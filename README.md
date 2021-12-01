@@ -1,2 +1,3 @@
-# go-snaps
+# GO Snaps
+
 Jest-like snapshot testing in golang

@@ -2,7 +2,6 @@ package snaps
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -10,12 +9,12 @@ import (
 
 var dmp = diffmatchpatch.New()
 
-func prettyPrintDiff(t *testing.T, expected, received string) {
+func prettyPrintDiff(t *testing.T, expected, received string) string {
 	diffs := dmp.DiffMain(expected, received, false)
 	buff := bytes.Buffer{}
 
 	if len(diffs) == 1 && diffs[0].Type == 0 {
-		return
+		return ""
 	}
 
 	buff.WriteString("\n")
@@ -36,9 +35,5 @@ func prettyPrintDiff(t *testing.T, expected, received string) {
 	}
 
 	buff.WriteString("\n")
-	fmt.Print(buff.String())
-
-	t.Error("diffs")
-	// FIXME: error message
-	// FIXME: how to change stack trace here
+	return buff.String()
 }
