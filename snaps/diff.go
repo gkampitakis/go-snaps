@@ -2,14 +2,13 @@ package snaps
 
 import (
 	"bytes"
-	"testing"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 var dmp = diffmatchpatch.New()
 
-func prettyPrintDiff(t *testing.T, expected, received string) string {
+func prettyDiff(expected, received string) string {
 	diffs := dmp.DiffMain(expected, received, false)
 	buff := bytes.Buffer{}
 
