@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	testsOccur       = map[string]int{}
-	snapshotNotFound = errors.New("Snapshot not found")
+	// We track occurrence as in the same test we can run multiple snapshots
+	testsOccur      = map[string]int{}
+	errSnapNotFound = errors.New("snapshot not found")
 )
 
 const (
@@ -58,24 +59,22 @@ func takeSnapshot(objects *[]interface{}) string {
 	return snapshot
 }
 
-func getTestID(tName string) string { // NOTE: this can be written better
+// Returns the id of the test in the snapshot
+// Form [<test-name> - <occurrence>]
+func getTestID(tName string) string {
 	occurrence := testsOccur[tName]
 	return fmt.Sprintf("[%s - %d]", tName, occurrence)
 }
 
-func snapshotEntry(snap, testID string) string {
-	return fmt.Sprintf("\n%s\n%s---\n", testID, snap)
-}
-
+// Returns the path where the "user" tests are running
 func baseCaller() string {
 	pc := make([]uintptr, 50) // NOTE: this might not be enough
 	// with 0 identifying the frame for Callers itself and 1 identifying the caller of Callers
-	n := runtime.Callers(2, pc)
+	n := runtime.Callers(0, pc)
 
 	frames := runtime.CallersFrames(pc[:n])
-	var more = true
-	var frame runtime.Frame
-	prevFile := ""
+	frame, more := frames.Next()
+	prevFile := frame.File
 
 	for more {
 		prevFile = frame.File
@@ -89,29 +88,4 @@ func baseCaller() string {
 	}
 
 	return prevFile
-}
-
-func callerStack() []string {
-	pc := make([]uintptr, 50) // NOTE: this might not be enough
-	// with 0 identifying the frame for Callers itself and 1 identifying the caller of Callers
-	n := runtime.Callers(2, pc)
-
-	frames := runtime.CallersFrames(pc[:n])
-	var more = true
-	var frame runtime.Frame
-	callStack := []string{}
-
-	for more {
-		frame, more = frames.Next()
-		tmp := strings.Split(frame.Function, ".")
-		fName := tmp[len(tmp)-1]
-
-		if fName == "tRunner" {
-			break
-		}
-
-		callStack = append(callStack, fmt.Sprintf("%s:%d", fName, frame.Line))
-	}
-
-	return callStack
 }

@@ -5,8 +5,8 @@ import (
 )
 
 func getEnvBool(variable string, fallback bool) bool {
-	e := os.Getenv(variable)
-	if e == "" {
+	e, exists := os.LookupEnv(variable)
+	if !exists {
 		return fallback
 	}
 

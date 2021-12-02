@@ -11,37 +11,57 @@ import (
 )
 
 type Config struct {
-	snapsDirName string
-	snapsExtName string
+	snapsDir     string
+	snapsExt     string
 	shouldUpdate bool
 }
 
-func New() *Config {
-	// FIXME:
-	return &Config{
-		snapsDirName: "snapshots",
-		snapsExtName: "snap",
-		shouldUpdate: getEnvBool("UPDATE_SNAPS", false),
-	}
-}
-
 var defaultConfig = Config{
-	snapsDirName: "__snapshots__",
-	snapsExtName: "snap",
+	snapsDir:     "__snapshots__",
+	snapsExt:     "snap",
 	shouldUpdate: getEnvBool("UPDATE_SNAPS", false),
 }
 
+// Get a new snaps instance configured
+func New(configurers ...func(*Config)) *Config {
+	config := defaultConfig
+
+	for _, c := range configurers {
+		c(&config)
+	}
+
+	return &config
+}
+
+// Set snaps directory. Default "__snapshots__"
+func SnapsDirectory(dir string) func(*Config) {
+	return func(c *Config) {
+		c.snapsDir = dir
+	}
+}
+
+// Set snap file extension. Default "snap"
+func SnapsExtension(extension string) func(*Config) {
+	return func(c *Config) {
+		c.snapsExt = extension
+	}
+}
+
+// Using pointer here so we can remove the interface{} when printing
 func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
+	t.Helper()
+
 	if len(*o) == 0 {
 		return
 	}
 
+	path, fPath := c.snapPathAndFile()
 	registerTest(t.Name())
 	snap := takeSnapshot(o)
-	prevSnap, err := c.getPrevSnapshot(t.Name())
+	prevSnap, err := c.getPrevSnapshot(t.Name(), fPath)
 
-	if errors.Is(err, snapshotNotFound) {
-		err := c.addNewSnapshot(t.Name(), snap)
+	if errors.Is(err, errSnapNotFound) {
+		err := c.addNewSnapshot(t.Name(), snap, path, fPath)
 		if err != nil {
 			t.Error(err)
 		}
@@ -56,7 +76,7 @@ func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
 	diff := prettyDiff(prevSnap, snap)
 	if diff != "" {
 		if c.shouldUpdate {
-			err := c.updateSnapshot(t.Name(), snap)
+			err := c.updateSnapshot(t.Name(), snap, fPath)
 			if err != nil {
 				t.Error(err)
 			}
@@ -65,41 +85,34 @@ func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
 			return
 		}
 
-		fmt.Print(diff)
-		t.Error("diffs")
-
-		// FIXME: error message
-		// FIXME: how to change stack trace here
+		t.Error(diff)
 	}
 }
 
-func (c *Config) getPrevSnapshot(tName string) (string, error) {
-	testID := getTestID(tName)
-	f, err := c.snapshotFileToString(tName)
+func (c *Config) getPrevSnapshot(tName, fPath string) (string, error) {
+	f, err := c.snapshotFileToString(tName, fPath)
 	if err != nil {
 		return "", err
 	}
+
+	testID := getTestID(tName)
 
 	// e.g (?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:---)
 	re := regexp.MustCompile("(?:\\" + testID + "[\\s\\S])(.*[\\s\\S]*?)(?:---)")
 	match := re.FindStringSubmatch(f)
 
 	if len(match) < 2 {
-		return "", snapshotNotFound
+		return "", errSnapNotFound
 	}
 
 	// The second capture group has the snapshot data
 	return match[1], err
 }
 
-func (c *Config) snapshotFileToString(tName string) (string, error) {
-	cPath := baseCaller()
-	p, fName := c.snapshotDir(tName, cPath), c.snapshotFileName(tName, cPath)
-	fPath := filepath.Join(p, fName)
-
+func (c *Config) snapshotFileToString(tName, fPath string) (string, error) {
 	_, err := os.Stat(fPath)
 	if err != nil {
-		return "", snapshotNotFound
+		return "", errSnapNotFound
 	}
 
 	f, err := os.ReadFile(fPath)
@@ -110,33 +123,23 @@ func (c *Config) snapshotFileToString(tName string) (string, error) {
 	return string(f), err
 }
 
-func (c *Config) stringToSnapshotFile(tName, snap string) error {
-	cPath := baseCaller()
-	p, fName := c.snapshotDir(tName, cPath), c.snapshotFileName(tName, cPath)
-
-	err := os.WriteFile(filepath.Join(p, fName), []byte(snap), os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	return err
+func (c *Config) stringToSnapshotFile(tName, snap, fPath string) error {
+	return os.WriteFile(fPath, []byte(snap), os.ModePerm)
 }
 
-func (c *Config) addNewSnapshot(tName, snap string) error {
-	testID := getTestID(tName)
-	cPath := baseCaller()
-	p, fName := c.snapshotDir(tName, cPath), c.snapshotFileName(tName, cPath)
-	if err := os.MkdirAll(p, os.ModePerm); err != nil {
+func (c *Config) addNewSnapshot(tName, snap, path, fPath string) error {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(filepath.Join(p, fName), os.O_APPEND|os.O_CREATE|os.O_RDWR, os.ModePerm)
+	f, err := os.OpenFile(fPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	_, err = f.WriteString(snapshotEntry(snap, testID))
+	testID := getTestID(tName)
+	_, err = f.WriteString(fmt.Sprintf("\n%s\n%s---\n", testID, snap))
 	if err != nil {
 		return err
 	}
@@ -144,27 +147,32 @@ func (c *Config) addNewSnapshot(tName, snap string) error {
 	return nil
 }
 
-func (c *Config) snapshotDir(tName, cPath string) string {
-	return filepath.Join(filepath.Dir(cPath), c.snapsDirName)
+/*
+	Returns the path (p) where the tests run + /snapsDirName
+	and the second string (f) is the the path + /snapsDirName + /<test-name>.snapsExtName
+*/
+func (c *Config) snapPathAndFile() (p, f string) {
+	callerPath := baseCaller()
+	base := filepath.Base(callerPath)
+
+	p = filepath.Join(filepath.Dir(callerPath), c.snapsDir)
+	f = filepath.Join(p, strings.TrimSuffix(base, filepath.Ext(base))+"."+c.snapsExt)
+
+	return
 }
 
-func (c *Config) snapshotFileName(tName, cPath string) string {
-	base := filepath.Base(cPath)
-	return strings.TrimSuffix(base, filepath.Ext(base)) + "." + c.snapsExtName
-}
-
-func (c *Config) updateSnapshot(tName, snap string) error {
-	// BUG: adds one new line above and below
-	testID := getTestID(tName)
-	f, err := c.snapshotFileToString(tName)
+func (c *Config) updateSnapshot(tName, snap, fPath string) error {
+	f, err := c.snapshotFileToString(tName, fPath)
 	if err != nil {
 		return err
 	}
 
-	re := regexp.MustCompile("(?:\\" + testID + "[\\s\\S])(.*[\\s\\S]*?)(?:---)")
-	newSnap := re.ReplaceAllString(f, snapshotEntry(snap, testID))
+	testID := getTestID(tName)
 
-	c.stringToSnapshotFile(tName, newSnap)
+	re := regexp.MustCompile("(?:\\" + testID + "[\\s\\S])(.*[\\s\\S]*?)(?:---)")
+	newSnap := re.ReplaceAllString(f, fmt.Sprintf("%s\n%s---", testID, snap))
+
+	err = c.stringToSnapshotFile(tName, newSnap, fPath)
 	if err != nil {
 		return err
 	}
