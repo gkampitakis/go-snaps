@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"strings"
 
 	"github.com/kr/pretty"
 )
@@ -68,23 +67,28 @@ func getTestID(tName string) string {
 
 // Returns the path where the "user" tests are running
 func baseCaller() string {
-	pc := make([]uintptr, 50) // NOTE: this might not be enough
-	// with 0 identifying the frame for Callers itself and 1 identifying the caller of Callers
-	n := runtime.Callers(0, pc)
+	var (
+		ok             bool
+		pc             uintptr
+		file, prevFile string
+	)
 
-	frames := runtime.CallersFrames(pc[:n])
-	frame, more := frames.Next()
-	prevFile := frame.File
-
-	for more {
-		prevFile = frame.File
-		frame, more = frames.Next()
-		tmp := strings.Split(frame.Function, ".")
-		fName := tmp[len(tmp)-1]
-
-		if fName == "tRunner" {
+	for i := 0; ; i++ {
+		prevFile = file
+		pc, file, _, ok = runtime.Caller(i)
+		if !ok {
 			break
 		}
+
+		f := runtime.FuncForPC(pc)
+		if f == nil {
+			break
+		}
+
+		if f.Name() == "testing.tRunner" {
+			break
+		}
+
 	}
 
 	return prevFile
