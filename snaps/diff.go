@@ -17,7 +17,7 @@ func prettyDiff(expected, received string) string {
 	}
 
 	buff.WriteString("\n")
-	buff.WriteString(redBG(" Expected "))
+	buff.WriteString(redBG(" Snapshot "))
 	buff.WriteString("\n")
 	buff.WriteString(greenBG(" Received "))
 	buff.WriteString("\n\n")

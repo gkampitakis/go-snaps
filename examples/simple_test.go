@@ -1,6 +1,7 @@
 package examples
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/gkampitakis/go_snaps/snaps"
@@ -39,6 +40,14 @@ func TestSimple(t *testing.T) {
 			"data": [ ]
 		}`)
 	})
+
+	t.Run("nest", func(t *testing.T) {
+		t.Run("more", func(t *testing.T) {
+			t.Run("one more nested test", func(t *testing.T) {
+				snaps.MatchSnapshot(t, "it's okay")
+			})
+		})
+	})
 }
 
 func TestSimpleTable(t *testing.T) {
@@ -61,6 +70,10 @@ func TestSimpleTable(t *testing.T) {
 			input: map[string]interface{}{
 				"test": func() {},
 			},
+		},
+		{
+			description: "buffer",
+			input:       bytes.NewBufferString("Buffer string"),
 		},
 	} {
 		t.Run(scenario.description, func(t *testing.T) {
