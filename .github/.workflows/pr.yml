@@ -1,0 +1,35 @@
+   
+name: pull_request
+
+on:
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+    branches:
+      - master
+
+jobs:
+  lint:
+    name: Run linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: "latest"
+  # test:
+  #   name: Run tests
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       go: [1.x]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Setup go
+  #       uses: actions/setup-go@v2
+  #       with:
+  #         go-version: ${{matrix.go}}
+  #     - name: Run Tests
+  #       run: go test -cover ./...

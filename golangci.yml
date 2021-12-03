@@ -1,0 +1,14 @@
+linters:
+  enable:
+    - sqlclosecheck
+    - unconvert
+    - stylecheck
+    - maligned
+    - lll
+    - ifshort
+    - goimports
+    - goimports
+
+linters-settings:
+  lll:
+    line-length: 180

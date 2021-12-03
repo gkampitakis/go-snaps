@@ -1,0 +1,13 @@
+{
+  "labels": ["dependencies"],
+  "extends": ["config:base", "group:all"],
+  "schedule": ["every weekend"],
+  "reviewers": ["gkampitakis"],
+  "rebaseWhen": "behind-base-branch",
+  "patch": {
+    "automerge": true
+  },
+  "minor": {
+    "automerge": false
+  }
+}

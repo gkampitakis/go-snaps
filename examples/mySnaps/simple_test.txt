@@ -1,0 +1,4 @@
+
+[TestSimpleConfig - 1]
+int(10)
+---
