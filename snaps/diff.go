@@ -27,9 +27,9 @@ func prettyDiff(expected, received string) string {
 		case 0:
 			buff.WriteString(dimText(diff.Text))
 		case -1:
-			buff.WriteString(redBG(diff.Text))
+			buff.WriteString(redText(diff.Text))
 		case 1:
-			buff.WriteString(greenBG(diff.Text))
+			buff.WriteString(greenText(diff.Text))
 		}
 	}
 

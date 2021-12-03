@@ -19,7 +19,8 @@ const (
 	redBGCode   = "\u001b[41m\u001b[37;1m"
 	greenBGCode = "\u001b[42m\u001b[37;1m"
 	dimCode     = "\u001b[2m"
-	greenCode   = "\u001b[32m"
+	greenCode   = "\u001b[32;1m"
+	redCode     = "\u001b[31;1m"
 )
 
 func redBG(txt string) string {
@@ -36,6 +37,10 @@ func dimText(txt string) string {
 
 func greenText(txt string) string {
 	return fmt.Sprintf("%s%s%s", greenCode, txt, resetCode)
+}
+
+func redText(txt string) string {
+	return fmt.Sprintf("%s%s%s", redCode, txt, resetCode)
 }
 
 func registerTest(tName string) int {

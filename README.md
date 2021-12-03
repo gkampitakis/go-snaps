@@ -1,8 +1,15 @@
-# GO Snaps
+# Go Snaps
 
+<p align="center">
 Jest-like snapshot testing in Golang
+</p>
 
+<br>
 
+<p align="center">
+<img src="./images/diff.png" alt="App Preview" width="400"/>
+<img src="./images/update.png" alt="App Preview" width="500"/>
+</p>
 
 ## Installation
 
@@ -12,7 +19,7 @@ To install `go-snaps`, use `go get`:
 go get github.com/gkampitakis/go-snaps
 ```
 
-Import the `go-snaps/snaps` package into your:
+Import the `go-snaps/snaps` package into your code:
 
 ```go
 package example
@@ -33,8 +40,8 @@ func TestExample(t *testing.T) {
 ### Usage
 
 You can pass multiple parameters to `MatchSnapshot` or call `MatchSnapshot` multiple
-times inside the same test. The difference is in the snapshot file the latter will
-create multiple entries.
+times inside the same test. The difference is in the latter, it will
+create multiple entries in the snapshot file.
 
 ```go
 
@@ -51,8 +58,8 @@ func TestSimple(t *testing.T) {
 
 ```
 
-By default `go-snaps` saves the snapshots in `__snapshots__` directory and the file
-name is the test file name with extension `.snap`. 
+By default `go-snaps` save the snapshots in `__snapshots__` directory and the file
+name is the test file name with extension `.snap`.
 
 So for example if your test is called `add_test.go` when you run your tests at the same
 directory a new folder will be created `./__snapshots__/add_test.snaps`. You can 
