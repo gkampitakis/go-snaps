@@ -7,7 +7,7 @@ linters:
     - lll
     - ifshort
     - goimports
-    - goimports
+    - unparam
 
 linters-settings:
   lll:

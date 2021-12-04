@@ -82,6 +82,32 @@ UPDATE_SNAPS=true go test ....
 
 You can also see some example usages in `./examples` in this project.
 
+### Snapshots
+
+Snapshots have the form 
+
+`[ TestID ]`
+<br>
+`data`
+<br>
+`---`
+
+`TestID` is the test name plus an increasing number ( allowing to do multiple calls
+of `MatchSnapshot` inside a test ).
+
+```txt
+[TestSimple/should_make_a_map_snapshot - 1]
+map[string]interface {}{
+    "mock-0": "value",
+    "mock-1": int(2),
+    "mock-2": func() {...},
+    "mock-3": float32(10.399999618530273),
+}
+---
+```
+
+> Keep in mind the order in which tests are written might not be the same order that snapshots are saved in the file.
+
 ### Acknowledgments
 
 This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) and [Cupaloy](https://github.com/bradleyjkemp/cupaloy) as inspiration.

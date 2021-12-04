@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"sync"
 
 	"github.com/kr/pretty"
 )
@@ -12,6 +13,7 @@ var (
 	// We track occurrence as in the same test we can run multiple snapshots
 	testsOccur      = map[string]int{}
 	errSnapNotFound = errors.New("snapshot not found")
+	_m              = sync.Mutex{}
 )
 
 const (
@@ -43,16 +45,6 @@ func redText(txt string) string {
 	return fmt.Sprintf("%s%s%s", redCode, txt, resetCode)
 }
 
-func registerTest(tName string) int {
-	if c, exists := testsOccur[tName]; exists {
-		testsOccur[tName] = c + 1
-		return c + 1
-	}
-
-	testsOccur[tName] = 1
-	return 1
-}
-
 func takeSnapshot(objects *[]interface{}) string {
 	var snapshot string
 
@@ -66,7 +58,14 @@ func takeSnapshot(objects *[]interface{}) string {
 // Returns the id of the test in the snapshot
 // Form [<test-name> - <occurrence>]
 func getTestID(tName string) string {
-	occurrence := testsOccur[tName]
+	occurrence := 1
+
+	if c, exists := testsOccur[tName]; exists {
+		occurrence = c + 1
+	}
+
+	testsOccur[tName] = occurrence
+
 	return fmt.Sprintf("[%s - %d]", tName, occurrence)
 }
 

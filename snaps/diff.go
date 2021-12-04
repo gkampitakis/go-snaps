@@ -9,7 +9,8 @@ import (
 var dmp = diffmatchpatch.New()
 
 func prettyDiff(expected, received string) string {
-	diffs := dmp.DiffMain(expected, received, false)
+	diffs := dmp.DiffCleanupSemantic(dmp.DiffMain(expected, received, false))
+
 	buff := bytes.Buffer{}
 
 	if len(diffs) == 1 && diffs[0].Type == 0 {

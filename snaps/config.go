@@ -56,12 +56,12 @@ func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
 	}
 
 	path, fPath := c.snapPathAndFile()
-	registerTest(t.Name())
+	testID := getTestID(t.Name())
 	snap := takeSnapshot(o)
-	prevSnap, err := c.getPrevSnapshot(t.Name(), fPath)
+	prevSnap, err := c.getPrevSnapshot(testID, fPath)
 
 	if errors.Is(err, errSnapNotFound) {
-		err := c.addNewSnapshot(t.Name(), snap, path, fPath)
+		err := c.addNewSnapshot(testID, snap, path, fPath)
 		if err != nil {
 			t.Error(err)
 		}
@@ -76,7 +76,7 @@ func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
 	diff := prettyDiff(prevSnap, snap)
 	if diff != "" {
 		if c.shouldUpdate {
-			err := c.updateSnapshot(t.Name(), snap, fPath)
+			err := c.updateSnapshot(testID, snap, fPath)
 			if err != nil {
 				t.Error(err)
 			}
@@ -89,13 +89,11 @@ func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
 	}
 }
 
-func (c *Config) getPrevSnapshot(tName, fPath string) (string, error) {
-	f, err := c.snapshotFileToString(tName, fPath)
+func (c *Config) getPrevSnapshot(testID, fPath string) (string, error) {
+	f, err := c.snapshotFileToString(fPath)
 	if err != nil {
 		return "", err
 	}
-
-	testID := getTestID(tName)
 
 	// e.g (?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:---)
 	re := regexp.MustCompile("(?:\\" + testID + "[\\s\\S])(.*[\\s\\S]*?)(?:---)")
@@ -109,7 +107,7 @@ func (c *Config) getPrevSnapshot(tName, fPath string) (string, error) {
 	return match[1], err
 }
 
-func (c *Config) snapshotFileToString(tName, fPath string) (string, error) {
+func (c *Config) snapshotFileToString(fPath string) (string, error) {
 	_, err := os.Stat(fPath)
 	if err != nil {
 		return "", errSnapNotFound
@@ -123,11 +121,11 @@ func (c *Config) snapshotFileToString(tName, fPath string) (string, error) {
 	return string(f), err
 }
 
-func (c *Config) stringToSnapshotFile(tName, snap, fPath string) error {
+func (c *Config) stringToSnapshotFile(snap, fPath string) error {
 	return os.WriteFile(fPath, []byte(snap), os.ModePerm)
 }
 
-func (c *Config) addNewSnapshot(tName, snap, path, fPath string) error {
+func (c *Config) addNewSnapshot(testID, snap, path, fPath string) error {
 	if err := os.MkdirAll(path, os.ModePerm); err != nil {
 		return err
 	}
@@ -138,7 +136,6 @@ func (c *Config) addNewSnapshot(tName, snap, path, fPath string) error {
 	}
 	defer f.Close()
 
-	testID := getTestID(tName)
 	_, err = f.WriteString(fmt.Sprintf("\n%s\n%s---\n", testID, snap))
 	if err != nil {
 		return err
@@ -161,18 +158,20 @@ func (c *Config) snapPathAndFile() (p, f string) {
 	return
 }
 
-func (c *Config) updateSnapshot(tName, snap, fPath string) error {
-	f, err := c.snapshotFileToString(tName, fPath)
+func (c *Config) updateSnapshot(testID, snap, fPath string) error {
+	// When t.Parallel a test can override another snapshot as we dump
+	// all snapshots
+	_m.Lock()
+	defer _m.Unlock()
+	f, err := c.snapshotFileToString(fPath)
 	if err != nil {
 		return err
 	}
 
-	testID := getTestID(tName)
-
 	re := regexp.MustCompile("(?:\\" + testID + "[\\s\\S])(.*[\\s\\S]*?)(?:---)")
 	newSnap := re.ReplaceAllString(f, fmt.Sprintf("%s\n%s---", testID, snap))
 
-	err = c.stringToSnapshotFile(tName, newSnap, fPath)
+	err = c.stringToSnapshotFile(newSnap, fPath)
 	if err != nil {
 		return err
 	}
