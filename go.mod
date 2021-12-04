@@ -1,4 +1,4 @@
-module github.com/gkampitakis/go_snaps
+module github.com/gkampitakis/go-snaps
 
 go 1.17
 

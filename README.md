@@ -27,7 +27,7 @@ package example
 import (
   "testing"
 
-	"github.com/gkampitakis/go_snaps/snaps"
+	"github.com/gkampitakis/go-snaps/snaps"
 )
 
 func TestExample(t *testing.T) {

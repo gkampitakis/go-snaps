@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/gkampitakis/go_snaps/snaps"
+	"github.com/gkampitakis/go-snaps/snaps"
 )
 
 func TestParallel(t *testing.T) {
