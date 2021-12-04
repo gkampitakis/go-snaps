@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 )
@@ -95,9 +94,7 @@ func (c *Config) getPrevSnapshot(testID, fPath string) (string, error) {
 		return "", err
 	}
 
-	// e.g (?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:---)
-	re := regexp.MustCompile("(?:\\" + testID + "[\\s\\S])(.*[\\s\\S]*?)(?:---)")
-	match := re.FindStringSubmatch(f)
+	match := testIDRegex(testID).FindStringSubmatch(f)
 
 	if len(match) < 2 {
 		return "", errSnapNotFound
@@ -168,8 +165,8 @@ func (c *Config) updateSnapshot(testID, snap, fPath string) error {
 		return err
 	}
 
-	re := regexp.MustCompile("(?:\\" + testID + "[\\s\\S])(.*[\\s\\S]*?)(?:---)")
-	newSnap := re.ReplaceAllString(f, fmt.Sprintf("%s\n%s---", testID, snap))
+	newSnap := testIDRegex(testID).
+		ReplaceAllString(f, fmt.Sprintf("%s\n%s---", testID, snap))
 
 	err = c.stringToSnapshotFile(newSnap, fPath)
 	if err != nil {

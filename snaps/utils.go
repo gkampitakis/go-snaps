@@ -3,6 +3,7 @@ package snaps
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"runtime"
 	"sync"
 
@@ -67,6 +68,11 @@ func getTestID(tName string) string {
 	testsOccur[tName] = occurrence
 
 	return fmt.Sprintf("[%s - %d]", tName, occurrence)
+}
+
+func testIDRegex(testID string) *regexp.Regexp {
+	// e.g (?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:---)
+	return regexp.MustCompile(`(?:` + regexp.QuoteMeta(testID) + `[\s\S])(.*[\s\S]*?)(?:---)`)
 }
 
 // Returns the path where the "user" tests are running

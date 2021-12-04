@@ -48,6 +48,10 @@ func TestSimple(t *testing.T) {
 			})
 		})
 	})
+
+	t.Run(".*", func(t *testing.T) {
+		snaps.MatchSnapshot(t, "ignore regex patterns on names")
+	})
 }
 
 func TestSimpleTable(t *testing.T) {
