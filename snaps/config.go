@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/gkampitakis/ciinfo"
 )
 
 type Config struct {
@@ -59,7 +61,7 @@ func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
 	snap := takeSnapshot(o)
 	prevSnap, err := c.getPrevSnapshot(testID, fPath)
 
-	if errors.Is(err, errSnapNotFound) {
+	if errors.Is(err, errSnapNotFound) && !ciinfo.IsCI {
 		err := c.addNewSnapshot(testID, snap, path, fPath)
 		if err != nil {
 			t.Error(err)
@@ -74,7 +76,7 @@ func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
 
 	diff := prettyDiff(prevSnap, snap)
 	if diff != "" {
-		if c.shouldUpdate {
+		if c.shouldUpdate && !ciinfo.IsCI {
 			err := c.updateSnapshot(testID, snap, fPath)
 			if err != nil {
 				t.Error(err)
