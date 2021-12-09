@@ -2,10 +2,12 @@ package snaps
 
 import (
 	"bytes"
+	"regexp"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
+var spacesReg = regexp.MustCompile(`^\s+$`)
 var dmp = diffmatchpatch.New()
 
 func prettyDiff(expected, received string) string {
@@ -28,9 +30,17 @@ func prettyDiff(expected, received string) string {
 		case 0:
 			buff.WriteString(dimText(diff.Text))
 		case -1:
-			buff.WriteString(redText(diff.Text))
+			if spacesReg.MatchString(diff.Text) {
+				buff.WriteString(redBG(diff.Text))
+			} else {
+				buff.WriteString(redText(diff.Text))
+			}
 		case 1:
-			buff.WriteString(greenText(diff.Text))
+			if spacesReg.MatchString(diff.Text) {
+				buff.WriteString(greenBG(diff.Text))
+			} else {
+				buff.WriteString(greenText(diff.Text))
+			}
 		}
 	}
 
