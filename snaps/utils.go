@@ -10,9 +10,21 @@ import (
 	"github.com/kr/pretty"
 )
 
+type safeMap struct {
+	values map[string]int
+	_m     sync.Mutex
+}
+
+func newSafeMap() *safeMap {
+	return &safeMap{
+		values: make(map[string]int),
+		_m:     sync.Mutex{},
+	}
+}
+
 var (
 	// We track occurrence as in the same test we can run multiple snapshots
-	testsOccur      = map[string]int{}
+	testsOccur      = newSafeMap()
 	errSnapNotFound = errors.New("snapshot not found")
 	_m              = sync.Mutex{}
 )
@@ -60,12 +72,14 @@ func takeSnapshot(objects *[]interface{}) string {
 // Form [<test-name> - <occurrence>]
 func getTestID(tName string) string {
 	occurrence := 1
+	testsOccur._m.Lock()
 
-	if c, exists := testsOccur[tName]; exists {
+	if c, exists := testsOccur.values[tName]; exists {
 		occurrence = c + 1
 	}
 
-	testsOccur[tName] = occurrence
+	testsOccur.values[tName] = occurrence
+	testsOccur._m.Unlock()
 
 	return fmt.Sprintf("[%s - %d]", tName, occurrence)
 }
