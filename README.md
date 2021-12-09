@@ -11,6 +11,10 @@ Jest-like snapshot testing in Golang
 <img src="./images/update.png" alt="App Preview" width="500"/>
 </p>
 
+<br>
+
+[![Tests](https://github.com/gkampitakis/go-snaps/actions/workflows/pr.yml/badge.svg)](https://github.com/gkampitakis/go-snaps/actions/workflows/pr.yml)
+
 ## Installation
 
 To install `go-snaps`, use `go get`:
