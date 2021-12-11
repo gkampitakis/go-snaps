@@ -1,6 +1,7 @@
 package snaps
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,7 +13,7 @@ func Equal(t *testing.T, expected interface{}, received interface{}) {
 	t.Helper()
 
 	if !reflect.DeepEqual(expected, received) {
-		t.Errorf("[expected]: %v - [received]: %v", expected, received)
+		t.Error(redText(fmt.Sprintf("[expected]: %v - [received]: %v", expected, received)))
 	}
 }
 
@@ -31,7 +32,6 @@ func TestConfig(t *testing.T) {
 
 		Equal(t, "__snapshots__", c.snapsDir)
 		Equal(t, "snap", c.snapsExt)
-		Equal(t, false, c.shouldUpdate)
 	})
 
 	t.Run("should apply new options", func(t *testing.T) {
@@ -39,7 +39,6 @@ func TestConfig(t *testing.T) {
 
 		Equal(t, "test_path", c.snapsDir)
 		Equal(t, "mock_ext", c.snapsExt)
-		Equal(t, false, c.shouldUpdate)
 	})
 }
 

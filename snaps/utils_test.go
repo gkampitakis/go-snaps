@@ -6,46 +6,55 @@ import (
 	"testing"
 )
 
+type textScenario struct {
+	description string
+	expected    string
+	formatFunc  func(string) string
+}
+
 func TestUtils(t *testing.T) {
-	t.Run("should wrap text with red background", func(t *testing.T) {
-		expectedTxt := "\u001b[41m\u001b[37;1mhello world\u001b[0m"
+	for _, scenario := range []textScenario{
+		{
+			description: "should wrap text with red background",
+			expected:    "\u001b[41m\u001b[37;1mhello world\u001b[0m",
+			formatFunc:  redBG,
+		},
+		{
+			description: "should wrap text with green background",
+			expected:    "\u001b[42m\u001b[37;1mhello world\u001b[0m",
+			formatFunc:  greenBG,
+		},
+		{
+			description: "should wrap text with dim text color",
+			expected:    "\u001b[2mhello world\u001b[0m",
+			formatFunc:  dimText,
+		},
+		{
+			description: "should wrap text with green text color",
+			expected:    "\u001b[32;1mhello world\u001b[0m",
+			formatFunc:  greenText,
+		},
+		{
+			description: "should wrap text with red text color",
+			expected:    "\u001b[31;1mhello world\u001b[0m",
+			formatFunc:  redText,
+		},
+		{
+			description: "should wrap text with yellow text color",
+			expected:    "\u001b[33;1mhello world\u001b[0m",
+			formatFunc:  yellowText,
+		},
+	} {
+		s := scenario
 
-		if txt := redBG("hello world"); txt != expectedTxt {
-			t.Errorf("expected red background %s", txt)
-		}
-	})
+		t.Run(s.description, func(t *testing.T) {
+			t.Parallel()
 
-	t.Run("should wrap text with green background", func(t *testing.T) {
-		expectedTxt := "\u001b[42m\u001b[37;1mhello world\u001b[0m"
-
-		if txt := greenBG("hello world"); txt != expectedTxt {
-			t.Errorf("expected green background %s", txt)
-		}
-	})
-
-	t.Run("should wrap text with dim text color", func(t *testing.T) {
-		expectedTxt := "\u001b[2mhello world\u001b[0m"
-
-		if txt := dimText("hello world"); txt != expectedTxt {
-			t.Errorf("expected dim color text %s", txt)
-		}
-	})
-
-	t.Run("should wrap text with green text color", func(t *testing.T) {
-		expectedTxt := "\u001b[32;1mhello world\u001b[0m"
-
-		if txt := greenText("hello world"); txt != expectedTxt {
-			t.Errorf("expected green color text %s", txt)
-		}
-	})
-
-	t.Run("should wrap text with red text color", func(t *testing.T) {
-		expectedTxt := "\u001b[31;1mhello world\u001b[0m"
-
-		if txt := redText("hello world"); txt != expectedTxt {
-			t.Errorf("expected red color text %s", txt)
-		}
-	})
+			if txt := s.formatFunc("hello world"); txt != s.expected {
+				t.Errorf("expected %s - received %s", s.expected, txt)
+			}
+		})
+	}
 
 	t.Run("should create a string from multiple params", func(t *testing.T) {
 		expected := "test\nint(5)\nmap[string]string{\"test\":\"test\"}\n"
@@ -62,32 +71,32 @@ func TestUtils(t *testing.T) {
 			wg.Add(1)
 
 			go func() {
-				getTestID("test")
+				getTestID("test", "/file")
 				wg.Done()
 			}()
 		}
 
 		wg.Wait()
 
-		testID := getTestID("test")
-		test_v2ID := getTestID("test-v2")
+		testID := getTestID("test", "/file")
+		testV2ID := getTestID("test-v2", "/file")
 
 		if testID != "[test - 6]" {
 			t.Errorf("wrong test id %s - expected: [test - 6]", testID)
 		}
 
-		if test_v2ID != "[test-v2 - 1]" {
-			t.Errorf("wrong test id %s - expected: [test-v2 - 1]", test_v2ID)
+		if testV2ID != "[test-v2 - 1]" {
+			t.Errorf("wrong test id %s - expected: [test-v2 - 1]", testV2ID)
 		}
 	})
 
-	t.Run("testIDRegex", func(t *testing.T) {
+	t.Run("dynamicTestIDRegexp", func(t *testing.T) {
 		t.Run("should escape regular expressions from testID", func(t *testing.T) {
-			escapedTestIDRegex := testIDRegex(`^\s+$-test`)
-			expectedRegex := `(?:\^\\s\+\$-test[\s\S])(.*[\s\S]*?)(?:---)`
+			escapedTestIDRegexp := dynamicTestIDRegexp(`^\s+$-test`)
+			expectedRegexp := `(?:\^\\s\+\$-test[\s\S])(.*[\s\S]*?)(?:---)`
 
-			if expectedRegex != escapedTestIDRegex.String() {
-				t.Errorf("wrong regex %s - expected %s", escapedTestIDRegex.String(), expectedRegex)
+			if expectedRegexp != escapedTestIDRegexp.String() {
+				t.Errorf("wrong regex %s - expected %s", escapedTestIDRegexp.String(), expectedRegexp)
 			}
 		})
 	})
@@ -96,7 +105,7 @@ func TestUtils(t *testing.T) {
 		var file string
 		expected := "/snaps/utils_test.go"
 		func() {
-			file = baseCaller()
+			file, _ = baseCaller()
 		}()
 
 		if !strings.Contains(file, expected) {
