@@ -1,7 +1,7 @@
 # Go Snaps
 
 <p align="center">
-Jest-like snapshot testing in Golang
+<b>Jest-like snapshot testing in Golang</b>
 </p>
 
 <br>
@@ -31,7 +31,7 @@ package example
 import (
   "testing"
 
-	"github.com/gkampitakis/go-snaps/snaps"
+  "github.com/gkampitakis/go-snaps/snaps"
 )
 
 func TestExample(t *testing.T) {
@@ -111,6 +111,46 @@ map[string]interface {}{
 ```
 
 > Keep in mind the order in which tests are written might not be the same order that snapshots are saved in the file.
+
+
+### Clean obsolete snapshots
+
+`go-snaps` can identify obsolete snapshots.
+
+In order to enable this functionality you need to use the `TestMain(t*testing.M)` 
+and call `snaps.Clean()`. This will also print a **Snapshot Summary**.
+
+If you want to remove the obsolete snap files and snapshots you can run 
+tests with `UPDATE_SNAPS=true` env variable.
+
+The reason for using `TestMain` is `go-snaps` needs to be sure that all tests 
+are finished so it can keep track which snapshots were not called. 
+
+**Example:**
+
+```go
+func TestMain(t *testing.M) {
+  v := t.Run()
+
+  // After all tests have run `go-snaps` can check for not used snapshots
+  snaps.Clean()
+
+  os.Exit(v)
+}
+```
+
+For more information around [TestMain](https://pkg.go.dev/testing#hdr-Main).
+
+#### Skipping Tests
+
+If you want to skip one test using `t.Skip`, `go-snaps` can't keep track
+if the test was skipped or if it was removed. For that reason `go-snaps` exposes 
+a light wrapper for `t.Skip`, `t.Skipf` and `t.SkipNow` which help `go-snaps` identify
+the skipped tests.
+
+> ⚠️ You can skip, or only run specific tests by using the `-run` flag. `go-snaps` 
+tries with a naive way to understand if snapshots are skipped or are obsolete. So 
+you might encounters tests marked as obsolete. Working on it.
 
 ### Acknowledgments
 

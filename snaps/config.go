@@ -20,7 +20,7 @@ type Config struct {
 var defaultConfig = Config{
 	snapsDir:     "__snapshots__",
 	snapsExt:     "snap",
-	shouldUpdate: getEnvBool("UPDATE_SNAPS", false),
+	shouldUpdate: shouldUpdate,
 }
 
 // Get a new snaps instance configured
@@ -57,7 +57,7 @@ func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
 	}
 
 	path, fPath := c.snapPathAndFile()
-	testID := getTestID(t.Name())
+	testID := getTestID(t.Name(), fPath)
 	snap := takeSnapshot(o)
 	prevSnap, err := c.getPrevSnapshot(testID, fPath)
 
@@ -76,7 +76,7 @@ func (c *Config) matchSnapshot(t *testing.T, o *[]interface{}) {
 
 	diff := prettyDiff(prevSnap, snap)
 	if diff != "" {
-		if c.shouldUpdate && !ciinfo.IsCI {
+		if c.shouldUpdate {
 			err := c.updateSnapshot(testID, snap, fPath)
 			if err != nil {
 				t.Error(err)
@@ -96,7 +96,7 @@ func (c *Config) getPrevSnapshot(testID, fPath string) (string, error) {
 		return "", err
 	}
 
-	match := testIDRegex(testID).FindStringSubmatch(f)
+	match := dynamicTestIDRegexp(testID).FindStringSubmatch(f)
 
 	if len(match) < 2 {
 		return "", errSnapNotFound
@@ -148,7 +148,7 @@ func (c *Config) addNewSnapshot(testID, snap, path, fPath string) error {
 	and the second string (f) is the the path + /snapsDirName + /<test-name>.snapsExtName
 */
 func (c *Config) snapPathAndFile() (p, f string) {
-	callerPath := baseCaller()
+	callerPath, _ := baseCaller()
 	base := filepath.Base(callerPath)
 
 	p = filepath.Join(filepath.Dir(callerPath), c.snapsDir)
@@ -167,7 +167,7 @@ func (c *Config) updateSnapshot(testID, snap, fPath string) error {
 		return err
 	}
 
-	newSnap := testIDRegex(testID).
+	newSnap := dynamicTestIDRegexp(testID).
 		ReplaceAllString(f, fmt.Sprintf("%s\n%s---", testID, snap))
 
 	err = c.stringToSnapshotFile(newSnap, fPath)

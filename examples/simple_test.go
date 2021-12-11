@@ -2,10 +2,19 @@ package examples
 
 import (
 	"bytes"
+	"os"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps"
 )
+
+func TestMain(t *testing.M) {
+	v := t.Run()
+
+	snaps.Clean()
+
+	os.Exit(v)
+}
 
 func TestSimple(t *testing.T) {
 	t.Run("should make an int snapshot", func(t *testing.T) {
@@ -84,10 +93,4 @@ func TestSimpleTable(t *testing.T) {
 			snaps.MatchSnapshot(t, scenario.input)
 		})
 	}
-}
-
-func TestSimpleConfig(t *testing.T) {
-	s := snaps.New(snaps.SnapsDirectory("mySnaps"), snaps.SnapsExtension("txt"))
-
-	s.MatchSnapshot(t, 10)
 }
