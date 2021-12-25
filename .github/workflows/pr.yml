@@ -21,11 +21,16 @@ jobs:
           version: "latest"
   test:
     name: Run tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
         go: [1.x]
     steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
       - uses: actions/checkout@v2
       - name: Setup go
         uses: actions/setup-go@v2

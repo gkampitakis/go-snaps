@@ -13,7 +13,7 @@ func Equal(t *testing.T, expected interface{}, received interface{}) {
 	t.Helper()
 
 	if !reflect.DeepEqual(expected, received) {
-		t.Error(redText(fmt.Sprintf("[expected]: %v - [received]: %v", expected, received)))
+		t.Error(redText(fmt.Sprintf("\n[expected]: %v\n[received]: %v", expected, received)))
 	}
 }
 
@@ -146,7 +146,7 @@ func TestConfigMethods(t *testing.T) {
 	t.Run("snapPathAndFile", func(t *testing.T) {
 		path, file := defaultConfig.snapPathAndFile()
 
-		Equal(t, true, strings.Contains(path, "/snaps/__snapshots__"))
-		Equal(t, true, strings.Contains(file, "/snaps/__snapshots__/config_test.snap"))
+		Equal(t, true, strings.Contains(path, filepath.FromSlash("/snaps/__snapshots__")))
+		Equal(t, true, strings.Contains(file, filepath.FromSlash("/snaps/__snapshots__/config_test.snap")))
 	})
 }
