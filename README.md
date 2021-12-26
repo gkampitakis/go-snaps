@@ -62,21 +62,11 @@ func TestSimple(t *testing.T) {
 
 ```
 
-By default `go-snaps` save the snapshots in `__snapshots__` directory and the file
+`go-snaps` save the snapshots in `__snapshots__` directory and the file
 name is the test file name with extension `.snap`.
 
 So for example if your test is called `add_test.go` when you run your tests at the same
-directory a new folder will be created `./__snapshots__/add_test.snaps`. You can 
-change the extension or the directory name if you wish.
-
-The example below will create a snapshot at `./mySnaps/<file-name>.txt`.
-```go
-func TestSimpleConfig(t *testing.T) {
-	s := snaps.New(snaps.SnapsDirectory("mySnaps"), snaps.SnapsExtension("txt"))
-
-	s.MatchSnapshot(t, 10)
-}
-```
+directory a new folder will be created `./__snapshots__/add_test.snaps`.
 
 Finally you can update your failing snapshots by setting `UPDATE_SNAPS` env variable to true.
 
@@ -123,7 +113,7 @@ and call `snaps.Clean()`. This will also print a **Snapshot Summary**.
 If you want to remove the obsolete snap files and snapshots you can run 
 tests with `UPDATE_SNAPS=true` env variable.
 
-The reason for using `TestMain` is `go-snaps` needs to be sure that all tests 
+The reason for using `TestMain`, is because `go-snaps` needs to be sure that all tests 
 are finished so it can keep track which snapshots were not called. 
 
 **Example:**
@@ -147,6 +137,8 @@ If you want to skip one test using `t.Skip`, `go-snaps` can't keep track
 if the test was skipped or if it was removed. For that reason `go-snaps` exposes 
 a light wrapper for `t.Skip`, `t.Skipf` and `t.SkipNow` which help `go-snaps` identify
 the skipped tests.
+
+Also `go-snaps` can track if you run a specific test from CLI with the flag `-run`.
 
 > ⚠️ You can skip, or only run specific tests by using the `-run` flag. `go-snaps` 
 tries with a naive way to understand if snapshots are skipped or are obsolete. So 

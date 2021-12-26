@@ -56,7 +56,7 @@ string hello world 2 2 1
 
 `
 
-func setupTempParseFiles(t *testing.T) (map[string]map[string]int, string, string) {
+func setupTempExamineFiles(t *testing.T) (map[string]map[string]int, string, string) {
 	t.Helper()
 	dir1 := t.TempDir()
 	dir2 := t.TempDir()
@@ -116,13 +116,19 @@ func getFileContent(t *testing.T, name string) string {
 	return string(content)
 }
 
-func TestParseFiles(t *testing.T) {
+func TestExamineFiles(t *testing.T) {
 	t.Run("should parse files", func(t *testing.T) {
-		tests, dir1, dir2 := setupTempParseFiles(t)
-		obsolete, used := parseFiles(tests, "", false)
+		tests, dir1, dir2 := setupTempExamineFiles(t)
+		obsolete, used := examineFiles(tests, "", false)
 
-		obsoleteExpected := []string{filepath.FromSlash(dir1 + "/obsolete1.snap"), filepath.FromSlash(dir2 + "/obsolete2.snap")}
-		usedExpected := []string{filepath.FromSlash(dir1 + "/test1.snap"), filepath.FromSlash(dir2 + "/test2.snap")}
+		obsoleteExpected := []string{
+			filepath.FromSlash(dir1 + "/obsolete1.snap"),
+			filepath.FromSlash(dir2 + "/obsolete2.snap"),
+		}
+		usedExpected := []string{
+			filepath.FromSlash(dir1 + "/test1.snap"),
+			filepath.FromSlash(dir2 + "/test2.snap"),
+		}
 
 		// Parse files uses maps so order of strings cannot be guaranteed
 		sort.Strings(obsoleteExpected)
@@ -136,14 +142,20 @@ func TestParseFiles(t *testing.T) {
 
 	t.Run("should remove outdate files", func(t *testing.T) {
 		shouldUpdate := true
-		tests, dir1, dir2 := setupTempParseFiles(t)
-		parseFiles(tests, "", shouldUpdate)
+		tests, dir1, dir2 := setupTempExamineFiles(t)
+		examineFiles(tests, "", shouldUpdate)
 
-		if _, err := os.Stat(filepath.FromSlash(dir1 + "/obsolete1.snap")); !errors.Is(err, os.ErrNotExist) {
+		if _, err := os.Stat(filepath.FromSlash(dir1 + "/obsolete1.snap")); !errors.Is(
+			err,
+			os.ErrNotExist,
+		) {
 			t.Error("obsolete obsolete1.snap not removed")
 		}
 
-		if _, err := os.Stat(filepath.FromSlash(dir2 + "/obsolete2.snap")); !errors.Is(err, os.ErrNotExist) {
+		if _, err := os.Stat(filepath.FromSlash(dir2 + "/obsolete2.snap")); !errors.Is(
+			err,
+			os.ErrNotExist,
+		) {
 			t.Error("obsolete obsolete2.snap not removed")
 		}
 	})
@@ -156,7 +168,7 @@ func TestOccurrences(t *testing.T) {
 		"divide":   2,
 	}
 
-	expected := Set{
+	expected := set{
 		"add - 1":      {},
 		"add - 2":      {},
 		"add - 3":      {},
@@ -168,21 +180,27 @@ func TestOccurrences(t *testing.T) {
 	Equal(t, expected, occurrences(tests))
 }
 
-func TestParseSnaps(t *testing.T) {
+func TestExamineSnaps(t *testing.T) {
 	t.Run("should report no obsolete tests", func(t *testing.T) {
-		tests, dir1, dir2 := setupTempParseFiles(t)
-		used := []string{filepath.FromSlash(dir1 + "/test1.snap"), filepath.FromSlash(dir2 + "/test2.snap")}
+		tests, dir1, dir2 := setupTempExamineFiles(t)
+		used := []string{
+			filepath.FromSlash(dir1 + "/test1.snap"),
+			filepath.FromSlash(dir2 + "/test2.snap"),
+		}
 		shouldUpdate := false
 
-		obsolete, err := parseSnaps(tests, used, "", shouldUpdate)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
 
 		Equal(t, []string{}, obsolete)
 		Equal(t, err, nil)
 	})
 
 	t.Run("should report two obsolete tests and not change content", func(t *testing.T) {
-		tests, dir1, dir2 := setupTempParseFiles(t)
-		used := []string{filepath.FromSlash(dir1 + "/test1.snap"), filepath.FromSlash(dir2 + "/test2.snap")}
+		tests, dir1, dir2 := setupTempExamineFiles(t)
+		used := []string{
+			filepath.FromSlash(dir1 + "/test1.snap"),
+			filepath.FromSlash(dir2 + "/test2.snap"),
+		}
 		shouldUpdate := false
 
 		// Reducing test occurrence to 1 meaning the second test was removed ( testid - 2 )
@@ -190,7 +208,7 @@ func TestParseSnaps(t *testing.T) {
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
-		obsolete, err := parseSnaps(tests, used, "", shouldUpdate)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
 		content1 := getFileContent(t, used[0])
 		content2 := getFileContent(t, used[1])
 
@@ -203,14 +221,17 @@ func TestParseSnaps(t *testing.T) {
 	})
 
 	t.Run("should update the obsolete snap files", func(t *testing.T) {
-		tests, dir1, dir2 := setupTempParseFiles(t)
-		used := []string{filepath.FromSlash(dir1 + "/test1.snap"), filepath.FromSlash(dir2 + "/test2.snap")}
+		tests, dir1, dir2 := setupTempExamineFiles(t)
+		used := []string{
+			filepath.FromSlash(dir1 + "/test1.snap"),
+			filepath.FromSlash(dir2 + "/test2.snap"),
+		}
 		shouldUpdate := true
 
 		delete(tests[used[0]], "TestDir1_3/TestSimple")
 		delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-		obsolete, err := parseSnaps(tests, used, "", shouldUpdate)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
 		content1 := getFileContent(t, used[0])
 		content2 := getFileContent(t, used[1])
 

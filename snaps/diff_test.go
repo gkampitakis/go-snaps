@@ -15,9 +15,36 @@ func TestDiff(t *testing.T) {
 		}
 	})
 
-	t.Run("should return diff", func(t *testing.T) {
+	t.Run("should return red diff", func(t *testing.T) {
 		expected, received := "Hello", ""
 		expectedDiff := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received \x1b[0m\n\n\x1b[31;1mHello\x1b[0m\n"
+
+		if diff := prettyDiff(expected, received); diff != expectedDiff {
+			t.Errorf("found diff between same string %s", diff)
+		}
+	})
+
+	t.Run("should return green diff", func(t *testing.T) {
+		expected, received := "", "Hello"
+		expectedDiff := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received \x1b[0m\n\n\x1b[32;1mHello\x1b[0m\n"
+
+		if diff := prettyDiff(expected, received); diff != expectedDiff {
+			t.Errorf("found diff between same string %s", diff)
+		}
+	})
+
+	t.Run("should return green bg diff for spaces", func(t *testing.T) {
+		expected, received := "    ", ""
+		expectedDiff := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received \x1b[0m\n\n\x1b[41m\x1b[37;1m    \x1b[0m\n"
+
+		if diff := prettyDiff(expected, received); diff != expectedDiff {
+			t.Errorf("found diff between same string %s", diff)
+		}
+	})
+
+	t.Run("should return red bg diff for spaces", func(t *testing.T) {
+		expected, received := "", "    "
+		expectedDiff := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received \x1b[0m\n\n\x1b[42m\x1b[37;1m    \x1b[0m\n"
 
 		if diff := prettyDiff(expected, received); diff != expectedDiff {
 			t.Errorf("found diff between same string %s", diff)
