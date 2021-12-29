@@ -69,7 +69,6 @@ const (
 	greenCode   = "\u001b[32;1m"
 	redCode     = "\u001b[31;1m"
 	yellowCode  = "\u001b[33;1m"
-	MOD         = "github.com/gkampitakis/go-snaps"
 )
 
 func redBG(txt string) string {
