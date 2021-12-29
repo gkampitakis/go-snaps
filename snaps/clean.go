@@ -2,11 +2,9 @@ package snaps
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -16,9 +14,10 @@ func Clean() {
 		fmt.Println(yellowText("go-snaps [Warning]: snaps.Clean should only run in 'TestMain'"))
 		return
 	}
+	runOnly := parseRunFlag(os.Args)
 
-	obsoleteSnaps, usedSnaps := parseFiles(testsOccur.values, shouldUpdate)
-	obsoleteTests, err := parseSnaps(testsOccur.values, usedSnaps, shouldUpdate)
+	obsoleteSnaps, usedSnaps := parseFiles(testsOccur.values, runOnly, shouldUpdate)
+	obsoleteTests, err := parseSnaps(testsOccur.values, usedSnaps, runOnly, shouldUpdate)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -34,7 +33,7 @@ func Clean() {
 	`Matchsnapshot`). If not skipped and not registed means it's an obsolete snap file
 	and we mark it as one.
 */
-func parseFiles(testsOccur map[string]map[string]int, shouldUpdate bool) (obsolete []string, used []string) {
+func parseFiles(testsOccur map[string]map[string]int, runOnly string, shouldUpdate bool) (obsolete []string, used []string) {
 	uniqueDirs := map[string]struct{}{}
 
 	for paths := range testsOccur {
@@ -53,12 +52,7 @@ func parseFiles(testsOccur map[string]map[string]int, shouldUpdate bool) (obsole
 			file := filepath.Join(dir, content.Name())
 
 			if _, called := testsOccur[file]; !called {
-				isSkipped, err := isFileSkipped(dir, content.Name())
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
-
+				isSkipped := isFileSkipped(dir, content.Name(), runOnly)
 				if isSkipped {
 					continue
 				}
@@ -81,7 +75,7 @@ func parseFiles(testsOccur map[string]map[string]int, shouldUpdate bool) (obsole
 	return obsolete, used
 }
 
-func parseSnaps(testsOccur map[string]map[string]int, used []string, shouldUpdate bool) ([]string, error) {
+func parseSnaps(testsOccur map[string]map[string]int, used []string, runOnly string, shouldUpdate bool) ([]string, error) {
 	obsoleteTests := []string{}
 
 	for _, snapPaths := range used {
@@ -109,7 +103,7 @@ func parseSnaps(testsOccur map[string]map[string]int, used []string, shouldUpdat
 			}
 			testID := match[1]
 
-			if _, exists := registeredTests[testID]; !exists && !testSkipped(testID) {
+			if _, exists := registeredTests[testID]; !exists && !testSkipped(testID, runOnly) {
 				obsoleteTests = append(obsoleteTests, testID)
 				hasDiffs = true
 
@@ -168,43 +162,6 @@ func summary(obsoleteSnaps []string, obsoleteTests []string) {
 }
 
 /*
-	Naive approach but works
-	Checks if the file includes the mod url import and if the Matchsnapshot call exists
-*/
-func isFileSkipped(dir string, filename string) (bool, error) {
-	modExists, called := false, false
-	ext := filepath.Ext(filename)
-	testFilePath := path.Join(dir, "..", strings.TrimSuffix(filename, ext)+".go")
-
-	f, err := os.Open(testFilePath)
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-
-	s := bufio.NewScanner(f)
-	for s.Scan() {
-		text := s.Text()
-
-		if strings.Contains(text, MOD) {
-			modExists = true
-		}
-
-		if strings.Contains(text, "MatchSnapshot(") {
-			called = true
-		}
-
-		if modExists && called {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-/*
 	Builds a Set with all snapshot ids registered inside a snap file
 	Form: testname - number id
 
@@ -220,7 +177,7 @@ func isFileSkipped(dir string, filename string) (bool, error) {
 	as it means there are 3 snapshots registered with that test
 */
 func occurrences(tests map[string]int) Set {
-	result := make(map[string]struct{})
+	result := make(Set)
 	for testID, counter := range tests {
 		if counter > 1 {
 			for i := 1; i <= counter; i++ {
@@ -233,23 +190,14 @@ func occurrences(tests map[string]int) Set {
 	return result
 }
 
-/*
-	This checks if the parent test is skipped
-	e.g
-	func TestParallel (t *testing.T) {
-		snaps.Skip()
-		...
-	}
-	Then every "child" test should be skipped
-*/
-func testSkipped(testID string) bool {
-	isSkipped := false
+func parseRunFlag(args []string) (runOnly string) {
+	flag := "-test.run="
 
-	for _, name := range skippedTests.values {
-		if strings.HasPrefix(testID, name) {
-			return true
+	for _, arg := range args {
+		if strings.HasPrefix(arg, flag) {
+			return strings.Split(arg, flag)[1]
 		}
 	}
 
-	return isSkipped
+	return ""
 }

@@ -119,7 +119,7 @@ func getFileContent(t *testing.T, name string) string {
 func TestParseFiles(t *testing.T) {
 	t.Run("should parse files", func(t *testing.T) {
 		tests, dir1, dir2 := setupTempParseFiles(t)
-		obsolete, used := parseFiles(tests, false)
+		obsolete, used := parseFiles(tests, "", false)
 
 		obsoleteExpected := []string{filepath.FromSlash(dir1 + "/obsolete1.snap"), filepath.FromSlash(dir2 + "/obsolete2.snap")}
 		usedExpected := []string{filepath.FromSlash(dir1 + "/test1.snap"), filepath.FromSlash(dir2 + "/test2.snap")}
@@ -137,7 +137,7 @@ func TestParseFiles(t *testing.T) {
 	t.Run("should remove outdate files", func(t *testing.T) {
 		shouldUpdate := true
 		tests, dir1, dir2 := setupTempParseFiles(t)
-		parseFiles(tests, shouldUpdate)
+		parseFiles(tests, "", shouldUpdate)
 
 		if _, err := os.Stat(filepath.FromSlash(dir1 + "/obsolete1.snap")); !errors.Is(err, os.ErrNotExist) {
 			t.Error("obsolete obsolete1.snap not removed")
@@ -174,7 +174,7 @@ func TestParseSnaps(t *testing.T) {
 		used := []string{filepath.FromSlash(dir1 + "/test1.snap"), filepath.FromSlash(dir2 + "/test2.snap")}
 		shouldUpdate := false
 
-		obsolete, err := parseSnaps(tests, used, shouldUpdate)
+		obsolete, err := parseSnaps(tests, used, "", shouldUpdate)
 
 		Equal(t, []string{}, obsolete)
 		Equal(t, err, nil)
@@ -190,7 +190,7 @@ func TestParseSnaps(t *testing.T) {
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
-		obsolete, err := parseSnaps(tests, used, shouldUpdate)
+		obsolete, err := parseSnaps(tests, used, "", shouldUpdate)
 		content1 := getFileContent(t, used[0])
 		content2 := getFileContent(t, used[1])
 
@@ -210,7 +210,7 @@ func TestParseSnaps(t *testing.T) {
 		delete(tests[used[0]], "TestDir1_3/TestSimple")
 		delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-		obsolete, err := parseSnaps(tests, used, shouldUpdate)
+		obsolete, err := parseSnaps(tests, used, "", shouldUpdate)
 		content1 := getFileContent(t, used[0])
 		content2 := getFileContent(t, used[1])
 
@@ -246,5 +246,19 @@ string hello world 2 2 1
 		// Content of snaps is not changed
 		Equal(t, expected1, content1)
 		Equal(t, expected2, content2)
+	})
+}
+
+func TestParseRunFlag(t *testing.T) {
+	t.Run("should return empty string", func(t *testing.T) {
+		runOly := parseRunFlag([]string{"-test.flag=ignore"})
+
+		Equal(t, "", runOly)
+	})
+
+	t.Run("should return -run value", func(t *testing.T) {
+		runOly := parseRunFlag([]string{"-test.run=MyTest"})
+
+		Equal(t, "MyTest", runOly)
 	})
 }
