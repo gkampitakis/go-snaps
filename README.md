@@ -138,11 +138,12 @@ if the test was skipped or if it was removed. For that reason `go-snaps` exposes
 a light wrapper for `t.Skip`, `t.Skipf` and `t.SkipNow` which help `go-snaps` identify
 the skipped tests.
 
-Also `go-snaps` can track if you run a specific test from CLI with the flag `-run`.
+You can skip, or only run specific tests by using the `-run` flag. `go-snaps` 
+can "understand" which tests are being skipped and parse only the relevant tests
+for obsolete snapshots.
 
-> ⚠️ You can skip, or only run specific tests by using the `-run` flag. `go-snaps` 
-tries with a naive way to understand if snapshots are skipped or are obsolete. So 
-you might encounters tests marked as obsolete. Working on it.
+> ⚠️ When running a specific test file by specifying a path
+`go test ./my_test.go` can't track the path so it will mistakenly mark snapshots as obsolete.
 
 ### Acknowledgments
 
