@@ -12,11 +12,44 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-type Set map[string]struct{}
+type set map[string]struct{}
+type testingT interface {
+	Helper()
+	Skip(args ...interface{})
+	Skipf(format string, args ...interface{})
+	SkipNow()
+	Name() string
+	Error(args ...interface{})
+}
 
-type syncMap struct {
+/*
+	We track occurrence as in the same test we can run multiple snapshots
+	This also helps with keeping track with obsolete snaps
+	map[snap path]: map[testname]: <number of snapshots>
+*/
+type syncRegistry struct {
 	values map[string]map[string]int
 	_m     sync.Mutex
+}
+
+// Returns the id of the test in the snapshot
+// Form [<test-name> - <occurrence>]
+func (s *syncRegistry) getTestID(tName, snapPath string) string {
+	occurrence := 1
+	s._m.Lock()
+
+	if _, exists := s.values[snapPath]; !exists {
+		s.values[snapPath] = make(map[string]int)
+	}
+
+	if c, exists := s.values[snapPath][tName]; exists {
+		occurrence = c + 1
+	}
+
+	s.values[snapPath][tName] = occurrence
+	s._m.Unlock()
+
+	return fmt.Sprintf("[%s - %d]", tName, occurrence)
 }
 
 type syncSlice struct {
@@ -24,11 +57,11 @@ type syncSlice struct {
 	_m     sync.Mutex
 }
 
-func (s *syncSlice) append(value string) {
+func (s *syncSlice) append(elems ...string) {
 	s._m.Lock()
 	defer s._m.Unlock()
 
-	s.values = append(s.values, value)
+	s.values = append(s.values, elems...)
 }
 
 func newSyncSlice() *syncSlice {
@@ -38,23 +71,21 @@ func newSyncSlice() *syncSlice {
 	}
 }
 
-func newSyncMap() *syncMap {
-	return &syncMap{
+func newRegistry() *syncRegistry {
+	return &syncRegistry{
 		values: make(map[string]map[string]int),
 		_m:     sync.Mutex{},
 	}
 }
 
 var (
-	/*
-		We track occurrence as in the same test we can run multiple snapshots
-		This also helps with keeping track with obsolete snaps
-		map[filepath]: map[testname]: <number of snapshots>
-	*/
-	testsOccur      = newSyncMap()
+	testsRegistry   = newRegistry()
 	errSnapNotFound = errors.New("snapshot not found")
 	_m              = sync.Mutex{}
-	shouldUpdate    = getEnvBool("UPDATE_SNAPS", false) && !ciinfo.IsCI
+	snapsDir        = "__snapshots__"
+	snapsExt        = ".snap"
+	isCI            = ciinfo.IsCI
+	shouldUpdate    = getEnvBool("UPDATE_SNAPS", false) && !isCI
 	// Matches [ Test ... ] testIDs
 	testIDRegexp = regexp.MustCompile(`^\[([Test].+)]$`)
 	spacesRegexp = regexp.MustCompile(`^\s+$`)
@@ -105,26 +136,7 @@ func takeSnapshot(objects *[]interface{}) string {
 	return snapshot
 }
 
-// Returns the id of the test in the snapshot
-// Form [<test-name> - <occurrence>]
-func getTestID(tName, fPath string) string {
-	occurrence := 1
-	testsOccur._m.Lock()
-
-	if _, exists := testsOccur.values[fPath]; !exists {
-		testsOccur.values[fPath] = make(map[string]int)
-	}
-
-	if c, exists := testsOccur.values[fPath][tName]; exists {
-		occurrence = c + 1
-	}
-
-	testsOccur.values[fPath][tName] = occurrence
-	testsOccur._m.Unlock()
-
-	return fmt.Sprintf("[%s - %d]", tName, occurrence)
-}
-
+// Matches a specific testID
 func dynamicTestIDRegexp(testID string) *regexp.Regexp {
 	// e.g (?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:---)
 	return regexp.MustCompile(`(?:` + regexp.QuoteMeta(testID) + `[\s\S])(.*[\s\S]*?)(?:---)`)

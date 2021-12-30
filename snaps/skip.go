@@ -6,29 +6,34 @@ import (
 	"go/token"
 	"path"
 	"strings"
-	"testing"
 )
 
 var skippedTests = newSyncSlice()
 
-// Wrapper of testing.Skip
-func Skip(t *testing.T, args ...interface{}) {
+// Wrapper of testing.Skip.
+// Keeps track which snapshots should be skipped
+// and not marked as obsolete
+func Skip(t testingT, args ...interface{}) {
 	t.Helper()
 
 	skippedTests.append(t.Name())
 	t.Skip(args...)
 }
 
-// Wrapper of testing.Skipf
-func Skipf(t *testing.T, format string, args ...interface{}) {
+// Wrapper of testing.Skipf.
+// Helps `go-snaps` keep track which snapshots should be skipped
+// and not marked as obsolete
+func Skipf(t testingT, format string, args ...interface{}) {
 	t.Helper()
 
 	skippedTests.append(t.Name())
 	t.Skipf(format, args...)
 }
 
-// Wrapper of testing.SkipNow
-func SkipNow(t *testing.T) {
+// Wrapper of testing.SkipNow.
+// Keeps track which snapshots should be skipped
+// and not marked as obsolete
+func SkipNow(t testingT) {
 	t.Helper()
 
 	skippedTests.append(t.Name())
@@ -36,7 +41,8 @@ func SkipNow(t *testing.T) {
 }
 
 /*
-	This checks if the parent test is skipped
+	This checks if the parent test is skipped,
+	or provided a 'runOnly' the testID is part of it
 	e.g
 	func TestParallel (t *testing.T) {
 		snaps.Skip()
@@ -64,7 +70,7 @@ func isFileSkipped(dir, filename, runOnly string) bool {
 		return false
 	}
 
-	testFilePath := path.Join(dir, "..", strings.TrimSuffix(filename, ".snap")+".go")
+	testFilePath := path.Join(dir, "..", strings.TrimSuffix(filename, snapsExt)+".go")
 	isSkipped := true
 
 	fset := token.NewFileSet()

@@ -9,6 +9,17 @@ import (
 	"strings"
 )
 
+// Clean runs checks for identifying obsolete snapshots and prints a Test Summary.
+//
+// Should be called in a TestMain
+//  func TestMain(t *testing.M) {
+//   v := t.Run()
+//
+//   // After all tests have run `go-snaps` can check for not used snapshots
+//   snaps.Clean()
+//
+//   os.Exit(v)
+//  }
 func Clean() {
 	if _, fName := baseCaller(); fName == "testing.tRunner" {
 		fmt.Println(yellowText("go-snaps [Warning]: snaps.Clean should only run in 'TestMain'"))
@@ -16,8 +27,8 @@ func Clean() {
 	}
 	runOnly := parseRunFlag(os.Args)
 
-	obsoleteSnaps, usedSnaps := parseFiles(testsOccur.values, runOnly, shouldUpdate)
-	obsoleteTests, err := parseSnaps(testsOccur.values, usedSnaps, runOnly, shouldUpdate)
+	obsoleteSnaps, usedSnaps := examineFiles(testsRegistry.values, runOnly, shouldUpdate)
+	obsoleteTests, err := examineSnaps(testsRegistry.values, usedSnaps, runOnly, shouldUpdate)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -33,11 +44,15 @@ func Clean() {
 	`Matchsnapshot`). If not skipped and not registed means it's an obsolete snap file
 	and we mark it as one.
 */
-func parseFiles(testsOccur map[string]map[string]int, runOnly string, shouldUpdate bool) (obsolete []string, used []string) {
-	uniqueDirs := map[string]struct{}{}
+func examineFiles(
+	registry map[string]map[string]int,
+	runOnly string,
+	shouldUpdate bool,
+) (obsolete []string, used []string) {
+	uniqueDirs := set{}
 
-	for paths := range testsOccur {
-		uniqueDirs[filepath.Dir(paths)] = struct{}{}
+	for snapPaths := range registry {
+		uniqueDirs[filepath.Dir(snapPaths)] = struct{}{}
 	}
 
 	for dir := range uniqueDirs {
@@ -49,45 +64,50 @@ func parseFiles(testsOccur map[string]map[string]int, runOnly string, shouldUpda
 				continue
 			}
 
-			file := filepath.Join(dir, content.Name())
+			snapPath := filepath.Join(dir, content.Name())
 
-			if _, called := testsOccur[file]; !called {
+			if _, called := registry[snapPath]; !called {
 				isSkipped := isFileSkipped(dir, content.Name(), runOnly)
 				if isSkipped {
 					continue
 				}
 
 				if shouldUpdate {
-					err := os.Remove(file)
+					err := os.Remove(snapPath)
 					if err != nil {
 						fmt.Println(err)
 					}
 				}
 
-				obsolete = append(obsolete, file)
+				obsolete = append(obsolete, snapPath)
 				continue
 			}
 
-			used = append(used, file)
+			used = append(used, snapPath)
 		}
 	}
 
 	return obsolete, used
 }
 
-func parseSnaps(testsOccur map[string]map[string]int, used []string, runOnly string, shouldUpdate bool) ([]string, error) {
+func examineSnaps(
+	registry map[string]map[string]int,
+	used []string,
+	runOnly string,
+	shouldUpdate bool,
+) ([]string, error) {
 	obsoleteTests := []string{}
 
-	for _, snapPaths := range used {
+	for _, snapPath := range used {
 		hasDiffs := false
 		updatedFile := ""
 
-		f, err := os.Open(snapPaths)
+		f, err := os.Open(snapPath)
 		if err != nil {
 			return nil, err
 		}
 
-		registeredTests := occurrences(testsOccur[snapPaths])
+		registeredTests := occurrences(registry[snapPath])
 		s := bufio.NewScanner(f)
 
 		for s.Scan() {
@@ -125,7 +145,7 @@ func parseSnaps(testsOccur map[string]map[string]int, used []string, runOnly str
 			continue
 		}
 
-		err = os.WriteFile(snapPaths, []byte(updatedFile), os.ModePerm)
+		err = os.WriteFile(snapPath, []byte(updatedFile), os.ModePerm)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -176,8 +196,8 @@ func summary(obsoleteSnaps []string, obsoleteTests []string) {
 
 	as it means there are 3 snapshots registered with that test
 */
-func occurrences(tests map[string]int) Set {
-	result := make(Set)
+func occurrences(tests map[string]int) set {
+	result := make(set)
 	for testID, counter := range tests {
 		if counter > 1 {
 			for i := 1; i <= counter; i++ {
