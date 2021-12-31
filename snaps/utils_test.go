@@ -53,7 +53,7 @@ func TestUtils(t *testing.T) {
 
 	t.Run("should create a string from multiple params", func(t *testing.T) {
 		expected := "test\nint(5)\nmap[string]string{\"test\":\"test\"}\n"
-		received := takeSnapshot(&[]interface{}{"test", 5, map[string]string{"test": "test"}})
+		received := takeSnapshot([]interface{}{"test", 5, map[string]string{"test": "test"}})
 
 		Equal(t, expected, received)
 	})

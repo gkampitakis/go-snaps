@@ -9,6 +9,9 @@ linters:
     - goimports
     - unparam
 
+  disable:
+    - errcheck
+
 linters-settings:
   lll:
-    line-length: 180
+    line-length: 130

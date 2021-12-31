@@ -105,6 +105,11 @@ map[string]interface {}{
 
 ### Clean obsolete snapshots
 
+<p align="center">
+<img src="./images/summary-obsolete.png" alt="Summary Obsolete" width="400"/>
+<img src="./images/summary-removed.png" alt="Summary Removed" width="500"/>
+</p>
+
 `go-snaps` can identify obsolete snapshots.
 
 In order to enable this functionality you need to use the `TestMain(t*testing.M)` 

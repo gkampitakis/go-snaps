@@ -2,6 +2,7 @@ package snaps
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -161,25 +162,6 @@ func TestExamineFiles(t *testing.T) {
 	})
 }
 
-func TestOccurrences(t *testing.T) {
-	tests := map[string]int{
-		"add":      3,
-		"subtract": 1,
-		"divide":   2,
-	}
-
-	expected := set{
-		"add - 1":      {},
-		"add - 2":      {},
-		"add - 3":      {},
-		"subtract - 1": {},
-		"divide - 1":   {},
-		"divide - 2":   {},
-	}
-
-	Equal(t, expected, occurrences(tests))
-}
-
 func TestExamineSnaps(t *testing.T) {
 	t.Run("should report no obsolete tests", func(t *testing.T) {
 		tests, dir1, dir2 := setupTempExamineFiles(t)
@@ -270,6 +252,25 @@ string hello world 2 2 1
 	})
 }
 
+func TestOccurrences(t *testing.T) {
+	tests := map[string]int{
+		"add":      3,
+		"subtract": 1,
+		"divide":   2,
+	}
+
+	expected := set{
+		"add - 1":      {},
+		"add - 2":      {},
+		"add - 3":      {},
+		"subtract - 1": {},
+		"divide - 1":   {},
+		"divide - 2":   {},
+	}
+
+	Equal(t, expected, occurrences(tests))
+}
+
 func TestParseRunFlag(t *testing.T) {
 	t.Run("should return empty string", func(t *testing.T) {
 		runOly := parseRunFlag([]string{"-test.flag=ignore"})
@@ -281,5 +282,180 @@ func TestParseRunFlag(t *testing.T) {
 		runOly := parseRunFlag([]string{"-test.run=MyTest"})
 
 		Equal(t, "MyTest", runOly)
+	})
+}
+
+func TestSummary(t *testing.T) {
+	t.Run("should not print anything", func(t *testing.T) {
+		mockPrinter := func(format string, args ...interface{}) (int, error) {
+			NotCalled(t)
+			return 0, nil
+		}
+
+		summary(mockPrinter, nil, nil, false)
+	})
+
+	t.Run("should print obsolete files", func(t *testing.T) {
+		expectedCalls := []func(format string, args ...interface{}){
+			func(format string, args ...interface{}) {
+				expectedFormat := "\n%s\n\n"
+				Equal(t, expectedFormat, format)
+
+				expectedArg := greenBG("Snapshot Summary")
+				Equal(t, expectedArg, args[0])
+			},
+			func(format string, arg ...interface{}) {
+				expected := yellowText(
+					fmt.Sprintf("%s%d snapshot files obsolete.\n", arrowPoint, 2),
+				)
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := dimText("  " + bulletPoint + "test0.snap\n")
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := dimText("  " + bulletPoint + "test1.snap\n")
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := "\n"
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := dimText("You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n")
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				NotCalled(t)
+			},
+		}
+		mockPrinter := func(format string, args ...interface{}) (int, error) {
+			expectedCalls[0](format, args...)
+
+			expectedCalls = expectedCalls[1:]
+			return 0, nil
+		}
+
+		summary(mockPrinter, []string{"test0.snap", "test1.snap"}, nil, false)
+	})
+
+	t.Run("should print obsolete tests", func(t *testing.T) {
+		expectedCalls := []func(format string, args ...interface{}){
+			func(format string, args ...interface{}) {
+				expectedFormat := "\n%s\n\n"
+				Equal(t, expectedFormat, format)
+
+				expectedArg := greenBG("Snapshot Summary")
+				Equal(t, expectedArg, args[0])
+			},
+			func(format string, arg ...interface{}) {
+				expected := yellowText(
+					fmt.Sprintf("%s%d snapshot tests obsolete.\n", arrowPoint, 2),
+				)
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := dimText("  " + bulletPoint + "TestMock/should_pass - 1\n")
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := dimText("  " + bulletPoint + "TestMock/should_pass - 2\n")
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := "\n"
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := dimText("You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n")
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				NotCalled(t)
+			},
+		}
+		mockPrinter := func(format string, args ...interface{}) (int, error) {
+			expectedCalls[0](format, args...)
+
+			expectedCalls = expectedCalls[1:]
+			return 0, nil
+		}
+
+		summary(mockPrinter, nil, []string{"TestMock/should_pass - 1", "TestMock/should_pass - 2"}, false)
+	})
+
+	t.Run("should print updated file", func(t *testing.T) {
+		expectedCalls := []func(format string, args ...interface{}){
+			func(format string, args ...interface{}) {
+				expectedFormat := "\n%s\n\n"
+				Equal(t, expectedFormat, format)
+
+				expectedArg := greenBG("Snapshot Summary")
+				Equal(t, expectedArg, args[0])
+			},
+			func(format string, arg ...interface{}) {
+				expected := greenText(
+					fmt.Sprintf("%s%d snapshot file removed.\n", arrowPoint, 1),
+				)
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := dimText("  " + bulletPoint + "test0.snap\n")
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := "\n"
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				NotCalled(t)
+			},
+		}
+		mockPrinter := func(format string, args ...interface{}) (int, error) {
+			expectedCalls[0](format, args...)
+
+			expectedCalls = expectedCalls[1:]
+			return 0, nil
+		}
+
+		summary(mockPrinter, []string{"test0.snap"}, nil, true)
+	})
+
+	t.Run("should print updated test", func(t *testing.T) {
+		expectedCalls := []func(format string, args ...interface{}){
+			func(format string, args ...interface{}) {
+				expectedFormat := "\n%s\n\n"
+				Equal(t, expectedFormat, format)
+
+				expectedArg := greenBG("Snapshot Summary")
+				Equal(t, expectedArg, args[0])
+			},
+			func(format string, arg ...interface{}) {
+				expected := greenText(
+					fmt.Sprintf("%s%d snapshot test removed.\n", arrowPoint, 1),
+				)
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := dimText("  " + bulletPoint + "TestMock/should_pass - 1\n")
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				expected := "\n"
+				Equal(t, expected, format)
+			},
+			func(format string, args ...interface{}) {
+				NotCalled(t)
+			},
+		}
+		mockPrinter := func(format string, args ...interface{}) (int, error) {
+			expectedCalls[0](format, args...)
+
+			expectedCalls = expectedCalls[1:]
+			return 0, nil
+		}
+
+		summary(mockPrinter, nil, []string{"TestMock/should_pass - 1"}, true)
 	})
 }
