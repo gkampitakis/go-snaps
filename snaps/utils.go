@@ -2,15 +2,54 @@ package snaps
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"regexp"
 	"runtime"
 	"sync"
+	"testing"
 
 	"github.com/gkampitakis/ciinfo"
 	"github.com/kr/pretty"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
+
+var (
+	testsRegistry   = newRegistry()
+	errSnapNotFound = errors.New("snapshot not found")
+	_m              = sync.Mutex{}
+	snapsDir        = "__snapshots__"
+	snapsExt        = ".snap"
+	isCI            = ciinfo.IsCI
+	shouldUpdate    bool
+	// Matches [ Test ... ] testIDs
+	testIDRegexp = regexp.MustCompile(`^\[([Test].+)]$`)
+	spacesRegexp = regexp.MustCompile(`^\s+$`)
+	dmp          = diffmatchpatch.New()
+)
+
+const (
+	resetCode   = "\u001b[0m"
+	redBGCode   = "\u001b[41m\u001b[37;1m"
+	greenBGCode = "\u001b[42m\u001b[37;1m"
+	dimCode     = "\u001b[2m"
+	greenCode   = "\u001b[32;1m"
+	redCode     = "\u001b[31;1m"
+	yellowCode  = "\u001b[33;1m"
+	arrowPoint  = "› "
+	bulletPoint = "• "
+)
+
+// Register snap flags
+func init() {
+	testing.Init()
+
+	updateFlag := flag.Bool("snaps.update", false, "update snapshots/remove obsolete tests")
+
+	flag.Parse()
+
+	shouldUpdate = *updateFlag || getEnvBool("UPDATE_SNAPS", false) && !isCI
+}
 
 type set map[string]struct{}
 type testingT interface {
@@ -80,32 +119,6 @@ func newRegistry() *syncRegistry {
 		_m:     sync.Mutex{},
 	}
 }
-
-var (
-	testsRegistry   = newRegistry()
-	errSnapNotFound = errors.New("snapshot not found")
-	_m              = sync.Mutex{}
-	snapsDir        = "__snapshots__"
-	snapsExt        = ".snap"
-	isCI            = ciinfo.IsCI
-	shouldUpdate    = getEnvBool("UPDATE_SNAPS", false) && !isCI
-	// Matches [ Test ... ] testIDs
-	testIDRegexp = regexp.MustCompile(`^\[([Test].+)]$`)
-	spacesRegexp = regexp.MustCompile(`^\s+$`)
-	dmp          = diffmatchpatch.New()
-)
-
-const (
-	resetCode   = "\u001b[0m"
-	redBGCode   = "\u001b[41m\u001b[37;1m"
-	greenBGCode = "\u001b[42m\u001b[37;1m"
-	dimCode     = "\u001b[2m"
-	greenCode   = "\u001b[32;1m"
-	redCode     = "\u001b[31;1m"
-	yellowCode  = "\u001b[33;1m"
-	arrowPoint  = "› "
-	bulletPoint = "• "
-)
 
 func redBG(txt string) string {
 	return fmt.Sprintf("%s%s%s", redBGCode, txt, resetCode)
