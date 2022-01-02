@@ -19,6 +19,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: "latest"
+          args: -c ./golangci.yml
   test:
     name: Run tests
     runs-on: ${{ matrix.os }}
@@ -37,4 +38,4 @@ jobs:
         with:
           go-version: ${{matrix.go}}
       - name: Run Tests
-        run: go test -cover -race ./...
+        run: go test -cover -race -v ./...

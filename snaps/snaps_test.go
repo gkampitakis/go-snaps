@@ -31,6 +31,8 @@ string hello world 1 3 2
 
 `
 
+// Testing Helper Functions - Start
+
 func Equal(t *testing.T, expected interface{}, received interface{}) {
 	t.Helper()
 
@@ -47,6 +49,12 @@ func Contains(t *testing.T, s string, substr string) {
 	}
 }
 
+func NotCalled(t *testing.T) {
+	t.Helper()
+
+	t.Error(redText("function was not expected to be called"))
+}
+
 func createTempFile(t *testing.T, data string) string {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "mock.file")
@@ -55,6 +63,8 @@ func createTempFile(t *testing.T, data string) string {
 
 	return path
 }
+
+// Testing Helper Functions - End
 
 func TestInternalMethods(t *testing.T) {
 	t.Run("getPrevSnapshot", func(t *testing.T) {
@@ -203,9 +213,15 @@ func TestMatchSnapshot(t *testing.T) {
 			mockName: func() string {
 				return "mock-name"
 			},
-			mockError: func(args ...interface{}) {},
+			mockError: func(args ...interface{}) {
+				NotCalled(t)
+			},
+			mockLog: func(args ...interface{}) {
+				Equal(t, greenText(arrowPoint+"New snapshot written.\n"), args[0])
+			},
 		}
-		matchSnapshot(mockT, &[]interface{}{10, "hello world"})
+
+		matchSnapshot(mockT, []interface{}{10, "hello world"})
 
 		snap, err := snapshotFileToString(snapPath)
 		Equal(t, nil, err)
@@ -232,9 +248,15 @@ func TestMatchSnapshot(t *testing.T) {
 			mockName: func() string {
 				return "mock-name"
 			},
-			mockError: func(args ...interface{}) {},
+			mockError: func(args ...interface{}) {
+				Equal(t, errSnapNotFound, args[0])
+			},
+			mockLog: func(args ...interface{}) {
+				NotCalled(t)
+			},
 		}
-		matchSnapshot(mockT, &[]interface{}{10, "hello world"})
+
+		matchSnapshot(mockT, []interface{}{10, "hello world"})
 
 		_, err = snapshotFileToString(snapPath)
 		Equal(t, errSnapNotFound, err)
@@ -243,6 +265,12 @@ func TestMatchSnapshot(t *testing.T) {
 	t.Run("should return error when diff is found", func(t *testing.T) {
 		dir, _ := os.Getwd()
 		snapPath := filepath.Join(dir, "__snapshots__", "snaps_test.snap")
+		printerExpectedCalls := []func(received interface{}){
+			func(received interface{}) {
+				Equal(t, greenText(arrowPoint+"New snapshot written.\n"), received)
+			},
+			func(received interface{}) { NotCalled(t) },
+		}
 		isCI = false
 
 		t.Cleanup(func() {
@@ -267,15 +295,22 @@ func TestMatchSnapshot(t *testing.T) {
 
 				Equal(t, expected, args[0])
 			},
+			mockLog: func(args ...interface{}) {
+				printerExpectedCalls[0](args[0])
+
+				// shift
+				printerExpectedCalls = printerExpectedCalls[1:]
+			},
 		}
+
 		// First call for creating the snapshot
-		matchSnapshot(mockT, &[]interface{}{10, "hello world"})
+		matchSnapshot(mockT, []interface{}{10, "hello world"})
 
 		// Reseting registry to emulate the same matchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params
-		matchSnapshot(mockT, &[]interface{}{100, "bye world"})
+		matchSnapshot(mockT, []interface{}{100, "bye world"})
 	})
 
 	t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
@@ -284,6 +319,14 @@ func TestMatchSnapshot(t *testing.T) {
 		isCI = false
 		shouldUpdatePrev := shouldUpdate
 		shouldUpdate = true
+		printerExpectedCalls := []func(received interface{}){
+			func(received interface{}) {
+				Equal(t, greenText(arrowPoint+"New snapshot written.\n"), received)
+			},
+			func(received interface{}) {
+				Equal(t, greenText(arrowPoint+"Snapshot updated.\n"), received)
+			},
+		}
 
 		t.Cleanup(func() {
 			os.RemoveAll(filepath.Join(dir, "__snapshots__"))
@@ -301,19 +344,40 @@ func TestMatchSnapshot(t *testing.T) {
 			mockName: func() string {
 				return "mock-name"
 			},
-			mockError: func(args ...interface{}) {},
+			mockError: func(args ...interface{}) {
+				NotCalled(t)
+			},
+			mockLog: func(args ...interface{}) {
+				printerExpectedCalls[0](args[0])
+
+				// shift
+				printerExpectedCalls = printerExpectedCalls[1:]
+			},
 		}
+
 		// First call for creating the snapshot
-		matchSnapshot(mockT, &[]interface{}{10, "hello world"})
+		matchSnapshot(mockT, []interface{}{10, "hello world"})
 
 		// Reseting registry to emulate the same matchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params
-		matchSnapshot(mockT, &[]interface{}{100, "bye world"})
+		matchSnapshot(mockT, []interface{}{100, "bye world"})
 
 		snap, err := snapshotFileToString(snapPath)
 		Equal(t, nil, err)
 		Equal(t, "\n[mock-name - 1]\nint(100)\nbye world\n---\n", snap)
+	})
+
+	t.Run("should print warning if no params provided", func(t *testing.T) {
+		mockT := MockTestingT{
+			mockHelper: func() {},
+			mockLog: func(args ...interface{}) {
+				Equal(t, yellowText("[warning] MatchSnapshot call without params\n"), args[0])
+			},
+		}
+
+		matchSnapshot(mockT, []interface{}{})
+		matchSnapshot(mockT, nil)
 	})
 }

@@ -20,7 +20,10 @@ type testingT interface {
 	SkipNow()
 	Name() string
 	Error(args ...interface{})
+	Log(args ...interface{})
 }
+
+type printerF func(format string, a ...interface{}) (int, error)
 
 /*
 	We track occurrence as in the same test we can run multiple snapshots
@@ -100,6 +103,8 @@ const (
 	greenCode   = "\u001b[32;1m"
 	redCode     = "\u001b[31;1m"
 	yellowCode  = "\u001b[33;1m"
+	arrowPoint  = "› "
+	bulletPoint = "• "
 )
 
 func redBG(txt string) string {
@@ -126,11 +131,11 @@ func yellowText(txt string) string {
 	return fmt.Sprintf("%s%s%s", yellowCode, txt, resetCode)
 }
 
-func takeSnapshot(objects *[]interface{}) string {
+func takeSnapshot(objects []interface{}) string {
 	var snapshot string
 
-	for i := 0; i < len(*objects); i++ {
-		snapshot += pretty.Sprint((*objects)[i]) + "\n"
+	for i := 0; i < len(objects); i++ {
+		snapshot += pretty.Sprint((objects)[i]) + "\n"
 	}
 
 	return snapshot

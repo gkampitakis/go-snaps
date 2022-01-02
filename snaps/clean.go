@@ -27,13 +27,13 @@ func Clean() {
 	}
 	runOnly := parseRunFlag(os.Args)
 
-	obsoleteSnaps, usedSnaps := examineFiles(testsRegistry.values, runOnly, shouldUpdate)
-	obsoleteTests, err := examineSnaps(testsRegistry.values, usedSnaps, runOnly, shouldUpdate)
+	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldUpdate)
+	obsoleteTests, err := examineSnaps(testsRegistry.values, usedFiles, runOnly, shouldUpdate)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	summary(obsoleteSnaps, obsoleteTests)
+	summary(fmt.Printf, obsoleteFiles, obsoleteTests, shouldUpdate)
 }
 
 /*
@@ -154,31 +154,71 @@ func examineSnaps(
 	return obsoleteTests, nil
 }
 
-func summary(obsoleteSnaps []string, obsoleteTests []string) {
-	if len(obsoleteSnaps) == 0 && len(obsoleteTests) == 0 {
+func summary(print printerF, obsoleteFiles []string, obsoleteTests []string, shouldUpdate bool) {
+	if len(obsoleteFiles) == 0 && len(obsoleteTests) == 0 {
 		return
 	}
 
-	fmt.Printf(" %s	\n", greenBG("Snapshot Summary"))
+	print("\n%s\n\n", greenBG("Snapshot Summary"))
 
-	if len(obsoleteSnaps) > 0 {
-		if len(obsoleteSnaps) > 2 {
-			fmt.Println(yellowText(fmt.Sprintf("%d obsolete files detected", len(obsoleteSnaps))))
-		} else {
-			fmt.Println(yellowText(fmt.Sprintf("%d obsolete file detected", len(obsoleteSnaps))))
+	if len(obsoleteFiles) > 0 {
+		print(summaryMsg(
+			len(obsoleteFiles),
+			stringTernary("files", "file", len(obsoleteFiles) > 1),
+			shouldUpdate),
+		)
+
+		for _, file := range obsoleteFiles {
+			print(dimText(fmt.Sprintf("  %s%s\n", bulletPoint, file)))
 		}
 
-		for _, file := range obsoleteSnaps {
-			fmt.Println(dimText("	" + file))
-		}
+		print("\n")
 	}
 
 	if len(obsoleteTests) > 0 {
-		fmt.Println(yellowText(fmt.Sprintf("%d obsolete tests detected", len(obsoleteTests))))
+		print(summaryMsg(
+			len(obsoleteTests),
+			stringTernary("tests", "test", len(obsoleteTests) > 1),
+			shouldUpdate),
+		)
+
 		for _, test := range obsoleteTests {
-			fmt.Println(dimText("	" + test))
+			print(dimText(fmt.Sprintf("  %s%s\n", bulletPoint, test)))
 		}
+
+		print("\n")
 	}
+
+	if !shouldUpdate {
+		print(dimText("You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n"))
+	}
+}
+
+func summaryMsg(files int, subject string, updated bool) string {
+	action := stringTernary("removed", "obsolete", updated)
+	color := colorTernary(greenText, yellowText, updated)
+
+	return color(fmt.Sprintf("%s%d snapshot %s %s.\n", arrowPoint, files, subject, action))
+}
+
+func stringTernary(trueBranch string, falseBranch string, assertion bool) string {
+	if !assertion {
+		return falseBranch
+	}
+
+	return trueBranch
+}
+
+func colorTernary(
+	colorFuncTrue func(string) string,
+	colorFuncFalse func(string) string,
+	assertion bool,
+) func(string) string {
+	if !assertion {
+		return colorFuncFalse
+	}
+
+	return colorFuncTrue
 }
 
 /*

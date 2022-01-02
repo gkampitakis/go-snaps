@@ -19,14 +19,14 @@ import (
 func MatchSnapshot(t *testing.T, o ...interface{}) {
 	t.Helper()
 
-	matchSnapshot(t, &o)
+	matchSnapshot(t, o)
 }
 
-// Using pointer here so we can remove the interface{} when printing
-func matchSnapshot(t testingT, o *[]interface{}) {
+func matchSnapshot(t testingT, o []interface{}) {
 	t.Helper()
 
-	if len(*o) == 0 {
+	if len(o) == 0 {
+		t.Log(yellowText("[warning] MatchSnapshot call without params\n"))
 		return
 	}
 
@@ -46,7 +46,7 @@ func matchSnapshot(t testingT, o *[]interface{}) {
 			t.Error(err)
 		}
 
-		fmt.Print(greenText("1 snapshot was written\n"))
+		t.Log(greenText(arrowPoint + "New snapshot written.\n"))
 		return
 	}
 	if err != nil {
@@ -61,7 +61,7 @@ func matchSnapshot(t testingT, o *[]interface{}) {
 				t.Error(err)
 			}
 
-			fmt.Print(greenText("1 snapshot was updated\n"))
+			t.Log(greenText(arrowPoint + "Snapshot updated.\n"))
 			return
 		}
 

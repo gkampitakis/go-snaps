@@ -13,6 +13,7 @@ type MockTestingT struct {
 	mockSkipf   func(format string, args ...interface{})
 	mockSkipNow func()
 	mockError   func(args ...interface{})
+	mockLog     func(args ...interface{})
 }
 
 func (m MockTestingT) Error(args ...interface{}) {
@@ -37,6 +38,10 @@ func (m MockTestingT) SkipNow() {
 
 func (m MockTestingT) Name() string {
 	return m.mockName()
+}
+
+func (m MockTestingT) Log(args ...interface{}) {
+	m.mockLog(args...)
 }
 
 func TestSkip(t *testing.T) {
