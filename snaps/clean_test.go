@@ -271,20 +271,6 @@ func TestOccurrences(t *testing.T) {
 	Equal(t, expected, occurrences(tests))
 }
 
-func TestParseRunFlag(t *testing.T) {
-	t.Run("should return empty string", func(t *testing.T) {
-		runOly := parseRunFlag([]string{"-test.flag=ignore"})
-
-		Equal(t, "", runOly)
-	})
-
-	t.Run("should return -run value", func(t *testing.T) {
-		runOly := parseRunFlag([]string{"-test.run=MyTest"})
-
-		Equal(t, "MyTest", runOly)
-	})
-}
-
 func TestSummary(t *testing.T) {
 	t.Run("should not print anything", func(t *testing.T) {
 		mockPrinter := func(format string, args ...interface{}) (int, error) {
@@ -323,7 +309,9 @@ func TestSummary(t *testing.T) {
 				Equal(t, expected, format)
 			},
 			func(format string, args ...interface{}) {
-				expected := dimText("You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n")
+				expected := dimText(
+					"You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n",
+				)
 				Equal(t, expected, format)
 			},
 			func(format string, args ...interface{}) {
@@ -368,7 +356,9 @@ func TestSummary(t *testing.T) {
 				Equal(t, expected, format)
 			},
 			func(format string, args ...interface{}) {
-				expected := dimText("You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n")
+				expected := dimText(
+					"You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n",
+				)
 				Equal(t, expected, format)
 			},
 			func(format string, args ...interface{}) {
@@ -382,7 +372,12 @@ func TestSummary(t *testing.T) {
 			return 0, nil
 		}
 
-		summary(mockPrinter, nil, []string{"TestMock/should_pass - 1", "TestMock/should_pass - 2"}, false)
+		summary(
+			mockPrinter,
+			nil,
+			[]string{"TestMock/should_pass - 1", "TestMock/should_pass - 2"},
+			false,
+		)
 	})
 
 	t.Run("should print updated file", func(t *testing.T) {

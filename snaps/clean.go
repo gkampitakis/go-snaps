@@ -2,11 +2,11 @@ package snaps
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // Clean runs checks for identifying obsolete snapshots and prints a Test Summary.
@@ -25,7 +25,7 @@ func Clean() {
 		fmt.Println(yellowText("go-snaps [Warning]: snaps.Clean should only run in 'TestMain'"))
 		return
 	}
-	runOnly := parseRunFlag(os.Args)
+	runOnly := flag.Lookup("test.run").Value.String()
 
 	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldUpdate)
 	obsoleteTests, err := examineSnaps(testsRegistry.values, usedFiles, runOnly, shouldUpdate)
@@ -190,7 +190,11 @@ func summary(print printerF, obsoleteFiles []string, obsoleteTests []string, sho
 	}
 
 	if !shouldUpdate {
-		print(dimText("You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n"))
+		print(
+			dimText(
+				"You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n",
+			),
+		)
 	}
 }
 
@@ -248,16 +252,4 @@ func occurrences(tests map[string]int) set {
 	}
 
 	return result
-}
-
-func parseRunFlag(args []string) (runOnly string) {
-	flag := "-test.run="
-
-	for _, arg := range args {
-		if strings.HasPrefix(arg, flag) {
-			return strings.Split(arg, flag)[1]
-		}
-	}
-
-	return ""
 }
