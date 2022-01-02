@@ -68,10 +68,13 @@ name is the test file name with extension `.snap`.
 So for example if your test is called `add_test.go` when you run your tests at the same
 directory a new folder will be created `./__snapshots__/add_test.snaps`.
 
-Finally you can update your failing snapshots by setting `UPDATE_SNAPS` env variable to true.
+Finally you can update your failing snapshots with the cli flag `-snaps.update=true` 
+or by setting `UPDATE_SNAPS` env variable to true.
 
 ```bash
-UPDATE_SNAPS=true go test ....
+go test ./... -snaps.update=true
+# or
+UPDATE_SNAPS=true go test ./...
 ```
 
 You can also see some example usages in `./examples` in this project.
