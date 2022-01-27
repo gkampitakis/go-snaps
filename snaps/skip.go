@@ -5,6 +5,7 @@ import (
 	"go/parser"
 	"go/token"
 	"path"
+	"regexp"
 	"strings"
 )
 
@@ -51,7 +52,9 @@ func SkipNow(t testingT) {
 	Then every "child" test should be skipped
 */
 func testSkipped(testID, runOnly string) bool {
-	if runOnly != "" && !strings.HasPrefix(testID, runOnly) {
+	matched, _ := regexp.Match(runOnly, []byte(testID))
+
+	if runOnly != "" && !matched {
 		return true
 	}
 
