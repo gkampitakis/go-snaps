@@ -171,6 +171,11 @@ func TestSkip(t *testing.T) {
 				Equal(t, false, testSkipped("TestAnotherTest", runOnly))
 			},
 		)
+
+		t.Run("should use regex match for runOnly", func(t *testing.T) {
+			Equal(t, false, testSkipped("MyTest - 1", "Test"))
+			Equal(t, true, testSkipped("MyTest - 1", "^Test"))
+		})
 	})
 
 	t.Run("isFileSkipped", func(t *testing.T) {

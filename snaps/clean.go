@@ -192,7 +192,8 @@ func summary(print printerF, obsoleteFiles []string, obsoleteTests []string, sho
 	if !shouldUpdate {
 		print(
 			dimText(
-				"You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n",
+				"You can remove obsolete files and tests by running 'go test ./... -snaps.update'\n" +
+					"or 'UPDATE_SNAPS=true go test ./...'\n",
 			),
 		)
 	}

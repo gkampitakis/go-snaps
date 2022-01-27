@@ -310,7 +310,8 @@ func TestSummary(t *testing.T) {
 			},
 			func(format string, args ...interface{}) {
 				expected := dimText(
-					"You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n",
+					"You can remove obsolete files and tests by running 'go test ./... -snaps.update'\n" +
+						"or 'UPDATE_SNAPS=true go test ./...'\n",
 				)
 				Equal(t, expected, format)
 			},
@@ -357,7 +358,8 @@ func TestSummary(t *testing.T) {
 			},
 			func(format string, args ...interface{}) {
 				expected := dimText(
-					"You can remove obsolete files and tests by running 'UPDATE_SNAPS=true go test ./...'\n",
+					"You can remove obsolete files and tests by running 'go test ./... -snaps.update'\n" +
+						"or 'UPDATE_SNAPS=true go test ./...'\n",
 				)
 				Equal(t, expected, format)
 			},
