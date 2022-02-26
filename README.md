@@ -13,7 +13,7 @@
 
 <br>
 
-[![Tests](https://github.com/gkampitakis/go-snaps/actions/workflows/pr.yml/badge.svg)](https://github.com/gkampitakis/go-snaps/actions/workflows/pr.yml)
+[![Go](https://github.com/gkampitakis/go-snaps/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/gkampitakis/go-snaps/actions/workflows/go.yml)
 
 ## Installation
 
