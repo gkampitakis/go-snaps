@@ -1,10 +1,31 @@
 package snaps
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
+
+// NOTE: this was added at 1.17
+func setEnv(t *testing.T, key, value string) {
+	t.Helper()
+
+	prevVal, exists := os.LookupEnv(key)
+	os.Setenv(key, value)
+
+	if exists {
+		t.Cleanup(func() {
+			os.Setenv(key, prevVal)
+		})
+	} else {
+		t.Cleanup(func() {
+			os.Unsetenv(key)
+		})
+	}
+}
 
 func TestEnv(t *testing.T) {
 	t.Run("should return true if env var is 'true'", func(t *testing.T) {
-		t.Setenv("MOCK_ENV", "true")
+		setEnv(t, "MOCK_ENV", "true")
 
 		res := getEnvBool("MOCK_ENV", false)
 
@@ -14,7 +35,7 @@ func TestEnv(t *testing.T) {
 	})
 
 	t.Run("should return false", func(t *testing.T) {
-		t.Setenv("MOCK_ENV", "")
+		setEnv(t, "MOCK_ENV", "")
 
 		res := getEnvBool("MOCK_ENV", true)
 
