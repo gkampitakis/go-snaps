@@ -1,6 +1,6 @@
 module github.com/gkampitakis/go-snaps
 
-go 1.17
+go 1.16
 
 require (
 	github.com/gkampitakis/ciinfo v0.1.0
@@ -8,7 +8,4 @@ require (
 	github.com/sergi/go-diff v1.2.0
 )
 
-require (
-	github.com/kr/text v0.2.0 // indirect
-	github.com/rogpeppe/go-internal v1.8.0 // indirect
-)
+require github.com/rogpeppe/go-internal v1.8.1 // indirect
