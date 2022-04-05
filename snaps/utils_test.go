@@ -80,7 +80,7 @@ func TestUtils(t *testing.T) {
 	t.Run("dynamicTestIDRegexp", func(t *testing.T) {
 		t.Run("should escape regular expressions from testID", func(t *testing.T) {
 			escapedTestIDRegexp := dynamicTestIDRegexp(`^\s+$-test`)
-			expectedRegexp := `(?:\^\\s\+\$-test[\s\S])(.*[\s\S]*?)(?:---)`
+			expectedRegexp := `(?m)(?:\^\\s\+\$-test[\s\S])(.*[\s\S]*?)(?:^---$)`
 
 			Equal(t, expectedRegexp, escapedTestIDRegexp.String())
 		})

@@ -108,26 +108,23 @@ func TestInternalMethods(t *testing.T) {
 			{
 				description: "should return match",
 				testID:      "[my-test - 1]",
-				fileData: `[my-test - 1]
-			mysnapshot
-			---`,
-				snap: "\t\t\tmysnapshot\n\t\t\t",
-				err:  nil,
+				fileData:    "[my-test - 1]\nmysnapshot\n---\n",
+				snap:        "mysnapshot\n",
+				err:         nil,
 			},
 			{
 				description: "should ignore regex in testID and match correct snap",
-				testID:      ".*",
-				fileData: `
-				[my-test]
-				wrong snap
-				---
-	
-				[.*]
-				mysnapshot
-				---
-			`,
-				snap: "\n\t\t\t\tmysnapshot\n\t\t\t\t",
-				err:  nil,
+				testID:      "[.*]",
+				fileData:    "\n[my-test]\nwrong snap\n---\n\n[.*]\nmysnapshot\n---\n",
+				snap:        "mysnapshot\n",
+				err:         nil,
+			},
+			{
+				description: "should ignore end chars (---) inside snapshot",
+				testID:      "[mock-test 1]",
+				fileData:    "\n[mock-test 1]\nmysnapshot\n---moredata\n---\n",
+				snap:        "mysnapshot\n---moredata\n",
+				err:         nil,
 			},
 		} {
 			s := scenario
@@ -379,5 +376,82 @@ func TestMatchSnapshot(t *testing.T) {
 
 		matchSnapshot(mockT, []interface{}{})
 		matchSnapshot(mockT, nil)
+	})
+
+	t.Run("diff should not print the escaped characters", func(t *testing.T) {
+		dir, _ := os.Getwd()
+		snapPath := filepath.Join(dir, "__snapshots__", "snaps_test.snap")
+		printerExpectedCalls := []func(received interface{}){
+			func(received interface{}) {
+				Equal(t, greenText(arrowPoint+"New snapshot written.\n"), received)
+			},
+			func(received interface{}) { NotCalled(t) },
+		}
+		isCI = false
+
+		t.Cleanup(func() {
+			os.RemoveAll(filepath.Join(dir, "__snapshots__"))
+			testsRegistry = newRegistry()
+			isCI = ciinfo.IsCI
+		})
+
+		_, err := os.Stat(snapPath)
+		// This is for checking we are starting with a clean state testing
+		Equal(t, true, errors.Is(err, os.ErrNotExist))
+
+		mockT := MockTestingT{
+			mockHelper: func() {},
+			mockName: func() string {
+				return "mock-name"
+			},
+			mockError: func(args ...interface{}) {
+				expected := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received " +
+					"\x1b[0m\n\n\x1b[2mint(10\x1b[0m\x1b[32;1m0\x1b[0m\x1b[2m)\n\x1b[0m\x1b[31;1m" +
+					"hello\x1b[0m\x1b[32;1mbye\x1b[0m\x1b[2m world----\n--\x1b[0m\x1b[31;1m-\x1b[0m\x1b[2m\n\x1b[0m\n"
+
+				Equal(t, expected, args[0])
+			},
+			mockLog: func(args ...interface{}) {
+				printerExpectedCalls[0](args[0])
+
+				// shift
+				printerExpectedCalls = printerExpectedCalls[1:]
+			},
+		}
+
+		// First call for creating the snapshot ( adding ending chars inside the diff )
+		matchSnapshot(mockT, []interface{}{10, "hello world----", "---"})
+
+		// Reseting registry to emulate the same matchSnapshot call
+		testsRegistry = newRegistry()
+
+		// Second call with different params
+		matchSnapshot(mockT, []interface{}{100, "bye world----", "--"})
+	})
+}
+
+func TestEscapeEndChars(t *testing.T) {
+	t.Run("should escape end chars inside data", func(t *testing.T) {
+		dir := filepath.Join(t.TempDir(), "__snapshots__")
+		name := filepath.Join(dir, "mock-test.snap")
+		snapshot := takeSnapshot([]interface{}{"my-snap", "---"})
+		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
+
+		Equal(t, nil, err)
+		snap, err := snapshotFileToString(name)
+		Equal(t, nil, err)
+		Equal(t, "\n[mock-id]\nmy-snap\n/-/-/-/\n---\n", snap)
+	})
+
+	t.Run("should not escape --- if not end chars", func(t *testing.T) {
+		dir := filepath.Join(t.TempDir(), "__snapshots__")
+		name := filepath.Join(dir, "mock-test.snap")
+		snapshot := takeSnapshot([]interface{}{"my-snap---", "---"})
+		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
+
+		Equal(t, nil, err)
+		snap, err := snapshotFileToString(name)
+		Equal(t, nil, err)
+		Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", snap)
 	})
 }
