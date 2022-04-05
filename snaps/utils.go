@@ -23,9 +23,11 @@ var (
 	isCI            = ciinfo.IsCI
 	shouldUpdate    bool
 	// Matches [ Test ... ] testIDs
-	testIDRegexp = regexp.MustCompile(`^\[([Test].+)]$`)
-	spacesRegexp = regexp.MustCompile(`^\s+$`)
-	dmp          = diffmatchpatch.New()
+	testIDRegexp          = regexp.MustCompile(`^\[([Test].+)]$`)
+	spacesRegexp          = regexp.MustCompile(`^\s+$`)
+	endCharRegexp         = regexp.MustCompile(`(?m)(^---$)`)
+	endCharEcscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
+	dmp                   = diffmatchpatch.New()
 )
 
 const (
@@ -151,13 +153,13 @@ func takeSnapshot(objects []interface{}) string {
 		snapshot += pretty.Sprint((objects)[i]) + "\n"
 	}
 
-	return snapshot
+	return escapeEndChars(snapshot)
 }
 
 // Matches a specific testID
 func dynamicTestIDRegexp(testID string) *regexp.Regexp {
-	// e.g (?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:---)
-	return regexp.MustCompile(`(?:` + regexp.QuoteMeta(testID) + `[\s\S])(.*[\s\S]*?)(?:---)`)
+	// e.g (?m)(?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:^---\n)
+	return regexp.MustCompile(`(?m)(?:` + regexp.QuoteMeta(testID) + `[\s\S])(.*[\s\S]*?)(?:^---$)`)
 }
 
 // Returns the path where the "user" tests are running and the function name
@@ -188,4 +190,13 @@ func baseCaller() (string, string) {
 	}
 
 	return prevFile, funcName
+}
+
+func unEscapeEndChars(input string) string {
+	return endCharEcscapedRegexp.ReplaceAllString(input, "---")
+}
+
+func escapeEndChars(input string) string {
+	// This is for making sure a snapshot doesn't contain an ending char
+	return endCharRegexp.ReplaceAllString(input, "/-/-/-/")
 }

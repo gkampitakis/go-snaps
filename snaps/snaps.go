@@ -53,7 +53,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 		t.Error(err)
 	}
 
-	diff := prettyDiff(prevSnapshot, snapshot)
+	diff := prettyDiff(unEscapeEndChars(prevSnapshot), unEscapeEndChars(snapshot))
 	if diff != "" {
 		if shouldUpdate {
 			err := updateSnapshot(testID, snapshot, snapPath)

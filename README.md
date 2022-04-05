@@ -103,9 +103,6 @@ map[string]interface {}{
 ---
 ```
 
-> Keep in mind the order in which tests are written might not be the same order that snapshots are saved in the file.
-
-
 ### Clean obsolete snapshots
 
 <p align="center">
@@ -150,9 +147,6 @@ You can skip, or only run specific tests by using the `-run` flag. `go-snaps`
 can "understand" which tests are being skipped and parse only the relevant tests
 for obsolete snapshots.
 
-> ⚠️ When running a specific test file by specifying a path
-`go test ./my_test.go` can't track the path so it will mistakenly mark snapshots as obsolete.
-
 ### Acknowledgments
 
 This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) and [Cupaloy](https://github.com/bradleyjkemp/cupaloy) as inspiration.
@@ -165,6 +159,17 @@ This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) an
 ```bash
 go test ./examples/... -v -count=1
 ```
+
+### Notes
+
+1. ⚠️ When running a specific test file by specifying a path
+`go test ./my_test.go`, `go-snaps` can't track the path so it will mistakenly mark snapshots as obsolete.
+
+2. The order in which tests are written might not be the same order that snapshots are saved in the file.
+
+3. If your snapshot data contain the termination characters `---` at the start of a line
+and after a new line, `go-snaps` will "escape" them and save them as `/-/-/-/`. This 
+should not cause any diff issues (false-positives).
 
 #### License 
 
