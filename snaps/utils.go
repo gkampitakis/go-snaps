@@ -2,12 +2,10 @@ package snaps
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"regexp"
 	"runtime"
 	"sync"
-	"testing"
 
 	"github.com/gkampitakis/ciinfo"
 	"github.com/kr/pretty"
@@ -21,13 +19,13 @@ var (
 	snapsDir        = "__snapshots__"
 	snapsExt        = ".snap"
 	isCI            = ciinfo.IsCI
-	shouldUpdate    bool
 	// Matches [ Test ... ] testIDs
 	testIDRegexp          = regexp.MustCompile(`^\[([Test].+)]$`)
 	spacesRegexp          = regexp.MustCompile(`^\s+$`)
 	endCharRegexp         = regexp.MustCompile(`(?m)(^---$)`)
 	endCharEcscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
 	dmp                   = diffmatchpatch.New()
+	shouldUpdate          = getEnvBool("UPDATE_SNAPS", false) && !isCI
 )
 
 const (
@@ -41,17 +39,6 @@ const (
 	arrowPoint  = "› "
 	bulletPoint = "• "
 )
-
-// Register snap flags
-func init() {
-	testing.Init()
-
-	updateFlag := flag.Bool("snaps.update", false, "update snapshots/remove obsolete tests")
-
-	flag.Parse()
-
-	shouldUpdate = *updateFlag || getEnvBool("UPDATE_SNAPS", false) && !isCI
-}
 
 type set map[string]struct{}
 type testingT interface {
