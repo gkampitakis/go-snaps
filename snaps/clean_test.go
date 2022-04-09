@@ -12,8 +12,12 @@ import (
 const mockSnap1 = `
 
 [TestDir1_1/TestSimple - 1]
+
 int(1)
+
+
 string hello world 1 1 1
+
 ---
 
 [TestDir1_2/TestSimple - 1]
@@ -163,7 +167,7 @@ func TestExamineFiles(t *testing.T) {
 }
 
 func TestExamineSnaps(t *testing.T) {
-	t.Run("should report no obsolete tests", func(t *testing.T) {
+	t.Run("should report no obsolete snapshots", func(t *testing.T) {
 		tests, dir1, dir2 := setupTempExamineFiles(t)
 		used := []string{
 			filepath.FromSlash(dir1 + "/test1.snap"),
@@ -177,7 +181,7 @@ func TestExamineSnaps(t *testing.T) {
 		Equal(t, err, nil)
 	})
 
-	t.Run("should report two obsolete tests and not change content", func(t *testing.T) {
+	t.Run("should report two obsolete snapshots and not change content", func(t *testing.T) {
 		tests, dir1, dir2 := setupTempExamineFiles(t)
 		used := []string{
 			filepath.FromSlash(dir1 + "/test1.snap"),
@@ -219,8 +223,12 @@ func TestExamineSnaps(t *testing.T) {
 
 		expected1 := `
 [TestDir1_1/TestSimple - 1]
+
 int(1)
+
+
 string hello world 1 1 1
+
 ---
 
 [TestDir1_2/TestSimple - 1]
@@ -310,8 +318,7 @@ func TestSummary(t *testing.T) {
 			},
 			func(format string, args ...interface{}) {
 				expected := dimText(
-					"You can remove obsolete files and tests by running 'go test ./... -snaps.update'\n" +
-						"or 'UPDATE_SNAPS=true go test ./...'\n",
+					"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",
 				)
 				Equal(t, expected, format)
 			},
@@ -358,8 +365,7 @@ func TestSummary(t *testing.T) {
 			},
 			func(format string, args ...interface{}) {
 				expected := dimText(
-					"You can remove obsolete files and tests by running 'go test ./... -snaps.update'\n" +
-						"or 'UPDATE_SNAPS=true go test ./...'\n",
+					"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",
 				)
 				Equal(t, expected, format)
 			},

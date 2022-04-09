@@ -111,14 +111,10 @@ func examineSnaps(
 		s := bufio.NewScanner(f)
 
 		for s.Scan() {
-			text := s.Text()
 			// Check if line is a test id
-			match := testIDRegexp.FindStringSubmatch(text)
+			match := testIDRegexp.FindStringSubmatch(s.Text())
+
 			if len(match) <= 1 {
-				// we are skipping excessive empty lines
-				if text != "" {
-					updatedFile += text + "\n"
-				}
 				continue
 			}
 			testID := match[1]
@@ -137,7 +133,18 @@ func examineSnaps(
 				continue
 			}
 
-			updatedFile += "\n" + text + "\n"
+			snapshot := ""
+
+			for s.Scan() {
+				line := s.Text()
+				// reached end char
+				if s.Text() == "---" {
+					break
+				}
+				snapshot += line + "\n"
+			}
+
+			updatedFile += fmt.Sprintf("\n[%s]\n%s---\n", testID, snapshot)
 		}
 
 		f.Close()
@@ -192,8 +199,7 @@ func summary(print printerF, obsoleteFiles []string, obsoleteTests []string, sho
 	if !shouldUpdate {
 		print(
 			dimText(
-				"You can remove obsolete files and tests by running 'go test ./... -snaps.update'\n" +
-					"or 'UPDATE_SNAPS=true go test ./...'\n",
+				"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",
 			),
 		)
 	}
