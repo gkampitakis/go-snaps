@@ -19,8 +19,8 @@ var (
 	snapsDir        = "__snapshots__"
 	snapsExt        = ".snap"
 	isCI            = ciinfo.IsCI
-	// Matches [ Test ... ] testIDs
-	testIDRegexp          = regexp.MustCompile(`^\[([Test].+)]$`)
+	// Matches [ Test... - number ] testIDs
+	testIDRegexp          = regexp.MustCompile(`(?m)^\[(Test.* - \d)\]$`)
 	spacesRegexp          = regexp.MustCompile(`^\s+$`)
 	endCharRegexp         = regexp.MustCompile(`(?m)(^---$)`)
 	endCharEcscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
@@ -145,7 +145,7 @@ func takeSnapshot(objects []interface{}) string {
 
 // Matches a specific testID
 func dynamicTestIDRegexp(testID string) *regexp.Regexp {
-	// e.g (?m)(?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:^---\n)
+	// e.g (?m)(?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:^---$)
 	return regexp.MustCompile(`(?m)(?:` + regexp.QuoteMeta(testID) + `[\s\S])(.*[\s\S]*?)(?:^---$)`)
 }
 

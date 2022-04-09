@@ -80,11 +80,11 @@ You can also see some example usages in `./examples` in this project.
 
 Snapshots have the form 
 
-`[ TestID ]`
-<br>
-`data`
-<br>
-`---`
+```text
+[ TestName - Number ]
+<data>
+---
+```
 
 `TestID` is the test name plus an increasing number ( allowing to do multiple calls
 of `MatchSnapshot` inside a test ).
@@ -110,7 +110,8 @@ map[string]interface {}{
 `go-snaps` can identify obsolete snapshots.
 
 In order to enable this functionality you need to use the `TestMain(t*testing.M)` 
-and call `snaps.Clean()`. This will also print a **Snapshot Summary**.
+and call `snaps.Clean()`. This will also print a **Snapshot Summary**. (if running tests 
+with verbose flag `-v`)
 
 If you want to remove the obsolete snap files and snapshots you can run 
 tests with `UPDATE_SNAPS=true` env variable.
