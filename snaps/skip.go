@@ -58,8 +58,11 @@ func testSkipped(testID, runOnly string) bool {
 		return true
 	}
 
+	// testID form: Test.*/runName - 1
+	testName := strings.Split(testID, " - ")[0]
+
 	for _, name := range skippedTests.values {
-		if strings.HasPrefix(testID, name) {
+		if testName == name || strings.HasPrefix(testName, name+"/") {
 			return true
 		}
 	}
