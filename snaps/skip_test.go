@@ -172,6 +172,28 @@ func TestSkip(t *testing.T) {
 			},
 		)
 
+		t.Run("should not mark tests skipped if not not a child", func(t *testing.T) {
+			t.Cleanup(func() {
+				skippedTests = newSyncSlice()
+			})
+
+			runOnly := ""
+			mockT := MockTestingT{
+				mockSkipNow: func() {},
+				mockHelper:  func() {},
+				mockName: func() string {
+					return "Test"
+				},
+			}
+			// This is for populating skippedTests.values and following the normal flow
+			SkipNow(mockT)
+
+			Equal(t, true, testSkipped("Test", runOnly))
+			Equal(t, true, testSkipped("Test/chid", runOnly))
+			Equal(t, false, testSkipped("TestMock", runOnly))
+			Equal(t, false, testSkipped("TestMock/child", runOnly))
+		})
+
 		t.Run("should use regex match for runOnly", func(t *testing.T) {
 			Equal(t, false, testSkipped("MyTest - 1", "Test"))
 			Equal(t, true, testSkipped("MyTest - 1", "^Test"))
