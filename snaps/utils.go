@@ -180,10 +180,10 @@ func baseCaller() (string, string) {
 }
 
 func unEscapeEndChars(input string) string {
-	return endCharEcscapedRegexp.ReplaceAllString(input, "---")
+	return endCharEcscapedRegexp.ReplaceAllLiteralString(input, "---")
 }
 
 func escapeEndChars(input string) string {
 	// This is for making sure a snapshot doesn't contain an ending char
-	return endCharRegexp.ReplaceAllString(input, "/-/-/-/")
+	return endCharRegexp.ReplaceAllLiteralString(input, "/-/-/-/")
 }

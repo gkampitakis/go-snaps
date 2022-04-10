@@ -147,7 +147,7 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 	}
 
 	updatedSnapFile := dynamicTestIDRegexp(testID).
-		ReplaceAllString(f, fmt.Sprintf("%s\n%s---", testID, snapshot))
+		ReplaceAllLiteralString(f, fmt.Sprintf("%s\n%s---", testID, snapshot))
 
 	err = stringToSnapshotFile(updatedSnapFile, snapPath)
 	if err != nil {
