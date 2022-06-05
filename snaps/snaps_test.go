@@ -303,7 +303,7 @@ func TestMatchSnapshot(t *testing.T) {
 		// First call for creating the snapshot
 		matchSnapshot(mockT, []interface{}{10, "hello world"})
 
-		// Reseting registry to emulate the same matchSnapshot call
+		// Resetting registry to emulate the same matchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params
@@ -355,7 +355,7 @@ func TestMatchSnapshot(t *testing.T) {
 		// First call for creating the snapshot
 		matchSnapshot(mockT, []interface{}{10, "hello world"})
 
-		// Reseting registry to emulate the same matchSnapshot call
+		// Resetting registry to emulate the same matchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params
@@ -422,7 +422,7 @@ func TestMatchSnapshot(t *testing.T) {
 		// First call for creating the snapshot ( adding ending chars inside the diff )
 		matchSnapshot(mockT, []interface{}{10, "hello world----", "---"})
 
-		// Reseting registry to emulate the same matchSnapshot call
+		// Resetting registry to emulate the same matchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params

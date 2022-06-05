@@ -9,17 +9,18 @@ import (
 	"testing"
 )
 
-// MatchSnapshot verifies the values match the most recent snap file**
-// You can pass multiple parameters
+// MatchSnapshot verifies the values match the most recent snap file
+//
+// You can pass multiple values
 // 	MatchSnapshot(t, 10, "hello world")
-// or call MatchSnapshot multiples times
+// or call MatchSnapshot multiples times inside a test
 //  MatchSnapshot(t, 10)
 //  MatchSnapshot(t, "hello world")
-// The difference is the latter will create multiple entries
-func MatchSnapshot(t *testing.T, o ...interface{}) {
+// The difference is the latter will create multiple entries.
+func MatchSnapshot(t *testing.T, values ...interface{}) {
 	t.Helper()
 
-	matchSnapshot(t, o)
+	matchSnapshot(t, values)
 }
 
 func matchSnapshot(t testingT, o []interface{}) {
@@ -44,6 +45,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 		err := addNewSnapshot(testID, snapshot, dir, snapPath)
 		if err != nil {
 			t.Error(err)
+			return
 		}
 
 		t.Log(greenText(arrowPoint + "New snapshot written.\n"))
@@ -51,22 +53,25 @@ func matchSnapshot(t testingT, o []interface{}) {
 	}
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
-	diff := prettyDiff(unEscapeEndChars(prevSnapshot), unEscapeEndChars(snapshot))
-	if diff != "" {
-		if shouldUpdate {
-			err := updateSnapshot(testID, snapshot, snapPath)
-			if err != nil {
-				t.Error(err)
-			}
+	diff := prettyDiff(unescapeEndChars(prevSnapshot), unescapeEndChars(snapshot))
+	if diff == "" {
+		return
+	}
 
-			t.Log(greenText(arrowPoint + "Snapshot updated.\n"))
-			return
-		}
-
+	if !shouldUpdate {
 		t.Error(diff)
+		return
 	}
+
+	if err = updateSnapshot(testID, snapshot, snapPath); err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Log(greenText(arrowPoint + "Snapshot updated.\n"))
 }
 
 func getPrevSnapshot(testID, snapPath string) (string, error) {
@@ -82,12 +87,11 @@ func getPrevSnapshot(testID, snapPath string) (string, error) {
 	}
 
 	// The second capture group contains the snapshot data
-	return match[1], err
+	return match[1], nil
 }
 
 func snapshotFileToString(name string) (string, error) {
-	_, err := os.Stat(name)
-	if err != nil {
+	if _, err := os.Stat(name); err != nil {
 		return "", errSnapNotFound
 	}
 
@@ -96,7 +100,7 @@ func snapshotFileToString(name string) (string, error) {
 		return "", err
 	}
 
-	return string(f), err
+	return string(f), nil
 }
 
 func stringToSnapshotFile(snap, name string) error {
@@ -149,10 +153,5 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 	updatedSnapFile := dynamicTestIDRegexp(testID).
 		ReplaceAllLiteralString(f, fmt.Sprintf("%s\n%s---", testID, snapshot))
 
-	err = stringToSnapshotFile(updatedSnapFile, snapPath)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return stringToSnapshotFile(updatedSnapFile, snapPath)
 }
