@@ -31,6 +31,7 @@ func Clean() {
 	obsoleteTests, err := examineSnaps(testsRegistry.values, usedFiles, runOnly, shouldUpdate)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	summary(fmt.Printf, obsoleteFiles, obsoleteTests, shouldUpdate)
@@ -41,7 +42,7 @@ func Clean() {
 
 	If a file exists but is not registered in the map we check if the file is
 	skipped. (We do that by checking if the mod is imported and there is a call to
-	`Matchsnapshot`). If not skipped and not registed means it's an obsolete snap file
+	`MatchSnapshot`). If not skipped and not registered means it's an obsolete snap file
 	and we mark it as one.
 */
 func examineFiles(
@@ -65,25 +66,24 @@ func examineFiles(
 			}
 
 			snapPath := filepath.Join(dir, content.Name())
-
-			if _, called := registry[snapPath]; !called {
-				isSkipped := isFileSkipped(dir, content.Name(), runOnly)
-				if isSkipped {
-					continue
-				}
-
-				if shouldUpdate {
-					err := os.Remove(snapPath)
-					if err != nil {
-						fmt.Println(err)
-					}
-				}
-
-				obsolete = append(obsolete, snapPath)
+			if _, called := registry[snapPath]; called {
+				used = append(used, snapPath)
 				continue
 			}
 
-			used = append(used, snapPath)
+			if isFileSkipped(dir, content.Name(), runOnly) {
+				continue
+			}
+
+			obsolete = append(obsolete, snapPath)
+
+			if !shouldUpdate {
+				continue
+			}
+
+			if err := os.Remove(snapPath); err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 
@@ -96,6 +96,26 @@ func examineSnaps(
 	runOnly string,
 	shouldUpdate bool,
 ) ([]string, error) {
+	removeSnapshot := func(s *bufio.Scanner) {
+		for s.Scan() {
+			// skip until ---
+			if s.Text() == "---" {
+				break
+			}
+		}
+	}
+	getSnapshot := func(s *bufio.Scanner) (snapshot string) {
+		for s.Scan() {
+			line := s.Text()
+			// reached end char
+			if s.Text() == "---" {
+				break
+			}
+			snapshot += line + newLine
+		}
+
+		return snapshot
+	}
 	obsoleteTests := []string{}
 
 	for _, snapPath := range used {
@@ -123,28 +143,12 @@ func examineSnaps(
 				obsoleteTests = append(obsoleteTests, testID)
 				hasDiffs = true
 
-				for s.Scan() {
-					// skip until ---
-					if s.Text() == "---" {
-						break
-					}
-				}
+				removeSnapshot(s)
 
 				continue
 			}
 
-			snapshot := ""
-
-			for s.Scan() {
-				line := s.Text()
-				// reached end char
-				if s.Text() == "---" {
-					break
-				}
-				snapshot += line + "\n"
-			}
-
-			updatedFile += fmt.Sprintf("\n[%s]\n%s---\n", testID, snapshot)
+			updatedFile += fmt.Sprintf("\n[%s]\n%s---\n", testID, getSnapshot(s))
 		}
 
 		f.Close()
@@ -152,8 +156,7 @@ func examineSnaps(
 			continue
 		}
 
-		err = os.WriteFile(snapPath, []byte(updatedFile), os.ModePerm)
-		if err != nil {
+		if err = stringToSnapshotFile(updatedFile, snapPath); err != nil {
 			fmt.Println(err)
 		}
 	}
@@ -166,34 +169,29 @@ func summary(print printerF, obsoleteFiles []string, obsoleteTests []string, sho
 		return
 	}
 
+	objectSummaryList := func(objects []string, name string) {
+		plural := name + "s"
+		print(summaryMsg(
+			len(objects),
+			stringTernary(len(objects) > 1, plural, name),
+			shouldUpdate),
+		)
+
+		for _, object := range objects {
+			print(dimText(fmt.Sprintf("  %s%s\n", bulletPoint, object)))
+		}
+
+		print(newLine)
+	}
+
 	print("\n%s\n\n", greenBG("Snapshot Summary"))
 
 	if len(obsoleteFiles) > 0 {
-		print(summaryMsg(
-			len(obsoleteFiles),
-			stringTernary("files", "file", len(obsoleteFiles) > 1),
-			shouldUpdate),
-		)
-
-		for _, file := range obsoleteFiles {
-			print(dimText(fmt.Sprintf("  %s%s\n", bulletPoint, file)))
-		}
-
-		print("\n")
+		objectSummaryList(obsoleteFiles, "file")
 	}
 
 	if len(obsoleteTests) > 0 {
-		print(summaryMsg(
-			len(obsoleteTests),
-			stringTernary("tests", "test", len(obsoleteTests) > 1),
-			shouldUpdate),
-		)
-
-		for _, test := range obsoleteTests {
-			print(dimText(fmt.Sprintf("  %s%s\n", bulletPoint, test)))
-		}
-
-		print("\n")
+		objectSummaryList(obsoleteTests, "test")
 	}
 
 	if !shouldUpdate {
@@ -206,13 +204,13 @@ func summary(print printerF, obsoleteFiles []string, obsoleteTests []string, sho
 }
 
 func summaryMsg(files int, subject string, updated bool) string {
-	action := stringTernary("removed", "obsolete", updated)
-	color := colorTernary(greenText, yellowText, updated)
+	action := stringTernary(updated, "removed", "obsolete")
+	color := colorTernary(updated, greenText, yellowText)
 
 	return color(fmt.Sprintf("%s%d snapshot %s %s.\n", arrowPoint, files, subject, action))
 }
 
-func stringTernary(trueBranch string, falseBranch string, assertion bool) string {
+func stringTernary(assertion bool, trueBranch string, falseBranch string) string {
 	if !assertion {
 		return falseBranch
 	}
@@ -221,9 +219,9 @@ func stringTernary(trueBranch string, falseBranch string, assertion bool) string
 }
 
 func colorTernary(
+	assertion bool,
 	colorFuncTrue func(string) string,
 	colorFuncFalse func(string) string,
-	assertion bool,
 ) func(string) string {
 	if !assertion {
 		return colorFuncFalse
@@ -236,8 +234,11 @@ func colorTernary(
 	Builds a Set with all snapshot ids registered inside a snap file
 	Form: testname - number id
 
-	tests have the form map[filepath]: map[testname]: <number of snapshots>
-	e.g ./path/__snapshots__/add_test.snap map[TestAdd] 3
+	tests have the form
+		map[filepath]: map[testname]: <number of snapshots>
+
+	e.g
+		./path/__snapshots__/add_test.snap map[TestAdd] 3
 
 		will result to
 
@@ -245,7 +246,7 @@ func colorTernary(
 		TestAdd - 2
 		TestAdd - 3
 
-	as it means there are 3 snapshots registered with that test
+	as it means there are 3 snapshots created inside TestAdd
 */
 func occurrences(tests map[string]int) set {
 	result := make(set)

@@ -16,16 +16,14 @@ var (
 	testsRegistry   = newRegistry()
 	errSnapNotFound = errors.New("snapshot not found")
 	_m              = sync.Mutex{}
-	snapsDir        = "__snapshots__"
-	snapsExt        = ".snap"
 	isCI            = ciinfo.IsCI
 	// Matches [ Test... - number ] testIDs
-	testIDRegexp          = regexp.MustCompile(`(?m)^\[(Test.* - \d)\]$`)
-	spacesRegexp          = regexp.MustCompile(`^\s+$`)
-	endCharRegexp         = regexp.MustCompile(`(?m)(^---$)`)
-	endCharEcscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
-	dmp                   = diffmatchpatch.New()
-	shouldUpdate          = getEnvBool("UPDATE_SNAPS", false) && !isCI
+	testIDRegexp         = regexp.MustCompile(`(?m)^\[(Test.* - \d)\]$`)
+	spacesRegexp         = regexp.MustCompile(`^\s+$`)
+	endCharRegexp        = regexp.MustCompile(`(?m)(^---$)`)
+	endCharEscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
+	dmp                  = diffmatchpatch.New()
+	shouldUpdate         = getEnvBool("UPDATE_SNAPS", false) && !isCI
 )
 
 const (
@@ -38,6 +36,9 @@ const (
 	yellowCode  = "\u001b[33;1m"
 	arrowPoint  = "› "
 	bulletPoint = "• "
+	newLine     = "\n"
+	snapsDir    = "__snapshots__"
+	snapsExt    = ".snap"
 )
 
 type set map[string]struct{}
@@ -137,7 +138,7 @@ func takeSnapshot(objects []interface{}) string {
 	var snapshot string
 
 	for i := 0; i < len(objects); i++ {
-		snapshot += pretty.Sprint((objects)[i]) + "\n"
+		snapshot += pretty.Sprint(objects[i]) + newLine
 	}
 
 	return escapeEndChars(snapshot)
@@ -179,8 +180,8 @@ func baseCaller() (string, string) {
 	return prevFile, funcName
 }
 
-func unEscapeEndChars(input string) string {
-	return endCharEcscapedRegexp.ReplaceAllLiteralString(input, "---")
+func unescapeEndChars(input string) string {
+	return endCharEscapedRegexp.ReplaceAllLiteralString(input, "---")
 }
 
 func escapeEndChars(input string) string {

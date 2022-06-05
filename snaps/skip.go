@@ -11,9 +11,9 @@ import (
 
 var skippedTests = newSyncSlice()
 
-// Wrapper of testing.Skip.
-// Keeps track which snapshots should be skipped
-// and not marked as obsolete
+// Wrapper of testing.Skip
+//
+// Keeps track which snapshots are getting skipped and not marked as obsolete.
 func Skip(t testingT, args ...interface{}) {
 	t.Helper()
 
@@ -21,9 +21,9 @@ func Skip(t testingT, args ...interface{}) {
 	t.Skip(args...)
 }
 
-// Wrapper of testing.Skipf.
-// Helps `go-snaps` keep track which snapshots should be skipped
-// and not marked as obsolete
+// Wrapper of testing.Skipf
+//
+// Keeps track which snapshots are getting skipped and not marked as obsolete.
 func Skipf(t testingT, format string, args ...interface{}) {
 	t.Helper()
 
@@ -31,9 +31,9 @@ func Skipf(t testingT, format string, args ...interface{}) {
 	t.Skipf(format, args...)
 }
 
-// Wrapper of testing.SkipNow.
-// Keeps track which snapshots should be skipped
-// and not marked as obsolete
+// Wrapper of testing.SkipNow
+//
+// Keeps track which snapshots are getting skipped and not marked as obsolete.
 func SkipNow(t testingT) {
 	t.Helper()
 
@@ -44,11 +44,14 @@ func SkipNow(t testingT) {
 /*
 	This checks if the parent test is skipped,
 	or provided a 'runOnly' the testID is part of it
+
 	e.g
-	func TestParallel (t *testing.T) {
-		snaps.Skip()
-		...
-	}
+
+		func TestParallel (t *testing.T) {
+			snaps.Skip()
+			...
+		}
+
 	Then every "child" test should be skipped
 */
 func testSkipped(testID, runOnly string) bool {
