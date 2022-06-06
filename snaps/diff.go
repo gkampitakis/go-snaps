@@ -7,14 +7,14 @@ import (
 )
 
 const (
-	DiffEqual  diffmatchpatch.Operation = 0
-	DiffInsert diffmatchpatch.Operation = 1
-	DiffDelete diffmatchpatch.Operation = -1
+	diffEqual  diffmatchpatch.Operation = 0
+	diffInsert diffmatchpatch.Operation = 1
+	diffDelete diffmatchpatch.Operation = -1
 )
 
 func prettyDiff(expected, received string) string {
 	diffs := dmp.DiffCleanupSemantic(dmp.DiffMain(expected, received, false))
-	if len(diffs) == 1 && diffs[0].Type == DiffEqual {
+	if len(diffs) == 1 && diffs[0].Type == diffEqual {
 		return ""
 	}
 
@@ -30,12 +30,12 @@ func prettyDiff(expected, received string) string {
 		text := diff.Text
 
 		switch diff.Type {
-		case DiffEqual:
+		case diffEqual:
 			buff.WriteString(dimText(text))
-		case DiffDelete:
+		case diffDelete:
 			str := stringTernary(spacesRegexp.MatchString(text), redBG(text), redText(text))
 			buff.WriteString(str)
-		case DiffInsert:
+		case diffInsert:
 			str := stringTernary(spacesRegexp.MatchString(text), greenBG(text), greenText(text))
 			buff.WriteString(str)
 		}
