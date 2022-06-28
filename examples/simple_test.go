@@ -37,7 +37,10 @@ func TestSimple(t *testing.T) {
 	})
 
 	t.Run("should make multiple entries in snapshot", func(t *testing.T) {
-		snaps.MatchSnapshot(t, 5, 10, 20, 25)
+		snaps.MatchSnapshot(t, 5)
+		snaps.MatchSnapshot(t, 10)
+		snaps.MatchSnapshot(t, 20)
+		snaps.MatchSnapshot(t, 25)
 	})
 
 	t.Run("should make create multiple snapshot", func(t *testing.T) {

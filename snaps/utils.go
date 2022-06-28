@@ -14,16 +14,15 @@ import (
 
 var (
 	testsRegistry   = newRegistry()
+	snapshotMap     = newSnapshotMap()
 	errSnapNotFound = errors.New("snapshot not found")
 	_m              = sync.Mutex{}
 	isCI            = ciinfo.IsCI
 	// Matches [ Test... - number ] testIDs
-	testIDRegexp         = regexp.MustCompile(`(?m)^\[(Test.* - \d)\]$`)
-	spacesRegexp         = regexp.MustCompile(`^\s+$`)
-	endCharRegexp        = regexp.MustCompile(`(?m)(^---$)`)
-	endCharEscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
-	dmp                  = diffmatchpatch.New()
-	shouldUpdate         = getEnvBool("UPDATE_SNAPS", false) && !isCI
+	testIDRegexp = regexp.MustCompile(`(?m)^\[(Test.* - \d)\]$`)
+	spacesRegexp = regexp.MustCompile(`^\s+$`)
+	dmp          = diffmatchpatch.New()
+	shouldUpdate = getEnvBool("UPDATE_SNAPS", false) && !isCI
 )
 
 const (
@@ -61,14 +60,56 @@ type printerF func(format string, a ...interface{}) (int, error)
 */
 type syncRegistry struct {
 	values map[string]map[string]int
-	_m     sync.Mutex
+	sync.Mutex
+}
+
+type syncSnapshotMap struct {
+	snapshots map[string]map[string]string
+	sync.RWMutex
+}
+
+// TODO: better naming
+func newSnapshotMap() *syncSnapshotMap {
+	return &syncSnapshotMap{
+		snapshots: map[string]map[string]string{},
+	}
+}
+
+func (m *syncSnapshotMap) get(snapPath, testID string) (string, bool) {
+	m.RLock()
+	defer m.RUnlock()
+
+	v, ok := m.snapshots[snapPath][testID]
+	return v, ok
+}
+
+func (m *syncSnapshotMap) fileLoaded(snapPath string) bool {
+	m.RLock()
+	defer m.RUnlock()
+	_, loaded := m.snapshots[snapPath]
+
+	return loaded
+}
+
+func (m *syncSnapshotMap) setFile(snapPath string, value map[string]string) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.snapshots[snapPath] = value
+}
+
+func (m *syncSnapshotMap) setSnapshot(snapPath, testID, value string) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.snapshots[snapPath][testID] = value
 }
 
 // Returns the id of the test in the snapshot
 // Form [<test-name> - <occurrence>]
 func (s *syncRegistry) getTestID(tName, snapPath string) string {
 	occurrence := 1
-	s._m.Lock()
+	s.Lock()
 
 	if _, exists := s.values[snapPath]; !exists {
 		s.values[snapPath] = make(map[string]int)
@@ -79,19 +120,19 @@ func (s *syncRegistry) getTestID(tName, snapPath string) string {
 	}
 
 	s.values[snapPath][tName] = occurrence
-	s._m.Unlock()
+	s.Unlock()
 
-	return fmt.Sprintf("[%s - %d]", tName, occurrence)
+	return fmt.Sprintf("%s - %d", tName, occurrence)
 }
 
 type syncSlice struct {
 	values []string
-	_m     sync.Mutex
+	sync.Mutex
 }
 
 func (s *syncSlice) append(elems ...string) {
-	s._m.Lock()
-	defer s._m.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	s.values = append(s.values, elems...)
 }
@@ -99,14 +140,12 @@ func (s *syncSlice) append(elems ...string) {
 func newSyncSlice() *syncSlice {
 	return &syncSlice{
 		values: []string{},
-		_m:     sync.Mutex{},
 	}
 }
 
 func newRegistry() *syncRegistry {
 	return &syncRegistry{
 		values: make(map[string]map[string]int),
-		_m:     sync.Mutex{},
 	}
 }
 
@@ -134,14 +173,8 @@ func yellowText(txt string) string {
 	return fmt.Sprintf("%s%s%s", yellowCode, txt, resetCode)
 }
 
-func takeSnapshot(objects []interface{}) string {
-	var snapshot string
-
-	for i := 0; i < len(objects); i++ {
-		snapshot += pretty.Sprint(objects[i]) + newLine
-	}
-
-	return escapeEndChars(snapshot)
+func takeSnapshot(value interface{}) string {
+	return pretty.Sprint(value) + newLine
 }
 
 // Matches a specific testID
@@ -178,13 +211,4 @@ func baseCaller() (string, string) {
 	}
 
 	return prevFile, funcName
-}
-
-func unescapeEndChars(input string) string {
-	return endCharEscapedRegexp.ReplaceAllLiteralString(input, "---")
-}
-
-func escapeEndChars(input string) string {
-	// This is for making sure a snapshot doesn't contain an ending char
-	return endCharRegexp.ReplaceAllLiteralString(input, "/-/-/-/")
 }

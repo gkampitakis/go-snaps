@@ -2,11 +2,11 @@ package snaps
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 // MatchSnapshot verifies the values match the most recent snap file
@@ -17,23 +17,14 @@ import (
 //  MatchSnapshot(t, 10)
 //  MatchSnapshot(t, "hello world")
 // The difference is the latter will create multiple entries.
-func MatchSnapshot(t *testing.T, values ...interface{}) {
+func MatchSnapshot(t testingT, value interface{}) {
 	t.Helper()
-
-	matchSnapshot(t, values)
-}
-
-func matchSnapshot(t testingT, o []interface{}) {
-	t.Helper()
-
-	if len(o) == 0 {
-		t.Log(yellowText("[warning] MatchSnapshot call without params\n"))
-		return
-	}
 
 	dir, snapPath := snapDirAndName()
 	testID := testsRegistry.getTestID(t.Name(), snapPath)
-	snapshot := takeSnapshot(o)
+	snapshot := takeSnapshot(value)
+	// Load snapshot
+	loadSnapshotFile(snapPath)
 	prevSnapshot, err := getPrevSnapshot(testID, snapPath)
 
 	if errors.Is(err, errSnapNotFound) {
@@ -42,6 +33,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 			return
 		}
 
+		// NOTE: issue with extraneous newline at the last entry
 		err := addNewSnapshot(testID, snapshot, dir, snapPath)
 		if err != nil {
 			t.Error(err)
@@ -56,7 +48,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 		return
 	}
 
-	diff := prettyDiff(unescapeEndChars(prevSnapshot), unescapeEndChars(snapshot))
+	diff := prettyDiff(prevSnapshot, snapshot)
 	if diff == "" {
 		return
 	}
@@ -66,41 +58,21 @@ func matchSnapshot(t testingT, o []interface{}) {
 		return
 	}
 
-	if err = updateSnapshot(testID, snapshot, snapPath); err != nil {
-		t.Error(err)
-		return
-	}
+	// if err = updateSnapshot(testID, snapshot, snapPath); err != nil {
+	// 	t.Error(err)
+	// 	return
+	// }
 
 	t.Log(greenText(arrowPoint + "Snapshot updated.\n"))
 }
 
 func getPrevSnapshot(testID, snapPath string) (string, error) {
-	f, err := snapshotFileToString(snapPath)
-	if err != nil {
-		return "", err
+	snapshot, exists := snapshotMap.get(snapPath, testID)
+	if !exists {
+		return snapshot, errSnapNotFound
 	}
 
-	match := dynamicTestIDRegexp(testID).FindStringSubmatch(f)
-
-	if len(match) < 2 {
-		return "", errSnapNotFound
-	}
-
-	// The second capture group contains the snapshot data
-	return match[1], nil
-}
-
-func snapshotFileToString(name string) (string, error) {
-	if _, err := os.Stat(name); err != nil {
-		return "", errSnapNotFound
-	}
-
-	f, err := os.ReadFile(name)
-	if err != nil {
-		return "", err
-	}
-
-	return string(f), nil
+	return snapshot, nil
 }
 
 func stringToSnapshotFile(snap, name string) error {
@@ -108,6 +80,9 @@ func stringToSnapshotFile(snap, name string) error {
 }
 
 func addNewSnapshot(testID, snapshot, dir, snapPath string) error {
+	// _m.Lock()
+	// defer _m.Unlock()
+	// BUG: <- this creates race conditions
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return err
 	}
@@ -118,12 +93,17 @@ func addNewSnapshot(testID, snapshot, dir, snapPath string) error {
 	}
 	defer f.Close()
 
-	_, err = f.WriteString(fmt.Sprintf("\n%s\n%s---\n", testID, snapshot))
+	e := yaml.NewEncoder(f)
+	e.Encode(map[string]string{
+		testID: snapshot,
+	})
+	err = e.Close()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	_, err = f.WriteString(newLine)
+	return err
 }
 
 /*
@@ -140,18 +120,41 @@ func snapDirAndName() (dir, name string) {
 	return
 }
 
-func updateSnapshot(testID, snapshot, snapPath string) error {
-	// When t.Parallel a test can override another snapshot as we dump
-	// all snapshots
-	_m.Lock()
-	defer _m.Unlock()
-	f, err := snapshotFileToString(snapPath)
+func loadSnapshotFile(snapPath string) error {
+	if _, err := os.Stat(snapPath); err != nil {
+		return errSnapNotFound
+	}
+
+	if snapshotMap.fileLoaded(snapPath) {
+		return nil
+	}
+
+	snapshots := map[string]string{}
+
+	f, err := os.Open(snapPath)
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
-	updatedSnapFile := dynamicTestIDRegexp(testID).
-		ReplaceAllLiteralString(f, fmt.Sprintf("%s\n%s---", testID, snapshot))
+	d := yaml.NewDecoder(f)
+	d.Decode(snapshots)
 
-	return stringToSnapshotFile(updatedSnapFile, snapPath)
+	snapshotMap.setFile(snapPath, snapshots)
+	return nil
 }
+
+// func updateSnapshot(testID, snapshot, snapPath string) error {
+// 	// When t.Parallel a test can override another snapshot as we dump
+// 	// all snapshots
+// 	_m.Lock()
+// 	defer _m.Unlock()
+// 	f, err := snapshotFileToString(snapPath, testID)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	updatedSnapFile := dynamicTestIDRegexp(testID).(f, fmt.Sprintf("%s\n%s---", testID, snapshot))
+
+// 	return stringToSnapshotFile(updatedSnapFile, snapPath)
+// }

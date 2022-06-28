@@ -78,6 +78,8 @@ func TestParallel(t *testing.T) {
 			t.Parallel()
 
 			snaps.MatchSnapshot(t, s.input)
+			snaps.MatchSnapshot(t, s.input)
+			snaps.MatchSnapshot(t, s.input)
 		})
 	}
 }
