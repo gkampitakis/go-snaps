@@ -59,7 +59,7 @@ func TestSimple(t *testing.T) {
 	})
 
 	t.Run(".*", func(t *testing.T) {
-		snaps.MatchSnapshot(t, "ignore regex patterns on names")
+		snaps.MatchSnapshot(t, "ignor dasdase regex patterns on names")
 	})
 }
 

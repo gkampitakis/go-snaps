@@ -26,19 +26,30 @@ var (
 	shouldUpdate         = getEnvBool("UPDATE_SNAPS", false) && !isCI
 )
 
+type ColorCode string
+
+func fg(code ColorCode) string {
+	return fmt.Sprintf("\u001b[38;5;%sm", code)
+}
+
+func bg(code ColorCode) string {
+	return fmt.Sprintf("\u001b[48;5;%sm", code)
+}
+
 const (
 	resetCode   = "\u001b[0m"
-	redBGCode   = "\u001b[41m\u001b[37;1m"
-	greenBGCode = "\u001b[42m\u001b[37;1m"
+	redBGCode   = "\u001b[48;5;225m"
+	greenBGCode = "\u001b[48;5;159m"
 	dimCode     = "\u001b[2m"
-	greenCode   = "\u001b[32;1m"
-	redCode     = "\u001b[31;1m"
+	greenCode   = "\u001b[38;5;22m"
+	redCode     = "\u001b[38;5;52m"
 	yellowCode  = "\u001b[33;1m"
 	arrowPoint  = "› "
 	bulletPoint = "• "
 	newLine     = "\n"
 	snapsDir    = "__snapshots__"
 	snapsExt    = ".snap"
+	// `\u001B[${38 + offset};5;${code}m`;
 )
 
 type set map[string]struct{}
