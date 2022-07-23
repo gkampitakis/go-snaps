@@ -184,7 +184,7 @@ func summary(print printerF, obsoleteFiles []string, obsoleteTests []string, sho
 		print(newLine)
 	}
 
-	print("\n%s\n\n", greenBG("Snapshot Summary"))
+	// print("\n%s\n\n", greenBG("Snapshot Summary"))
 
 	if len(obsoleteFiles) > 0 {
 		objectSummaryList(obsoleteFiles, "file")

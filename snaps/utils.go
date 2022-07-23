@@ -26,16 +26,6 @@ var (
 	shouldUpdate         = getEnvBool("UPDATE_SNAPS", false) && !isCI
 )
 
-type ColorCode string
-
-func fg(code ColorCode) string {
-	return fmt.Sprintf("\u001b[38;5;%sm", code)
-}
-
-func bg(code ColorCode) string {
-	return fmt.Sprintf("\u001b[48;5;%sm", code)
-}
-
 const (
 	resetCode   = "\u001b[0m"
 	redBGCode   = "\u001b[48;5;225m"
@@ -124,13 +114,13 @@ func newRegistry() *syncRegistry {
 	}
 }
 
-func redBG(txt string) string {
-	return fmt.Sprintf("%s%s%s", redBGCode, txt, resetCode)
-}
+// func redBG(txt string) string {
+// 	return fmt.Sprintf("%s%s%s", redBGCode, txt, resetCode)
+// }
 
-func greenBG(txt string) string {
-	return fmt.Sprintf("%s%s%s", greenBGCode, txt, resetCode)
-}
+// func greenBG(txt string) string {
+// 	return fmt.Sprintf("%s%s%s", greenBGCode, txt, resetCode)
+// }
 
 func dimText(txt string) string {
 	return fmt.Sprintf("%s%s%s", dimCode, txt, resetCode)
