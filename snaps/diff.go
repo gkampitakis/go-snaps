@@ -36,6 +36,7 @@ func prettyDiff(expected, received string) string {
 	fmt.Println(res, res2, strings.Title(expected))
 
 	diffs := dmp.DiffCleanupSemantic(dmp.DiffMain(res[0], res2[0], false))
+	diffs := dmp.DiffCleanupSemanticLossless(dmp.DiffMain(expected, received, false))
 	if len(diffs) == 1 && diffs[0].Type == diffEqual {
 		return ""
 	}
@@ -51,28 +52,45 @@ func prettyDiff(expected, received string) string {
 	buff.WriteString(greenBG(greenText(fmt.Sprintf("+ Received + %d ", added))))
 	buff.WriteString(newLine + newLine)
 
-	var a, b string
-
 	for _, diff := range diffs {
-		text := diff.Text
+		lines := strings.Split(diff.Text, "\n")
+		addNewLine := lines[len(lines)-1] == ""
+		if addNewLine {
+			lines = lines[:len(lines)-1]
+		}
 
 		switch diff.Type {
 		case diffEqual:
-			a += text
-			b += text
-		case diffDelete:
-			// str := stringTernary(spacesRegexp.MatchString(text), redBG(text), redText(text))
-			// buff.WriteString(redBG(redText(text)))
-			a += text
-		case diffInsert:
-			// str := stringTernary(spacesRegexp.MatchString(text), greenBG(text), greenText(text))
-			// buff.WriteString(greenBG(greenText(text)))
+			for i, line := range lines {
+				if i+1 == len(lines) && !addNewLine {
+					buff.WriteString(" " + dimText(line))
+					continue
+				}
 
-			b += text
+				buff.WriteString(" " + dimText(line) + newLine)
+			}
+		case diffDelete:
+			for i, line := range lines {
+				if i+1 == len(lines) && !addNewLine {
+					buff.WriteString(redBG(redText(fmt.Sprintf("- %s", line))))
+					continue
+				}
+
+				buff.WriteString(redBG(redText(fmt.Sprintf("- %s", line))) + newLine)
+			}
+
+		case diffInsert:
+			for i, line := range lines {
+				if i+1 == len(lines) && !addNewLine {
+					buff.WriteString(greenBG(greenText(fmt.Sprintf("+ %s", line))))
+					continue
+				}
+
+				buff.WriteString(greenBG(greenText(fmt.Sprintf("+ %s", line))) + newLine)
+
+			}
 		}
 	}
-
-	buff.WriteString(redBG(redText(a)) + newLine + greenBG(greenText(b)))
 
 	return buff.String()
 }

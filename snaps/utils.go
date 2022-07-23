@@ -41,7 +41,10 @@ const (
 	redBGCode   = "\u001b[48;5;225m"
 	greenBGCode = "\u001b[48;5;159m"
 	dimCode     = "\u001b[2m"
-	greenCode   = "\u001b[38;5;22m"
+	// \033[0;92m
+	greenCode = "\u001b[38;5;22m"
+	// Bold
+	// greenCode   = "\u001b[01;38;5;22m"
 	redCode     = "\u001b[38;5;52m"
 	yellowCode  = "\u001b[33;1m"
 	arrowPoint  = "› "
