@@ -30,11 +30,11 @@ const (
 	resetCode   = "\u001b[0m"
 	redBGCode   = "\u001b[48;5;225m"
 	greenBGCode = "\u001b[48;5;159m"
+	boldRed     = "\u001b[01;38;5;52m"
+	boldGreen   = "\u001b[01;38;5;22m"
+	white       = "\u001b[38;5;255m"
 	dimCode     = "\u001b[2m"
-	// \033[0;92m
-	greenCode = "\u001b[38;5;22m"
-	// Bold
-	// greenCode   = "\u001b[01;38;5;22m"
+	greenCode   = "\u001b[38;5;22m"
 	redCode     = "\u001b[38;5;52m"
 	yellowCode  = "\u001b[33;1m"
 	arrowPoint  = "› "
@@ -42,7 +42,6 @@ const (
 	newLine     = "\n"
 	snapsDir    = "__snapshots__"
 	snapsExt    = ".snap"
-	// `\u001B[${38 + offset};5;${code}m`;
 )
 
 type set map[string]struct{}
