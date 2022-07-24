@@ -28,11 +28,14 @@ var (
 
 const (
 	resetCode   = "\u001b[0m"
-	redBGCode   = "\u001b[41m\u001b[37;1m"
-	greenBGCode = "\u001b[42m\u001b[37;1m"
+	redBGCode   = "\u001b[48;5;225m"
+	greenBGCode = "\u001b[48;5;159m"
+	boldRed     = "\u001b[01;38;5;52m"
+	boldGreen   = "\u001b[01;38;5;22m"
+	white       = "\u001b[38;5;255m"
 	dimCode     = "\u001b[2m"
-	greenCode   = "\u001b[32;1m"
-	redCode     = "\u001b[31;1m"
+	greenCode   = "\u001b[38;5;22m"
+	redCode     = "\u001b[38;5;52m"
 	yellowCode  = "\u001b[33;1m"
 	arrowPoint  = "› "
 	bulletPoint = "• "
@@ -110,13 +113,13 @@ func newRegistry() *syncRegistry {
 	}
 }
 
-func redBG(txt string) string {
-	return fmt.Sprintf("%s%s%s", redBGCode, txt, resetCode)
-}
+// func redBG(txt string) string {
+// 	return fmt.Sprintf("%s%s%s", redBGCode, txt, resetCode)
+// }
 
-func greenBG(txt string) string {
-	return fmt.Sprintf("%s%s%s", greenBGCode, txt, resetCode)
-}
+// func greenBG(txt string) string {
+// 	return fmt.Sprintf("%s%s%s", greenBGCode, txt, resetCode)
+// }
 
 func dimText(txt string) string {
 	return fmt.Sprintf("%s%s%s", dimCode, txt, resetCode)
