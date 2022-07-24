@@ -34,6 +34,7 @@ func Clean() {
 		return
 	}
 
+	// FIXME:
 	summary(fmt.Printf, obsoleteFiles, obsoleteTests, shouldUpdate)
 }
 

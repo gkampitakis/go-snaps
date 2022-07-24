@@ -7,7 +7,7 @@ const (
 
 	redBG       = "\u001b[48;5;225m"
 	greenBG     = "\u001b[48;5;159m"
-	boldGreenBG = "\u001b[48;5;24m"
+	boldGreenBG = "\u001b[48;5;23m"
 	boldRedBG   = "\u001b[48;5;127m"
 
 	dim    = "\u001b[2m"

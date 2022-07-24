@@ -3,6 +3,7 @@ package snaps
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -12,11 +13,18 @@ const (
 	diffEqual  diffmatchpatch.Operation = 0
 	diffInsert diffmatchpatch.Operation = 1
 	diffDelete diffmatchpatch.Operation = -1
+
+	EqualOp  DiffOperation = 0
+	InsertOp DiffOperation = 1
+	DeleteOp DiffOperation = -1
+	SkipOp   DiffOperation = 2
 )
 
+type DiffOperation int8
+
 type processedDiff struct {
-	Type   diffmatchpatch.Operation
-	Items  []string
+	Type   DiffOperation
+	Items  []string // TODO: rename
 	Concat bool
 }
 
@@ -25,14 +33,32 @@ type processedDiff struct {
 // https://stackoverflow.com/a/6508925/10068782
 // createPatchMark
 
-// TEST: how it looks with long snapshot more than 100 lines with small changes
+/**
 
-func processDiffLines(diff []diffmatchpatch.Diff) []processedDiff {
+skip feature
+
+if its first we need to keep the last 4 of the equal
+
+if in middle we need 4 before and 4 after
+
+if its last we need to keep the first 4 of the equal
+
+*/
+
+// TEST: how it looks with long snapshot more than 100 lines with small changes
+// TODO: it's difficult to recognize diffs when deletes and additions are done on the same spot intermingled
+
+func processDiffLines(diffs []diffmatchpatch.Diff) []processedDiff {
 	processedDiffs := []processedDiff{}
 
-	for i, diff := range diff {
+	for i, diff := range diffs {
 		text := diff.Text
-		lines := strings.Split(text, newLine)
+		var lines []string
+		if text == "\n" {
+			lines = []string{text}
+		} else {
+			lines = strings.Split(text, newLine)
+		}
 		lastIdx := len(lines) - 1
 		concat := true
 		prevConcat := false
@@ -48,20 +74,60 @@ func processDiffLines(diff []diffmatchpatch.Diff) []processedDiff {
 
 		switch diff.Type {
 		case diffEqual:
-			processedDiffs = append(processedDiffs, processedDiff{
-				Type:   diff.Type,
-				Items:  lines,
-				Concat: prevConcat || concat,
-			})
+			// we are in the start
+			// TODO: clean this if else hell
+			if len(lines) > 4 {
+				// i == 0 &&
+				// processedDiffs = append(processedDiffs, )
+
+				skipStep := processedDiff{
+					Type:   SkipOp,
+					Items:  nil,
+					Concat: false,
+				}
+
+				equalStep := processedDiff{
+					Type:   DiffOperation(diffEqual),
+					Items:  lines,
+					Concat: prevConcat || concat,
+				}
+
+				if i == 0 {
+					lines = lines[len(lines)-4:]
+					equalStep.Items = lines
+
+					processedDiffs = append(processedDiffs, skipStep, equalStep)
+				} else if i+1 == len(diffs) {
+					lines = lines[:4]
+					equalStep.Items = lines
+
+					processedDiffs = append(processedDiffs, equalStep, skipStep)
+				} else {
+					// here we need to break equality to two steps equal skip equal
+					// TODO: implement the logic here
+					processedDiffs = append(processedDiffs, processedDiff{
+						Type:   DiffOperation(diffEqual),
+						Items:  lines,
+						Concat: prevConcat || concat,
+					})
+				}
+			} else {
+				processedDiffs = append(processedDiffs, processedDiff{
+					Type:   DiffOperation(diffEqual),
+					Items:  lines,
+					Concat: prevConcat || concat,
+				})
+			}
+
 		case diffInsert:
 			processedDiffs = append(processedDiffs, processedDiff{
-				Type:   diff.Type,
+				Type:   DiffOperation(diffInsert),
 				Items:  lines,
 				Concat: prevConcat || concat,
 			})
 		case diffDelete:
 			processedDiffs = append(processedDiffs, processedDiff{
-				Type:   diff.Type,
+				Type:   DiffOperation(diff.Type),
 				Items:  lines,
 				Concat: prevConcat || concat,
 			})
@@ -71,10 +137,30 @@ func processDiffLines(diff []diffmatchpatch.Diff) []processedDiff {
 	return processedDiffs
 }
 
+func padding(inserted, deleted int) (string, string) {
+	digits := func(n int) (c int) {
+		return len(strconv.Itoa(n))
+	}
+
+	i := digits(inserted)
+	d := digits(deleted)
+	if i == d {
+		return "", ""
+	}
+	diff := i - d
+	if diff > 0 {
+		return "", strings.Repeat(" ", diff)
+	}
+
+	return strings.Repeat(" ", -diff), ""
+}
+
 func header(buff *bytes.Buffer, inserted, deleted int) {
+	iPadding, dPadding := padding(inserted, deleted)
+
 	buff.WriteString(newLine)
-	buff.WriteString(diffDeleteText("- ", fmt.Sprintf("Snapshot  - %d ", deleted), true))
-	buff.WriteString(diffInsertText("+ ", fmt.Sprintf("Received  + %d ", inserted), true))
+	buff.WriteString(diffDeleteText("- ", fmt.Sprintf("Snapshot %s - %d", dPadding, deleted), true))
+	buff.WriteString(diffInsertText("+ ", fmt.Sprintf("Received %s + %d", iPadding, inserted), true))
 	buff.WriteString(newLine)
 }
 
@@ -122,32 +208,21 @@ func multiLineDiff(diffs []diffmatchpatch.Diff, inserted, deleted int) string {
 		}
 
 		switch diff.Type {
-		case diffEqual:
+		case EqualOp:
 			for j, line := range lines {
-				// TEST: with bug in missing new line
-				// if line == "" {
-				// 	line = "\n"
-				// 	diff.Concat = false
-				// }
-
 				buff.WriteString(diffEqualText(stringTernary(diff.Concat, "", "  "), line, newline(j)))
 			}
-		case diffDelete:
+		case DeleteOp:
 			for j, line := range lines {
-				// if line == "" {
-				// 	line = "\n"
-				// 	diff.Concat = false
-				// }
 				buff.WriteString(diffDeleteText(stringTernary(diff.Concat, "", "- "), line, newline(j)))
 			}
-		case diffInsert:
+		case InsertOp:
 			for j, line := range lines {
-				// if line == "" {
-				// 	line = "\n"
-				// 	diff.Concat = false
-				// }
 				buff.WriteString(diffInsertText(stringTernary(diff.Concat, "", "+ "), line, newline(j)))
 			}
+		case SkipOp:
+			// TODO: write this a bit better
+			buff.WriteString(diffEqualText("", newLine+"---", true))
 		}
 	}
 
