@@ -1,6 +1,6 @@
 module github.com/gkampitakis/go-snaps
 
-go 1.16
+go 1.19
 
 require (
 	github.com/gkampitakis/ciinfo v0.1.0
