@@ -7,8 +7,8 @@
 <br>
 
 <p align="center">
-<img src="./images/diff.png" alt="App Preview" width="400"/>
-<img src="./images/update.png" alt="App Preview" width="500"/>
+<img src="./images/diff.png" alt="App Preview Diff"/>
+<img src="./images/new_snapshot.png" alt="App Preview New" width="500"/>
 </p>
 
 <br>

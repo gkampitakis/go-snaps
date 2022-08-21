@@ -7,22 +7,24 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Clean runs checks for identifying obsolete snapshots and prints a Test Summary.
 //
 // Should be called in a TestMain
-//  func TestMain(t *testing.M) {
-//   v := t.Run()
 //
-//   // After all tests have run `go-snaps` can check for not used snapshots
-//   snaps.Clean()
+//	func TestMain(t *testing.M) {
+//	 v := t.Run()
 //
-//   os.Exit(v)
-//  }
+//	 // After all tests have run `go-snaps` can check for not used snapshots
+//	 snaps.Clean()
+//
+//	 os.Exit(v)
+//	}
 func Clean() {
 	if _, fName := baseCaller(); fName == "testing.tRunner" {
-		fmt.Println(yellowText("go-snaps [Warning]: snaps.Clean should only run in 'TestMain'"))
+		fprintColored(os.Stdout, yellow, "[Warning]: snaps.Clean should only be called in 'TestMain'\n")
 		return
 	}
 	runOnly := flag.Lookup("test.run").Value.String()
@@ -34,16 +36,20 @@ func Clean() {
 		return
 	}
 
-	summary(fmt.Printf, obsoleteFiles, obsoleteTests, shouldUpdate)
+	if len(obsoleteFiles) == 0 && len(obsoleteTests) == 0 {
+		return
+	}
+
+	fmt.Print(summary(obsoleteFiles, obsoleteTests, shouldUpdate))
 }
 
 /*
-	Map containing the occurrences is checked against the filesystem.
+Map containing the occurrences is checked against the filesystem.
 
-	If a file exists but is not registered in the map we check if the file is
-	skipped. (We do that by checking if the mod is imported and there is a call to
-	`MatchSnapshot`). If not skipped and not registered means it's an obsolete snap file
-	and we mark it as one.
+If a file exists but is not registered in the map we check if the file is
+skipped. (We do that by checking if the mod is imported and there is a call to
+`MatchSnapshot`). If not skipped and not registered means it's an obsolete snap file
+and we mark it as one.
 */
 func examineFiles(
 	registry map[string]map[string]int,
@@ -111,7 +117,7 @@ func examineSnaps(
 			if s.Text() == "---" {
 				break
 			}
-			snapshot += line + newLine
+			snapshot += line + "\n"
 		}
 
 		return snapshot
@@ -164,27 +170,35 @@ func examineSnaps(
 	return obsoleteTests, nil
 }
 
-func summary(print printerF, obsoleteFiles []string, obsoleteTests []string, shouldUpdate bool) {
-	if len(obsoleteFiles) == 0 && len(obsoleteTests) == 0 {
-		return
-	}
+func summary(obsoleteFiles []string, obsoleteTests []string, shouldUpdate bool) string {
+	var s strings.Builder
 
 	objectSummaryList := func(objects []string, name string) {
-		plural := name + "s"
-		print(summaryMsg(
-			len(objects),
-			stringTernary(len(objects) > 1, plural, name),
-			shouldUpdate),
+		subject := name
+		action := "obsolete"
+		color := yellow
+		if len(objects) > 1 {
+			subject = name + "s"
+		}
+		if shouldUpdate {
+			action = "removed"
+			color = green
+		}
+
+		fprintColored(
+			&s,
+			color,
+			fmt.Sprintf("%s%d snapshot %s %s.\n", arrowPoint, len(objects), subject, action),
 		)
 
 		for _, object := range objects {
-			print(dimText(fmt.Sprintf("  %s%s\n", bulletPoint, object)))
+			fprintColored(&s, dim, fmt.Sprintf("  %s%s\n", bulletPoint, object))
 		}
 
-		print(newLine)
+		s.WriteString("\n")
 	}
 
-	print("\n%s\n\n", greenBG("Snapshot Summary"))
+	fmt.Fprintf(&s, "\n%s\n\n", sprintColored(greenBG+greendiff, "Snapshot Summary"))
 
 	if len(obsoleteFiles) > 0 {
 		objectSummaryList(obsoleteFiles, "file")
@@ -195,58 +209,35 @@ func summary(print printerF, obsoleteFiles []string, obsoleteTests []string, sho
 	}
 
 	if !shouldUpdate {
-		print(
-			dimText(
-				"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",
-			),
+		fprintColored(
+			&s,
+			dim,
+			"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",
 		)
 	}
-}
 
-func summaryMsg(files int, subject string, updated bool) string {
-	action := stringTernary(updated, "removed", "obsolete")
-	color := colorTernary(updated, greenText, yellowText)
-
-	return color(fmt.Sprintf("%s%d snapshot %s %s.\n", arrowPoint, files, subject, action))
-}
-
-func stringTernary(assertion bool, trueBranch string, falseBranch string) string {
-	if !assertion {
-		return falseBranch
-	}
-
-	return trueBranch
-}
-
-func colorTernary(
-	assertion bool,
-	colorFuncTrue func(string) string,
-	colorFuncFalse func(string) string,
-) func(string) string {
-	if !assertion {
-		return colorFuncFalse
-	}
-
-	return colorFuncTrue
+	return s.String()
 }
 
 /*
-	Builds a Set with all snapshot ids registered inside a snap file
-	Form: testname - number id
+Builds a Set with all snapshot ids registered inside a snap file
+Form: testname - number id
 
-	tests have the form
-		map[filepath]: map[testname]: <number of snapshots>
+tests have the form
 
-	e.g
-		./path/__snapshots__/add_test.snap map[TestAdd] 3
+	map[filepath]: map[testname]: <number of snapshots>
 
-		will result to
+e.g
 
-		TestAdd - 1
-		TestAdd - 2
-		TestAdd - 3
+	./path/__snapshots__/add_test.snap map[TestAdd] 3
 
-	as it means there are 3 snapshots created inside TestAdd
+	will result to
+
+	TestAdd - 1
+	TestAdd - 2
+	TestAdd - 3
+
+as it means there are 3 snapshots created inside TestAdd
 */
 func occurrences(tests map[string]int) set {
 	result := make(set)

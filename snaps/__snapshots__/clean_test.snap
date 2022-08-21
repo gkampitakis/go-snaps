@@ -1,0 +1,44 @@
+
+[TestSummary/should_print_updated_file - 1]
+
+[48;5;159m[38;5;22mSnapshot Summary[0m
+
+[32;1m› 1 snapshot file removed.
+[0m[2m  • test0.snap
+[0m
+
+---
+
+[TestSummary/should_print_updated_test - 1]
+
+[48;5;159m[38;5;22mSnapshot Summary[0m
+
+[32;1m› 1 snapshot test removed.
+[0m[2m  • TestMock/should_pass - 1
+[0m
+
+---
+
+[TestSummary/should_print_obsolete_tests - 1]
+
+[48;5;159m[38;5;22mSnapshot Summary[0m
+
+[33;1m› 2 snapshot tests obsolete.
+[0m[2m  • TestMock/should_pass - 1
+[0m[2m  • TestMock/should_pass - 2
+[0m
+[2mYou can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'
+[0m
+---
+
+[TestSummary/should_print_obsolete_files - 1]
+
+[48;5;159m[38;5;22mSnapshot Summary[0m
+
+[33;1m› 2 snapshot files obsolete.
+[0m[2m  • test0.snap
+[0m[2m  • test1.snap
+[0m
+[2mYou can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'
+[0m
+---

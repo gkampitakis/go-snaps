@@ -1,0 +1,52 @@
+
+[TestDiff/should_print_header_consistently - 1]
+
+[38;5;52m[48;5;225m- Snapshot    - 20[0m
+[38;5;22m[48;5;159m+ Received + 10000[0m
+
+
+---
+
+[TestDiff/should_print_header_consistently - 2]
+
+[38;5;52m[48;5;225m- Snapshot - 10000[0m
+[38;5;22m[48;5;159m+ Received    + 20[0m
+
+
+---
+
+[TestDiff/should_apply_highlights_on_single_line_diff - 1]
+
+[38;5;52m[48;5;225m- Snapshot - 20[0m
+[38;5;22m[48;5;159m+ Received + 20[0m
+
+[48;5;225m[38;5;52m- [0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;225m[38;5;52mabc[0m[48;5;127m[38;5;255md[0m[48;5;159m[38;5;22m+ [0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m[48;5;159m[38;5;22mabc[0m[48;5;23m[38;5;255mf[0m
+---
+
+[TestDiff/multiline_diff - 1]
+
+[38;5;52m[48;5;225m- Snapshot - 5[0m
+[38;5;22m[48;5;159m+ Received + 6[0m
+
+[33;1m@@ -1,12 +1,13 @@[0m
+
+  [2mProin justo libero, pellentesque sit amet scelerisque ut, sollicitudin non tortor. 
+[0m[48;5;225m[38;5;52m- [0m[48;5;225m[38;5;52m     Sed velit elit, accumsan sed [0m[48;5;127m[38;5;255mporttitor[0m[48;5;225m[38;5;52m nec, elementum quis sapien. [0m
+[48;5;159m[38;5;22m+ [0m[48;5;159m[38;5;22m         Sed velit elit, accumsan sed [0m[48;5;23m[38;5;255mIpsum[0m[48;5;159m[38;5;22m nec, elementum quis sapien. [0m
+  [2m                                                   Phasellus mattis purus in dui pretium, eu euismod metus feugiat. 
+[0m[48;5;225m[38;5;52m- [0m[48;5;225m[38;5;52m     Morbi turpis [0m[48;5;127m[38;5;255mtellus[0m[48;5;225m[38;5;52m, tincidunt mollis rutrum at, mattis laoreet lacus. [0m
+[48;5;159m[38;5;22m+ [0m[48;5;159m[38;5;22m         Morbi turpis [0m[48;5;23m[38;5;255mLorem[0m[48;5;159m[38;5;22m, tincidunt mollis rutrum at, mattis laoreet lacus. [0m
+  [2m                                                   Donec in quam tempus, eleifend erat sit amet, aliquet metus. 
+[0m  [2m                                               Sed ullamcorper velit a est efficitur, et tempus ante rhoncus. 
+[0m  [2m                                               Aliquam diam sapien, vulputate sit amet elit sit amet, commodo eleifend sapien. 
+[0m  [2m                                               Donec consequat at nibh id mattis. Quisque vitae sagittis eros, convallis consectetur ante. 
+[0m  [2m                                               Duis finibus suscipit mi sed consectetur. Nulla libero neque, sagittis vel nulla vel,
+[0m[38;5;52m[48;5;225m-                                vestibulum sagittis mauris. Ut laoreet urna lectus. [0m
+[38;5;52m[48;5;225m-                                    Sed lorem felis, condimentum eget vehicula non, sagittis sit amet diam. [0m
+[38;5;52m[48;5;225m-                                    Vivamus ut sapien at erat imperdiet suscipit id a lectus.[0m
+[38;5;22m[48;5;159m+                                   vestibulum sagittis mauris. Ut laoreet urna lectus. [0m
+[38;5;22m[48;5;159m+                                   Sed lorem felis, condimentum eget vehicula non, sagittis sit amet diam. [0m
+[38;5;22m[48;5;159m+                                   Vivamus ut sapien at erat imperdiet suscipit id a lectus.[0m
+[38;5;22m[48;5;159m+                                   Another Line added.[0m
+
+---
