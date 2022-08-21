@@ -2,7 +2,6 @@ package snaps
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -37,7 +36,7 @@ func Equal(t *testing.T, expected interface{}, received interface{}) {
 	t.Helper()
 
 	if !reflect.DeepEqual(expected, received) {
-		t.Error(redText(fmt.Sprintf("\n[expected]: %v\n[received]: %v", expected, received)))
+		t.Errorf("\n[expected]: %v\n[received]: %v", expected, received)
 	}
 }
 
@@ -45,14 +44,14 @@ func Contains(t *testing.T, s string, substr string) {
 	t.Helper()
 
 	if !strings.Contains(s, substr) {
-		t.Error(redText(fmt.Sprintf("\n [expected] %s to contain %s", s, substr)))
+		t.Errorf("\n [expected] %s to contain %s", s, substr)
 	}
 }
 
 func NotCalled(t *testing.T) {
 	t.Helper()
 
-	t.Error(redText("function was not expected to be called"))
+	t.Errorf("function was not expected to be called")
 }
 
 func createTempFile(t *testing.T, data string) string {
@@ -196,7 +195,7 @@ func TestMatchSnapshot(t *testing.T) {
 		isCI = false
 
 		t.Cleanup(func() {
-			os.RemoveAll(filepath.Join(dir, "__snapshots__"))
+			os.Remove(snapPath)
 			testsRegistry = newRegistry()
 			isCI = ciinfo.IsCI
 		})
@@ -214,7 +213,7 @@ func TestMatchSnapshot(t *testing.T) {
 				NotCalled(t)
 			},
 			mockLog: func(args ...interface{}) {
-				Equal(t, greenText(arrowPoint+"New snapshot written.\n"), args[0])
+				Equal(t, sprintColored(green, arrowPoint+"New snapshot written.\n"), args[0])
 			},
 		}
 
@@ -231,7 +230,7 @@ func TestMatchSnapshot(t *testing.T) {
 		isCI = true
 
 		t.Cleanup(func() {
-			os.RemoveAll(filepath.Join(dir, "__snapshots__"))
+			os.Remove(snapPath)
 			testsRegistry = newRegistry()
 			isCI = ciinfo.IsCI
 		})
@@ -264,14 +263,14 @@ func TestMatchSnapshot(t *testing.T) {
 		snapPath := filepath.Join(dir, "__snapshots__", "snaps_test.snap")
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) {
-				Equal(t, greenText(arrowPoint+"New snapshot written.\n"), received)
+				Equal(t, sprintColored(green, arrowPoint+"New snapshot written.\n"), received)
 			},
 			func(received interface{}) { NotCalled(t) },
 		}
 		isCI = false
 
 		t.Cleanup(func() {
-			os.RemoveAll(filepath.Join(dir, "__snapshots__"))
+			os.Remove(snapPath)
 			testsRegistry = newRegistry()
 			isCI = ciinfo.IsCI
 		})
@@ -286,9 +285,10 @@ func TestMatchSnapshot(t *testing.T) {
 				return "mock-name"
 			},
 			mockError: func(args ...interface{}) {
-				expected := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m" +
-					" Received \x1b[0m\n\n\x1b[2mint(10\x1b[0m\x1b[32;1m0\x1b[0m\x1b[2m)\n\x1b" +
-					"[0m\x1b[31;1mhello\x1b[0m\x1b[32;1mbye\x1b[0m\x1b[2m world\n\x1b[0m\n"
+				expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 2\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+					"+ Received + 2\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
+					"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+					"+ bye world\x1b[0m\n  \x1b[2m\n\x1b[0m"
 
 				Equal(t, expected, args[0])
 			},
@@ -318,15 +318,15 @@ func TestMatchSnapshot(t *testing.T) {
 		shouldUpdate = true
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) {
-				Equal(t, greenText(arrowPoint+"New snapshot written.\n"), received)
+				Equal(t, sprintColored(green, arrowPoint+"New snapshot written.\n"), received)
 			},
 			func(received interface{}) {
-				Equal(t, greenText(arrowPoint+"Snapshot updated.\n"), received)
+				Equal(t, sprintColored(green, arrowPoint+"Snapshot updated.\n"), received)
 			},
 		}
 
 		t.Cleanup(func() {
-			os.RemoveAll(filepath.Join(dir, "__snapshots__"))
+			os.Remove(snapPath)
 			testsRegistry = newRegistry()
 			isCI = ciinfo.IsCI
 			shouldUpdate = shouldUpdatePrev
@@ -370,7 +370,7 @@ func TestMatchSnapshot(t *testing.T) {
 		mockT := MockTestingT{
 			mockHelper: func() {},
 			mockLog: func(args ...interface{}) {
-				Equal(t, yellowText("[warning] MatchSnapshot call without params\n"), args[0])
+				Equal(t, sprintColored(yellow, "[warning] MatchSnapshot call without params\n"), args[0])
 			},
 		}
 
@@ -383,14 +383,14 @@ func TestMatchSnapshot(t *testing.T) {
 		snapPath := filepath.Join(dir, "__snapshots__", "snaps_test.snap")
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) {
-				Equal(t, greenText(arrowPoint+"New snapshot written.\n"), received)
+				Equal(t, sprintColored(green, arrowPoint+"New snapshot written.\n"), received)
 			},
 			func(received interface{}) { NotCalled(t) },
 		}
 		isCI = false
 
 		t.Cleanup(func() {
-			os.RemoveAll(filepath.Join(dir, "__snapshots__"))
+			os.Remove(snapPath)
 			testsRegistry = newRegistry()
 			isCI = ciinfo.IsCI
 		})
@@ -405,9 +405,11 @@ func TestMatchSnapshot(t *testing.T) {
 				return "mock-name"
 			},
 			mockError: func(args ...interface{}) {
-				expected := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received " +
-					"\x1b[0m\n\n\x1b[2mint(10\x1b[0m\x1b[32;1m0\x1b[0m\x1b[2m)\n\x1b[0m\x1b[31;1m" +
-					"hello\x1b[0m\x1b[32;1mbye\x1b[0m\x1b[2m world----\n--\x1b[0m\x1b[31;1m-\x1b[0m\x1b[2m\n\x1b[0m\n"
+				expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 3\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+					"+ Received + 3\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
+					"- hello world----\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m- ---\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+					"+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ bye world----\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+					"+ --\x1b[0m\n  \x1b[2m\n\x1b[0m"
 
 				Equal(t, expected, args[0])
 			},

@@ -9,7 +9,6 @@ import (
 
 	"github.com/gkampitakis/ciinfo"
 	"github.com/kr/pretty"
-	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 var (
@@ -19,24 +18,14 @@ var (
 	isCI            = ciinfo.IsCI
 	// Matches [ Test... - number ] testIDs
 	testIDRegexp         = regexp.MustCompile(`(?m)^\[(Test.* - \d)\]$`)
-	spacesRegexp         = regexp.MustCompile(`^\s+$`)
 	endCharRegexp        = regexp.MustCompile(`(?m)(^---$)`)
 	endCharEscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
-	dmp                  = diffmatchpatch.New()
 	shouldUpdate         = getEnvBool("UPDATE_SNAPS", false) && !isCI
 )
 
 const (
-	resetCode   = "\u001b[0m"
-	redBGCode   = "\u001b[41m\u001b[37;1m"
-	greenBGCode = "\u001b[42m\u001b[37;1m"
-	dimCode     = "\u001b[2m"
-	greenCode   = "\u001b[32;1m"
-	redCode     = "\u001b[31;1m"
-	yellowCode  = "\u001b[33;1m"
 	arrowPoint  = "› "
 	bulletPoint = "• "
-	newLine     = "\n"
 	snapsDir    = "__snapshots__"
 	snapsExt    = ".snap"
 )
@@ -52,12 +41,10 @@ type testingT interface {
 	Log(args ...interface{})
 }
 
-type printerF func(format string, a ...interface{}) (int, error)
-
 /*
-	We track occurrence as in the same test we can run multiple snapshots
-	This also helps with keeping track with obsolete snaps
-	map[snap path]: map[testname]: <number of snapshots>
+We track occurrence as in the same test we can run multiple snapshots
+This also helps with keeping track with obsolete snaps
+map[snap path]: map[testname]: <number of snapshots>
 */
 type syncRegistry struct {
 	values map[string]map[string]int
@@ -110,35 +97,11 @@ func newRegistry() *syncRegistry {
 	}
 }
 
-func redBG(txt string) string {
-	return fmt.Sprintf("%s%s%s", redBGCode, txt, resetCode)
-}
-
-func greenBG(txt string) string {
-	return fmt.Sprintf("%s%s%s", greenBGCode, txt, resetCode)
-}
-
-func dimText(txt string) string {
-	return fmt.Sprintf("%s%s%s", dimCode, txt, resetCode)
-}
-
-func greenText(txt string) string {
-	return fmt.Sprintf("%s%s%s", greenCode, txt, resetCode)
-}
-
-func redText(txt string) string {
-	return fmt.Sprintf("%s%s%s", redCode, txt, resetCode)
-}
-
-func yellowText(txt string) string {
-	return fmt.Sprintf("%s%s%s", yellowCode, txt, resetCode)
-}
-
 func takeSnapshot(objects []interface{}) string {
 	var snapshot string
 
 	for i := 0; i < len(objects); i++ {
-		snapshot += pretty.Sprint(objects[i]) + newLine
+		snapshot += pretty.Sprint(objects[i]) + "\n"
 	}
 
 	return escapeEndChars(snapshot)

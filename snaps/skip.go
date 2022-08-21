@@ -42,17 +42,17 @@ func SkipNow(t testingT) {
 }
 
 /*
-	This checks if the parent test is skipped,
-	or provided a 'runOnly' the testID is part of it
+This checks if the parent test is skipped,
+or provided a 'runOnly' the testID is part of it
 
-	e.g
+e.g
 
-		func TestParallel (t *testing.T) {
-			snaps.Skip()
-			...
-		}
+	func TestParallel (t *testing.T) {
+		snaps.Skip(t)
+		...
+	}
 
-	Then every "child" test should be skipped
+Then every "child" test should be skipped
 */
 func testSkipped(testID, runOnly string) bool {
 	matched, _ := regexp.Match(runOnly, []byte(testID))

@@ -12,10 +12,14 @@ import (
 // MatchSnapshot verifies the values match the most recent snap file
 //
 // You can pass multiple values
-// 	MatchSnapshot(t, 10, "hello world")
+//
+//	MatchSnapshot(t, 10, "hello world")
+//
 // or call MatchSnapshot multiples times inside a test
-//  MatchSnapshot(t, 10)
-//  MatchSnapshot(t, "hello world")
+//
+//	MatchSnapshot(t, 10)
+//	MatchSnapshot(t, "hello world")
+//
 // The difference is the latter will create multiple entries.
 func MatchSnapshot(t *testing.T, values ...interface{}) {
 	t.Helper()
@@ -27,7 +31,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 	t.Helper()
 
 	if len(o) == 0 {
-		t.Log(yellowText("[warning] MatchSnapshot call without params\n"))
+		t.Log(sprintColored(yellow, "[warning] MatchSnapshot call without params\n"))
 		return
 	}
 
@@ -48,7 +52,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 			return
 		}
 
-		t.Log(greenText(arrowPoint + "New snapshot written.\n"))
+		t.Log(sprintColored(green, arrowPoint+"New snapshot written.\n"))
 		return
 	}
 	if err != nil {
@@ -71,7 +75,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 		return
 	}
 
-	t.Log(greenText(arrowPoint + "Snapshot updated.\n"))
+	t.Log(sprintColored(green, arrowPoint+"Snapshot updated.\n"))
 }
 
 func getPrevSnapshot(testID, snapPath string) (string, error) {
@@ -127,8 +131,8 @@ func addNewSnapshot(testID, snapshot, dir, snapPath string) error {
 }
 
 /*
-	Returns the dir for snapshots [where the tests run + /snapsDirName]
-	and the name [dir + /snapsDirName + /<test-name>.snapsExtName]
+Returns the dir for snapshots [where the tests run + /snapsDirName]
+and the name [dir + /snapsDirName + /<test-name>.snapsExtName]
 */
 func snapDirAndName() (dir, name string) {
 	callerPath, _ := baseCaller()

@@ -2,7 +2,6 @@ package snaps
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,7 +13,6 @@ const mockSnap1 = `
 [TestDir1_1/TestSimple - 1]
 
 int(1)
-
 
 string hello world 1 1 1
 
@@ -226,7 +224,6 @@ func TestExamineSnaps(t *testing.T) {
 
 int(1)
 
-
 string hello world 1 1 1
 
 ---
@@ -280,185 +277,37 @@ func TestOccurrences(t *testing.T) {
 }
 
 func TestSummary(t *testing.T) {
-	t.Run("should not print anything", func(t *testing.T) {
-		mockPrinter := func(format string, args ...interface{}) (int, error) {
-			NotCalled(t)
-			return 0, nil
-		}
+	for _, v := range []struct {
+		name     string
+		snapshot string
+	}{
+		{
+			name:     "should print obsolete files",
+			snapshot: summary([]string{"test0.snap", "test1.snap"}, nil, false),
+		},
+		{
+			name: "should print obsolete tests",
+			snapshot: summary(
+				nil,
+				[]string{"TestMock/should_pass - 1", "TestMock/should_pass - 2"},
+				false,
+			),
+		},
+		{
+			name:     "should print updated file",
+			snapshot: summary([]string{"test0.snap"}, nil, true),
+		},
+		{
+			name:     "should print updated test",
+			snapshot: summary(nil, []string{"TestMock/should_pass - 1"}, true),
+		},
+	} {
+		// capture v
+		v := v
+		t.Run(v.name, func(t *testing.T) {
+			t.Parallel()
 
-		summary(mockPrinter, nil, nil, false)
-	})
-
-	t.Run("should print obsolete files", func(t *testing.T) {
-		expectedCalls := []func(format string, args ...interface{}){
-			func(format string, args ...interface{}) {
-				expectedFormat := "\n%s\n\n"
-				Equal(t, expectedFormat, format)
-
-				expectedArg := greenBG("Snapshot Summary")
-				Equal(t, expectedArg, args[0])
-			},
-			func(format string, arg ...interface{}) {
-				expected := yellowText(
-					fmt.Sprintf("%s%d snapshot files obsolete.\n", arrowPoint, 2),
-				)
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := dimText("  " + bulletPoint + "test0.snap\n")
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := dimText("  " + bulletPoint + "test1.snap\n")
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := "\n"
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := dimText(
-					"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",
-				)
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				NotCalled(t)
-			},
-		}
-		mockPrinter := func(format string, args ...interface{}) (int, error) {
-			expectedCalls[0](format, args...)
-
-			expectedCalls = expectedCalls[1:]
-			return 0, nil
-		}
-
-		summary(mockPrinter, []string{"test0.snap", "test1.snap"}, nil, false)
-	})
-
-	t.Run("should print obsolete tests", func(t *testing.T) {
-		expectedCalls := []func(format string, args ...interface{}){
-			func(format string, args ...interface{}) {
-				expectedFormat := "\n%s\n\n"
-				Equal(t, expectedFormat, format)
-
-				expectedArg := greenBG("Snapshot Summary")
-				Equal(t, expectedArg, args[0])
-			},
-			func(format string, arg ...interface{}) {
-				expected := yellowText(
-					fmt.Sprintf("%s%d snapshot tests obsolete.\n", arrowPoint, 2),
-				)
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := dimText("  " + bulletPoint + "TestMock/should_pass - 1\n")
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := dimText("  " + bulletPoint + "TestMock/should_pass - 2\n")
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := "\n"
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := dimText(
-					"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",
-				)
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				NotCalled(t)
-			},
-		}
-		mockPrinter := func(format string, args ...interface{}) (int, error) {
-			expectedCalls[0](format, args...)
-
-			expectedCalls = expectedCalls[1:]
-			return 0, nil
-		}
-
-		summary(
-			mockPrinter,
-			nil,
-			[]string{"TestMock/should_pass - 1", "TestMock/should_pass - 2"},
-			false,
-		)
-	})
-
-	t.Run("should print updated file", func(t *testing.T) {
-		expectedCalls := []func(format string, args ...interface{}){
-			func(format string, args ...interface{}) {
-				expectedFormat := "\n%s\n\n"
-				Equal(t, expectedFormat, format)
-
-				expectedArg := greenBG("Snapshot Summary")
-				Equal(t, expectedArg, args[0])
-			},
-			func(format string, arg ...interface{}) {
-				expected := greenText(
-					fmt.Sprintf("%s%d snapshot file removed.\n", arrowPoint, 1),
-				)
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := dimText("  " + bulletPoint + "test0.snap\n")
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := "\n"
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				NotCalled(t)
-			},
-		}
-		mockPrinter := func(format string, args ...interface{}) (int, error) {
-			expectedCalls[0](format, args...)
-
-			expectedCalls = expectedCalls[1:]
-			return 0, nil
-		}
-
-		summary(mockPrinter, []string{"test0.snap"}, nil, true)
-	})
-
-	t.Run("should print updated test", func(t *testing.T) {
-		expectedCalls := []func(format string, args ...interface{}){
-			func(format string, args ...interface{}) {
-				expectedFormat := "\n%s\n\n"
-				Equal(t, expectedFormat, format)
-
-				expectedArg := greenBG("Snapshot Summary")
-				Equal(t, expectedArg, args[0])
-			},
-			func(format string, arg ...interface{}) {
-				expected := greenText(
-					fmt.Sprintf("%s%d snapshot test removed.\n", arrowPoint, 1),
-				)
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := dimText("  " + bulletPoint + "TestMock/should_pass - 1\n")
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				expected := "\n"
-				Equal(t, expected, format)
-			},
-			func(format string, args ...interface{}) {
-				NotCalled(t)
-			},
-		}
-		mockPrinter := func(format string, args ...interface{}) (int, error) {
-			expectedCalls[0](format, args...)
-
-			expectedCalls = expectedCalls[1:]
-			return 0, nil
-		}
-
-		summary(mockPrinter, nil, []string{"TestMock/should_pass - 1"}, true)
-	})
+			MatchSnapshot(t, v.snapshot)
+		})
+	}
 }

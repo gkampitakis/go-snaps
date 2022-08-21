@@ -1,76 +1,105 @@
 package snaps
 
 import (
+	"strings"
 	"testing"
-
-	"github.com/kr/pretty"
 )
+
+func TestStringUtils(t *testing.T) {
+	t.Run("splitNewlines", func(t *testing.T) {
+		for _, v := range []struct {
+			input    string
+			expected []string
+		}{
+			{"foo", []string{"foo\n"}},
+			{"foo\nbar", []string{"foo\n", "bar\n"}},
+			{"foo\nbar\n", []string{"foo\n", "bar\n", "\n"}},
+			{`abc
+			efg
+			hello \n world`, []string{"abc\n", "\t\t\tefg\n", "\t\t\thello \\n world\n"}},
+		} {
+			v := v
+			t.Run(v.input, func(t *testing.T) {
+				t.Parallel()
+				Equal(t, v.expected, splitNewlines(v.input))
+			})
+		}
+
+	})
+
+	t.Run("isSingleLine", func(t *testing.T) {
+		Equal(t, true, isSingleline("hello world"))
+		Equal(t, true, isSingleline("hello world\n"))
+		Equal(t, false, isSingleline(`hello 
+		 world
+		 `))
+		Equal(t, false, isSingleline("hello \n world\n"))
+		Equal(t, false, isSingleline("hello \n world"))
+	})
+}
 
 func TestDiff(t *testing.T) {
 	t.Run("should return empty string if no diffs", func(t *testing.T) {
-		expected, received := "Hello World\n", "Hello World\n"
+		t.Run("single line", func(t *testing.T) {
+			expected, received := "Hello World\n", "Hello World\n"
 
-		if diff := prettyDiff(expected, received); diff != "" {
-			t.Errorf("found diff between same string %s", diff)
-		}
+			if diff := prettyDiff(expected, received); diff != "" {
+				t.Errorf("found diff between same string %s", diff)
+			}
+		})
+
+		t.Run("multiline", func(t *testing.T) {
+			expected := `one snapshot
+			containing new lines
+			`
+			received := expected
+
+			if diff := prettyDiff(expected, received); diff != "" {
+				t.Errorf("found diff between same string %s", diff)
+			}
+		})
 	})
 
-	t.Run("should return red diff", func(t *testing.T) {
-		expected, received := "Hello", ""
-		expectedDiff := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received \x1b[0m\n\n\x1b[31;1mHello\x1b[0m\n"
-
-		if diff := prettyDiff(expected, received); diff != expectedDiff {
-			t.Errorf("found diff between same string %s", diff)
-		}
+	t.Run("should print header consistently", func(t *testing.T) {
+		MatchSnapshot(t, header(10000, 20))
+		MatchSnapshot(t, header(20, 10000))
 	})
 
-	t.Run("should return green diff", func(t *testing.T) {
-		expected, received := "", "Hello"
-		expectedDiff := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received \x1b[0m\n\n\x1b[32;1mHello\x1b[0m\n"
+	t.Run("should apply highlights on single line diff", func(t *testing.T) {
+		a := strings.Repeat("abcd", 20)
+		b := strings.Repeat("abcf", 20)
 
-		if diff := prettyDiff(expected, received); diff != expectedDiff {
-			t.Errorf("found diff between same string %s", diff)
-		}
+		MatchSnapshot(t, prettyDiff(a, b))
 	})
 
-	t.Run("should return green bg diff for spaces", func(t *testing.T) {
-		expected, received := "    ", ""
-		expectedDiff := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received \x1b[0m\n\n\x1b[41m\x1b[37;1m    \x1b[0m\n"
+	t.Run("multiline diff", func(t *testing.T) {
+		a := `Proin justo libero, pellentesque sit amet scelerisque ut, sollicitudin non tortor. 
+		Sed velit elit, accumsan sed porttitor nec, elementum quis sapien. 
+		Phasellus mattis purus in dui pretium, eu euismod metus feugiat. 
+		Morbi turpis tellus, tincidunt mollis rutrum at, mattis laoreet lacus. 
+		Donec in quam tempus, eleifend erat sit amet, aliquet metus. 
+		Sed ullamcorper velit a est efficitur, et tempus ante rhoncus. 
+		Aliquam diam sapien, vulputate sit amet elit sit amet, commodo eleifend sapien. 
+		Donec consequat at nibh id mattis. Quisque vitae sagittis eros, convallis consectetur ante. 
+		Duis finibus suscipit mi sed consectetur. Nulla libero neque, sagittis vel nulla vel,
+		 vestibulum sagittis mauris. Ut laoreet urna lectus. 
+		 Sed lorem felis, condimentum eget vehicula non, sagittis sit amet diam. 
+		 Vivamus ut sapien at erat imperdiet suscipit id a lectus.`
 
-		if diff := prettyDiff(expected, received); diff != expectedDiff {
-			t.Errorf("found diff between same string %s", diff)
-		}
-	})
+		b := `Proin justo libero, pellentesque sit amet scelerisque ut, sollicitudin non tortor. 
+		Sed velit elit, accumsan sed Ipsum nec, elementum quis sapien. 
+		Phasellus mattis purus in dui pretium, eu euismod metus feugiat. 
+		Morbi turpis Lorem, tincidunt mollis rutrum at, mattis laoreet lacus. 
+		Donec in quam tempus, eleifend erat sit amet, aliquet metus. 
+		Sed ullamcorper velit a est efficitur, et tempus ante rhoncus. 
+		Aliquam diam sapien, vulputate sit amet elit sit amet, commodo eleifend sapien. 
+		Donec consequat at nibh id mattis. Quisque vitae sagittis eros, convallis consectetur ante. 
+		Duis finibus suscipit mi sed consectetur. Nulla libero neque, sagittis vel nulla vel,
+		vestibulum sagittis mauris. Ut laoreet urna lectus. 
+		Sed lorem felis, condimentum eget vehicula non, sagittis sit amet diam. 
+		Vivamus ut sapien at erat imperdiet suscipit id a lectus.
+		Another Line added.`
 
-	t.Run("should return red bg diff for spaces", func(t *testing.T) {
-		expected, received := "", "    "
-		expectedDiff := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m Received \x1b[0m\n\n\x1b[42m\x1b[37;1m    \x1b[0m\n"
-
-		if diff := prettyDiff(expected, received); diff != expectedDiff {
-			t.Errorf("found diff between same string %s", diff)
-		}
-	})
-
-	t.Run("should colorize space diffs", func(t *testing.T) {
-		expected := `{
-			"user": "gkampitakis",
-			"id": 1234567,
-			"data": [ ]
-		}`
-		received := `{
-					"user": "gk",
-					"id": 1234567,
-					"data": [ ]
-		}`
-
-		expectedDiff := "\n\x1b[41m\x1b[37;1m Snapshot \x1b[0m\n\x1b[42m\x1b[37;1m " +
-			"Received \x1b[0m\n\n\x1b[2m{\n            \x1b[0m\x1b[42m\x1b[37;1m        \x1b[" +
-			"0m\x1b[2m\"user\": \"gk\x1b[0m\x1b[31;1mampitakis\x1b[0m\x1b[2m\",\n            \x1b[0" +
-			"m\x1b[42m\x1b[37;1m        \x1b[0m\x1b[2m\"id\": 1234567,\n\x1b[0m\x1b[42m\x1b[37;1m        \x1b[" +
-			"0m\x1b[2m            \"data\": [ ]\n        }\x1b[0m\n"
-
-		if diff := prettyDiff(pretty.Sprint(expected), pretty.Sprint(received)); diff != expectedDiff {
-			t.Errorf("wrong diff produced %s", diff)
-		}
+		MatchSnapshot(t, prettyDiff(a, b))
 	})
 }
