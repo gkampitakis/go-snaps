@@ -3,9 +3,13 @@ linters:
     - unconvert
     - stylecheck
     - lll
-    - ifshort
+    - unparam
     - goimports
     - unparam
+    - gofumpt
+    - revive
+    - unconvert
+    - gocognit
 
   disable:
     - errcheck
@@ -15,3 +19,5 @@ linters-settings:
     min-complexity: 15
   lll:
     line-length: 130
+  gofumpt:
+    extra-rules: true

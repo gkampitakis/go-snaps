@@ -30,16 +30,18 @@ const (
 	snapsExt    = ".snap"
 )
 
-type set map[string]struct{}
-type testingT interface {
-	Helper()
-	Skip(args ...interface{})
-	Skipf(format string, args ...interface{})
-	SkipNow()
-	Name() string
-	Error(args ...interface{})
-	Log(args ...interface{})
-}
+type (
+	set      map[string]struct{}
+	testingT interface {
+		Helper()
+		Skip(args ...interface{})
+		Skipf(format string, args ...interface{})
+		SkipNow()
+		Name() string
+		Error(args ...interface{})
+		Log(args ...interface{})
+	}
+)
 
 /*
 We track occurrence as in the same test we can run multiple snapshots

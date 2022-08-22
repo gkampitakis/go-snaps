@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gkampitakis/go-snaps/snaps/internal"
+	"github.com/gkampitakis/go-snaps/snaps/internal/difflib"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
@@ -16,9 +16,7 @@ const (
 	context                             = 3
 )
 
-var (
-	dmp = diffmatchpatch.New()
-)
+var dmp = diffmatchpatch.New()
 
 func splitNewlines(s string) []string {
 	lines := strings.SplitAfter(s, "\n")
@@ -49,14 +47,14 @@ func getUnifiedDiff(a, b string) (string, int, int) {
 
 	s.Grow(len(a) + len(b))
 
-	m := internal.NewMatcher(aLines, bLines)
+	m := difflib.NewMatcher(aLines, bLines)
 	for _, g := range m.GetGroupedOpCodes(context) {
 		// aLines is a product of splitNewLines(), some items are just \"n"
 		// if change is less than 10 items don't print the range
 		if len(aLines) > 10 || len(bLines) > 10 {
 			first, last := g[0], g[len(g)-1]
-			range1 := internal.FormatRangeUnified(first.I1, last.I2)
-			range2 := internal.FormatRangeUnified(first.J1, last.J2)
+			range1 := difflib.FormatRangeUnified(first.I1, last.I2)
+			range2 := difflib.FormatRangeUnified(first.J1, last.J2)
 			fprintRange(&s, range1, range2)
 		}
 
@@ -64,7 +62,7 @@ func getUnifiedDiff(a, b string) (string, int, int) {
 			fallback := false
 			i1, i2, j1, j2 := c.I1, c.I2, c.J1, c.J2
 
-			if c.Tag == internal.OpReplace {
+			if c.Tag == difflib.OpReplace {
 				expected := strings.Join(bLines[j1:j2], "")
 				received := strings.Join(aLines[i1:i2], "")
 
@@ -80,7 +78,7 @@ func getUnifiedDiff(a, b string) (string, int, int) {
 				fallback = true
 			}
 
-			if c.Tag == internal.OpEqual {
+			if c.Tag == difflib.OpEqual {
 				for _, line := range aLines[i1:i2] {
 					fprintEqual(&s, line)
 				}
@@ -89,14 +87,14 @@ func getUnifiedDiff(a, b string) (string, int, int) {
 			}
 
 			// no continue, if fallback = true we want both lines printed
-			if fallback || c.Tag == internal.OpDelete {
+			if fallback || c.Tag == difflib.OpDelete {
 				for _, line := range aLines[i1:i2] {
 					fprintDelete(&s, line)
 					deleted++
 				}
 			}
 
-			if fallback || c.Tag == internal.OpInsert {
+			if fallback || c.Tag == difflib.OpInsert {
 				for _, line := range bLines[j1:j2] {
 					fprintInsert(&s, line)
 					inserted++

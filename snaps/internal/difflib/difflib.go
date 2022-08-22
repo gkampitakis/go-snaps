@@ -1,4 +1,4 @@
-package internal
+package difflib
 
 /*
 This package is a partial port of Python difflib.
@@ -85,7 +85,7 @@ func FormatRangeUnified(start, stop int) string {
 		return strconv.Itoa(beginning)
 	}
 	if length == 0 {
-		beginning -= 1
+		beginning--
 	}
 
 	return strconv.Itoa(beginning) + "," + strconv.Itoa(length)
@@ -301,7 +301,7 @@ func (m *sequenceMatcher) findLongestMatch(alo, ahi, blo, bhi int) match {
 	for besti+bestsize < ahi && bestj+bestsize < bhi &&
 		!m.isBJunk(m.b[bestj+bestsize]) &&
 		m.a[besti+bestsize] == m.b[bestj+bestsize] {
-		bestsize += 1
+		bestsize++
 	}
 
 	// Now that we have a wholly interesting match (albeit possibly
@@ -318,7 +318,7 @@ func (m *sequenceMatcher) findLongestMatch(alo, ahi, blo, bhi int) match {
 	for besti+bestsize < ahi && bestj+bestsize < bhi &&
 		m.isBJunk(m.b[bestj+bestsize]) &&
 		m.a[besti+bestsize] == m.b[bestj+bestsize] {
-		bestsize += 1
+		bestsize++
 	}
 
 	return match{A: besti, B: bestj, Size: bestsize}
@@ -470,8 +470,10 @@ func (m *sequenceMatcher) GetGroupedOpCodes(n int) [][]opCode {
 		// End the current group and start a new one whenever
 		// there is a large range with no changes.
 		if c.Tag == OpEqual && i2-i1 > nn {
-			group = append(group, opCode{c.Tag, i1, min(i2, i1+n),
-				j1, min(j2, j1+n)})
+			group = append(group, opCode{
+				c.Tag, i1, min(i2, i1+n),
+				j1, min(j2, j1+n),
+			})
 			groups = append(groups, group)
 			group = []opCode{}
 			i1, j1 = max(i1, i2-n), max(j1, j2-n)

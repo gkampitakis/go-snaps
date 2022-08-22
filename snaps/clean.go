@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,7 +54,7 @@ func examineFiles(
 	registry map[string]map[string]int,
 	runOnly string,
 	shouldUpdate bool,
-) (obsolete []string, used []string) {
+) (obsolete, used []string) {
 	uniqueDirs := set{}
 
 	for snapPaths := range registry {
@@ -63,7 +62,8 @@ func examineFiles(
 	}
 
 	for dir := range uniqueDirs {
-		dirContents, _ := ioutil.ReadDir(dir)
+		// TODO: verify change
+		dirContents, _ := os.ReadDir(dir)
 
 		for _, content := range dirContents {
 			// this is a sanity check shouldn't have dirs inside the snapshot dirs
@@ -170,7 +170,7 @@ func examineSnaps(
 	return obsoleteTests, nil
 }
 
-func summary(obsoleteFiles []string, obsoleteTests []string, shouldUpdate bool) string {
+func summary(obsoleteFiles, obsoleteTests []string, shouldUpdate bool) string {
 	var s strings.Builder
 
 	objectSummaryList := func(objects []string, name string) {

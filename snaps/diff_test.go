@@ -24,7 +24,6 @@ func TestStringUtils(t *testing.T) {
 				Equal(t, v.expected, splitNewlines(v.input))
 			})
 		}
-
 	})
 
 	t.Run("isSingleLine", func(t *testing.T) {

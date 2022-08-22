@@ -32,7 +32,7 @@ string hello world 1 3 2
 
 // Testing Helper Functions - Start
 
-func Equal(t *testing.T, expected interface{}, received interface{}) {
+func Equal(t *testing.T, expected, received interface{}) {
 	t.Helper()
 
 	if !reflect.DeepEqual(expected, received) {
@@ -40,7 +40,7 @@ func Equal(t *testing.T, expected interface{}, received interface{}) {
 	}
 }
 
-func Contains(t *testing.T, s string, substr string) {
+func Contains(t *testing.T, s, substr string) {
 	t.Helper()
 
 	if !strings.Contains(s, substr) {
