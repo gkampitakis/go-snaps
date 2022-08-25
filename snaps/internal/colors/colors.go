@@ -1,0 +1,85 @@
+package colors
+
+import (
+	"fmt"
+	"io"
+	"strings"
+)
+
+const (
+	reset = "\x1b[0m"
+
+	RedBg       = "\x1b[48;5;225m"
+	GreenBG     = "\x1b[48;5;159m"
+	BoldGreenBG = "\x1b[48;5;23m"
+	BoldRedBg   = "\x1b[48;5;127m"
+
+	Dim       = "\x1b[2m"
+	Greendiff = "\x1b[38;5;22m"
+	Reddiff   = "\x1b[38;5;52m"
+	Yellow    = "\x1b[33;1m"
+	White     = "\x1b[38;5;255m"
+	Green     = "\x1b[32;1m"
+)
+
+func Sprint(color, s string) string {
+	return fmt.Sprintf("%s%s%s", color, s, reset)
+}
+
+func FprintF(w io.Writer, color, s string) {
+	fmt.Fprintf(w, "%s%s%s", color, s, reset)
+}
+
+/** Only used for the pretty_diff */
+func FprintEqual(w io.Writer, s string) {
+	fmt.Fprintf(w, "  %s%s%s", Dim, s, reset)
+}
+
+func FprintDelete(w io.Writer, s string) {
+	// this is for mitigating https://unix.stackexchange.com/q/212933
+	// couldn't find a better way.
+	if hasNewlineSuffix(s) {
+		fmt.Fprintf(w, "%s%s- %s%s\n", Reddiff, RedBg, trimSuffix(s), reset)
+	} else {
+		fmt.Fprintf(w, "%s%s- %s%s", Reddiff, RedBg, s, reset)
+	}
+}
+
+func FprintInsert(w io.Writer, s string) {
+	if hasNewlineSuffix(s) {
+		fmt.Fprintf(w, "%s%s+ %s%s\n", Greendiff, GreenBG, trimSuffix(s), reset)
+	} else {
+		fmt.Fprintf(w, "%s%s+ %s%s", Greendiff, GreenBG, s, reset)
+	}
+}
+
+func FprintDeleteBold(w io.Writer, s string) {
+	fmt.Fprintf(w, "%s%s%s%s", BoldRedBg, White, s, reset)
+}
+
+func FprintInsertBold(w io.Writer, s string) {
+	fmt.Fprintf(w, "%s%s%s%s", BoldGreenBG, White, s, reset)
+}
+
+func FprintRange(w io.Writer, r1, r2 string) {
+	fmt.Fprintf(w, "%s@@ -%s +%s @@%s\n\n", Yellow, r1, r2, reset)
+}
+
+func FprintBg(w io.Writer, bgColor, color, s string) {
+	if hasNewlineSuffix(s) {
+		fmt.Fprintf(w, "%s%s%s%s\n", bgColor, color, trimSuffix(s), reset)
+	} else {
+		fmt.Fprintf(w, "%s%s%s%s", bgColor, color, s, reset)
+	}
+}
+
+// hasNewlineSuffix checks if the string contains a "\n" at the end.
+func hasNewlineSuffix(s string) bool {
+	return strings.HasSuffix(s, "\n")
+}
+
+// trimSuffix is like strings.TrimSuffix but specific for "\n" char and without checking
+// it exists as we already have earlier.
+func trimSuffix(s string) string {
+	return s[:len(s)-1]
+}

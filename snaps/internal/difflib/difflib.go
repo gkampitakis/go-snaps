@@ -53,7 +53,7 @@ type match struct {
 	Size int
 }
 
-type opCode struct {
+type OpCode struct {
 	Tag int8
 	I1  int
 	I2  int
@@ -127,7 +127,7 @@ type sequenceMatcher struct {
 	matchingBlocks []match
 	fullBCount     map[string]int
 	bPopular       map[string]struct{}
-	opCodes        []opCode
+	opCodes        []OpCode
 }
 
 func NewMatcher(a, b []string) *sequenceMatcher {
@@ -403,13 +403,13 @@ func (m *sequenceMatcher) getMatchingBlocks() []match {
 // OpInsert (insert):    b[j1:j2] should be inserted at a[i1:i1], i1==i2 in this case.
 //
 // OpEqual (equal):      a[i1:i2] == b[j1:j2]
-func (m *sequenceMatcher) getOpCodes() []opCode {
+func (m *sequenceMatcher) getOpCodes() []OpCode {
 	if m.opCodes != nil {
 		return m.opCodes
 	}
 	i, j := 0, 0
 	matching := m.getMatchingBlocks()
-	opCodes := make([]opCode, 0, len(matching))
+	opCodes := make([]OpCode, 0, len(matching))
 	for _, m := range matching {
 		//  invariant: we've pumped out correct diffs to change
 		//  a[:i] into b[:j], and the next matching block is
@@ -426,13 +426,13 @@ func (m *sequenceMatcher) getOpCodes() []opCode {
 			tag = OpInsert
 		}
 		if tag > 0 {
-			opCodes = append(opCodes, opCode{tag, i, ai, j, bj})
+			opCodes = append(opCodes, OpCode{tag, i, ai, j, bj})
 		}
 		i, j = ai+size, bj+size
 		// the list of matching blocks is terminated by a
 		// sentinel with size 0
 		if size > 0 {
-			opCodes = append(opCodes, opCode{OpEqual, ai, i, bj, j})
+			opCodes = append(opCodes, OpCode{OpEqual, ai, i, bj, j})
 		}
 	}
 	m.opCodes = opCodes
@@ -443,42 +443,42 @@ func (m *sequenceMatcher) getOpCodes() []opCode {
 //
 // Return a generator of groups with up to n lines of context.
 // Each group is in the same format as returned by getOpCodes().
-func (m *sequenceMatcher) GetGroupedOpCodes(n int) [][]opCode {
+func (m *sequenceMatcher) GetGroupedOpCodes(n int) [][]OpCode {
 	if n < 0 {
 		n = 3
 	}
 	codes := m.getOpCodes()
 	if len(codes) == 0 {
-		codes = []opCode{{OpEqual, 0, 1, 0, 1}}
+		codes = []OpCode{{OpEqual, 0, 1, 0, 1}}
 	}
 	// Fixup leading and trailing groups if they show no changes.
 	if codes[0].Tag == OpEqual {
 		c := codes[0]
 		i1, i2, j1, j2 := c.I1, c.I2, c.J1, c.J2
-		codes[0] = opCode{c.Tag, max(i1, i2-n), i2, max(j1, j2-n), j2}
+		codes[0] = OpCode{c.Tag, max(i1, i2-n), i2, max(j1, j2-n), j2}
 	}
 	if codes[len(codes)-1].Tag == OpEqual {
 		c := codes[len(codes)-1]
 		i1, i2, j1, j2 := c.I1, c.I2, c.J1, c.J2
-		codes[len(codes)-1] = opCode{c.Tag, i1, min(i2, i1+n), j1, min(j2, j1+n)}
+		codes[len(codes)-1] = OpCode{c.Tag, i1, min(i2, i1+n), j1, min(j2, j1+n)}
 	}
 	nn := n + n
-	groups := [][]opCode{}
-	group := []opCode{}
+	groups := [][]OpCode{}
+	group := []OpCode{}
 	for _, c := range codes {
 		i1, i2, j1, j2 := c.I1, c.I2, c.J1, c.J2
 		// End the current group and start a new one whenever
 		// there is a large range with no changes.
 		if c.Tag == OpEqual && i2-i1 > nn {
-			group = append(group, opCode{
+			group = append(group, OpCode{
 				c.Tag, i1, min(i2, i1+n),
 				j1, min(j2, j1+n),
 			})
 			groups = append(groups, group)
-			group = []opCode{}
+			group = []OpCode{}
 			i1, j1 = max(i1, i2-n), max(j1, j2-n)
 		}
-		group = append(group, opCode{c.Tag, i1, i2, j1, j2})
+		group = append(group, OpCode{c.Tag, i1, i2, j1, j2})
 	}
 	if len(group) > 0 && !(len(group) == 1 && group[0].Tag == OpEqual) {
 		groups = append(groups, group)

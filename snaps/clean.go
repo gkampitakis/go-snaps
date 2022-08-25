@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
 )
 
 // Clean runs checks for identifying obsolete snapshots and prints a Test Summary.
@@ -23,7 +25,7 @@ import (
 //	}
 func Clean() {
 	if _, fName := baseCaller(); fName == "testing.tRunner" {
-		fprintColored(os.Stdout, yellow, "[Warning]: snaps.Clean should only be called in 'TestMain'\n")
+		colors.FprintF(os.Stdout, colors.Yellow, "[Warning]: snaps.Clean should only be called in 'TestMain'\n")
 		return
 	}
 	runOnly := flag.Lookup("test.run").Value.String()
@@ -62,7 +64,6 @@ func examineFiles(
 	}
 
 	for dir := range uniqueDirs {
-		// TODO: verify change
 		dirContents, _ := os.ReadDir(dir)
 
 		for _, content := range dirContents {
@@ -102,31 +103,11 @@ func examineSnaps(
 	runOnly string,
 	shouldUpdate bool,
 ) ([]string, error) {
-	removeSnapshot := func(s *bufio.Scanner) {
-		for s.Scan() {
-			// skip until ---
-			if s.Text() == "---" {
-				break
-			}
-		}
-	}
-	getSnapshot := func(s *bufio.Scanner) (snapshot string) {
-		for s.Scan() {
-			line := s.Text()
-			// reached end char
-			if s.Text() == "---" {
-				break
-			}
-			snapshot += line + "\n"
-		}
-
-		return snapshot
-	}
 	obsoleteTests := []string{}
 
 	for _, snapPath := range used {
+		var updatedFile strings.Builder
 		hasDiffs := false
-		updatedFile := ""
 
 		f, err := os.Open(snapPath)
 		if err != nil {
@@ -139,13 +120,12 @@ func examineSnaps(
 		for s.Scan() {
 			// Check if line is a test id
 			match := testIDRegexp.FindStringSubmatch(s.Text())
-
 			if len(match) <= 1 {
 				continue
 			}
 			testID := match[1]
 
-			if _, exists := registeredTests[testID]; !exists && !testSkipped(testID, runOnly) {
+			if !registeredTests.Has(testID) && !testSkipped(testID, runOnly) {
 				obsoleteTests = append(obsoleteTests, testID)
 				hasDiffs = true
 
@@ -154,7 +134,7 @@ func examineSnaps(
 				continue
 			}
 
-			updatedFile += fmt.Sprintf("\n[%s]\n%s---\n", testID, getSnapshot(s))
+			fmt.Fprintf(&updatedFile, "\n[%s]\n%s---\n", testID, scanSnapshot(s))
 		}
 
 		f.Close()
@@ -162,12 +142,37 @@ func examineSnaps(
 			continue
 		}
 
-		if err = stringToSnapshotFile(updatedFile, snapPath); err != nil {
+		if err = stringToSnapshotFile(updatedFile.String(), snapPath); err != nil {
 			fmt.Println(err)
 		}
 	}
 
 	return obsoleteTests, nil
+}
+
+func removeSnapshot(s *bufio.Scanner) {
+	for s.Scan() {
+		// skip until ---
+		if s.Text() == "---" {
+			break
+		}
+	}
+}
+
+func scanSnapshot(s *bufio.Scanner) string {
+	var snapshot strings.Builder
+
+	for s.Scan() {
+		line := s.Text()
+		// reached end char
+		if s.Text() == "---" {
+			break
+		}
+
+		snapshot.WriteString(line + "\n")
+	}
+
+	return snapshot.String()
 }
 
 func summary(obsoleteFiles, obsoleteTests []string, shouldUpdate bool) string {
@@ -176,29 +181,29 @@ func summary(obsoleteFiles, obsoleteTests []string, shouldUpdate bool) string {
 	objectSummaryList := func(objects []string, name string) {
 		subject := name
 		action := "obsolete"
-		color := yellow
+		color := colors.Yellow
 		if len(objects) > 1 {
 			subject = name + "s"
 		}
 		if shouldUpdate {
 			action = "removed"
-			color = green
+			color = colors.Green
 		}
 
-		fprintColored(
+		colors.FprintF(
 			&s,
 			color,
 			fmt.Sprintf("%s%d snapshot %s %s.\n", arrowPoint, len(objects), subject, action),
 		)
 
 		for _, object := range objects {
-			fprintColored(&s, dim, fmt.Sprintf("  %s%s\n", bulletPoint, object))
+			colors.FprintF(&s, colors.Dim, fmt.Sprintf("  %s%s\n", bulletPoint, object))
 		}
 
 		s.WriteString("\n")
 	}
 
-	fmt.Fprintf(&s, "\n%s\n\n", sprintColored(greenBG+greendiff, "Snapshot Summary"))
+	fmt.Fprintf(&s, "\n%s\n\n", colors.Sprint(colors.GreenBG+colors.Greendiff, "Snapshot Summary"))
 
 	if len(obsoleteFiles) > 0 {
 		objectSummaryList(obsoleteFiles, "file")
@@ -209,9 +214,9 @@ func summary(obsoleteFiles, obsoleteTests []string, shouldUpdate bool) string {
 	}
 
 	if !shouldUpdate {
-		fprintColored(
+		colors.FprintF(
 			&s,
-			dim,
+			colors.Dim,
 			"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",
 		)
 	}

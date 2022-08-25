@@ -3,6 +3,8 @@ package snaps
 import (
 	"strings"
 	"testing"
+
+	"github.com/gkampitakis/go-snaps/snaps/internal/test"
 )
 
 func TestStringUtils(t *testing.T) {
@@ -21,19 +23,19 @@ func TestStringUtils(t *testing.T) {
 			v := v
 			t.Run(v.input, func(t *testing.T) {
 				t.Parallel()
-				Equal(t, v.expected, splitNewlines(v.input))
+				test.Equal(t, v.expected, splitNewlines(v.input))
 			})
 		}
 	})
 
 	t.Run("isSingleLine", func(t *testing.T) {
-		Equal(t, true, isSingleline("hello world"))
-		Equal(t, true, isSingleline("hello world\n"))
-		Equal(t, false, isSingleline(`hello 
+		test.Equal(t, true, isSingleline("hello world"))
+		test.Equal(t, true, isSingleline("hello world\n"))
+		test.Equal(t, false, isSingleline(`hello 
 		 world
 		 `))
-		Equal(t, false, isSingleline("hello \n world\n"))
-		Equal(t, false, isSingleline("hello \n world"))
+		test.Equal(t, false, isSingleline("hello \n world\n"))
+		test.Equal(t, false, isSingleline("hello \n world"))
 	})
 }
 

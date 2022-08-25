@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
 )
 
 // MatchSnapshot verifies the values match the most recent snap file
@@ -31,7 +33,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 	t.Helper()
 
 	if len(o) == 0 {
-		t.Log(sprintColored(yellow, "[warning] MatchSnapshot call without params\n"))
+		t.Log(colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"))
 		return
 	}
 
@@ -52,7 +54,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 			return
 		}
 
-		t.Log(sprintColored(green, arrowPoint+"New snapshot written.\n"))
+		t.Log(colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"))
 		return
 	}
 	if err != nil {
@@ -75,7 +77,7 @@ func matchSnapshot(t testingT, o []interface{}) {
 		return
 	}
 
-	t.Log(sprintColored(green, arrowPoint+"Snapshot updated.\n"))
+	t.Log(colors.Sprint(colors.Green, arrowPoint+"Snapshot updated.\n"))
 }
 
 func getPrevSnapshot(testID, snapPath string) (string, error) {
@@ -116,13 +118,13 @@ func addNewSnapshot(testID, snapshot, dir, snapPath string) error {
 		return err
 	}
 
-	f, err := os.OpenFile(snapPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, os.ModePerm)
+	f, err := os.OpenFile(snapPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	_, err = f.WriteString(fmt.Sprintf("\n%s\n%s---\n", testID, snapshot))
+	_, err = fmt.Fprintf(f, "\n%s\n%s---\n", testID, snapshot)
 	if err != nil {
 		return err
 	}

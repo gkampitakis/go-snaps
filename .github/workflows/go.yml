@@ -7,13 +7,13 @@ on:
       - "images/**"
       - "*.md"
     branches:
-      - main
+      - master
   push:
     paths-ignore:
       - "images/**"
       - "*.md"
     branches:
-      - main
+      - master
 
 jobs:
   lint:

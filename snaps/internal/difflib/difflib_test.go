@@ -2,31 +2,24 @@ package difflib
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/gkampitakis/go-snaps/snaps/internal/test"
 )
-
-func Equal(t *testing.T, expected, received interface{}) {
-	t.Helper()
-
-	if !reflect.DeepEqual(expected, received) {
-		t.Errorf("\n[expected]: %v\n[received]: %v", expected, received)
-	}
-}
 
 func TestGetOptCodes(t *testing.T) {
 	for _, v := range []struct {
 		name     string
 		a        string
 		b        string
-		expected []opCode
+		expected []OpCode
 	}{
 		{
 			name: "qabxcd, abycdf",
 			a:    "qabxcd",
 			b:    "abycdf",
-			expected: []opCode{
+			expected: []OpCode{
 				{Tag: OpDelete, I1: 0, I2: 1, J1: 0, J2: 0},  // d a[0:1], (q) b[0:0] ()
 				{Tag: OpEqual, I1: 1, I2: 3, J1: 0, J2: 2},   // e a[1:3], (ab) b[0:2] (ab)
 				{Tag: OpReplace, I1: 3, I2: 4, J1: 2, J2: 3}, // r a[3:4], (x) b[2:3] (y)
@@ -38,7 +31,7 @@ func TestGetOptCodes(t *testing.T) {
 			name: "AsciiOnDelete",
 			a:    strings.Repeat("a", 40) + "c" + strings.Repeat("b", 40),
 			b:    strings.Repeat("a", 40) + strings.Repeat("b", 40),
-			expected: []opCode{
+			expected: []OpCode{
 				{OpEqual, 0, 40, 0, 40},
 				{OpDelete, 40, 41, 40, 40},
 				{OpEqual, 41, 81, 40, 80},
@@ -48,7 +41,7 @@ func TestGetOptCodes(t *testing.T) {
 			name: "AsciiOneInsert - 1",
 			a:    strings.Repeat("b", 100),
 			b:    "a" + strings.Repeat("b", 100),
-			expected: []opCode{
+			expected: []OpCode{
 				{OpInsert, 0, 0, 0, 1},
 				{OpEqual, 0, 100, 1, 101},
 			},
@@ -57,7 +50,7 @@ func TestGetOptCodes(t *testing.T) {
 			name: "AsciiOneInsert - 2",
 			a:    strings.Repeat("b", 100),
 			b:    strings.Repeat("b", 50) + "a" + strings.Repeat("b", 50),
-			expected: []opCode{
+			expected: []OpCode{
 				{OpEqual, 0, 50, 0, 50},
 				{OpInsert, 50, 50, 50, 51},
 				{OpEqual, 50, 100, 51, 101},
@@ -70,7 +63,7 @@ func TestGetOptCodes(t *testing.T) {
 
 			a := strings.Split(v.a, "")
 			b := strings.Split(v.b, "")
-			Equal(t, v.expected, NewMatcher(a, b).getOpCodes())
+			test.Equal(t, v.expected, NewMatcher(a, b).getOpCodes())
 		})
 	}
 }
@@ -113,7 +106,7 @@ group
   0, 35, 38, 31, 34
 `
 
-	Equal(t, expected, w.String())
+	test.Equal(t, expected, w.String())
 }
 
 func TestOutputFormatRangeFormatUnified(t *testing.T) {
@@ -125,9 +118,21 @@ func TestOutputFormatRangeFormatUnified(t *testing.T) {
 	//  "%1d,%1d", <beginning line number>, <number of lines> otherwise.
 	// If a range is empty, its beginning line number shall be the number of
 	// the line just before the range, or 0 if the empty range starts the file.
-	Equal(t, "3,0", FormatRangeUnified(3, 3))
-	Equal(t, "4", FormatRangeUnified(3, 4))
-	Equal(t, "4,2", FormatRangeUnified(3, 5))
-	Equal(t, "4,3", FormatRangeUnified(3, 6))
-	Equal(t, "0,0", FormatRangeUnified(0, 0))
+	test.Equal(t, "3,0", FormatRangeUnified(3, 3))
+	test.Equal(t, "4", FormatRangeUnified(3, 4))
+	test.Equal(t, "4,2", FormatRangeUnified(3, 5))
+	test.Equal(t, "4,3", FormatRangeUnified(3, 6))
+	test.Equal(t, "0,0", FormatRangeUnified(0, 0))
+}
+
+func TestFindLongest(t *testing.T) {
+	a := strings.Split("dabcd", "")
+	b := strings.Split(strings.Repeat("d", 100)+"abc"+strings.Repeat("d", 100), "")
+	m := NewMatcher(a, b)
+
+	match := m.findLongestMatch(0, len(a), 0, len(b))
+	test.Equal(t, 0, match.A)
+	test.Equal(t, 99, match.B)
+	test.Equal(t, 5, match.Size)
+	test.Equal(t, a[match.A:match.A+match.Size], b[match.B:match.B+match.Size])
 }

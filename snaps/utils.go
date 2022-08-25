@@ -43,6 +43,11 @@ type (
 	}
 )
 
+func (s set) Has(i string) bool {
+	_, has := s[i]
+	return has
+}
+
 /*
 We track occurrence as in the same test we can run multiple snapshots
 This also helps with keeping track with obsolete snaps
@@ -50,14 +55,14 @@ map[snap path]: map[testname]: <number of snapshots>
 */
 type syncRegistry struct {
 	values map[string]map[string]int
-	_m     sync.Mutex
+	sync.Mutex
 }
 
 // Returns the id of the test in the snapshot
 // Form [<test-name> - <occurrence>]
 func (s *syncRegistry) getTestID(tName, snapPath string) string {
 	occurrence := 1
-	s._m.Lock()
+	s.Lock()
 
 	if _, exists := s.values[snapPath]; !exists {
 		s.values[snapPath] = make(map[string]int)
@@ -68,19 +73,19 @@ func (s *syncRegistry) getTestID(tName, snapPath string) string {
 	}
 
 	s.values[snapPath][tName] = occurrence
-	s._m.Unlock()
+	s.Unlock()
 
 	return fmt.Sprintf("[%s - %d]", tName, occurrence)
 }
 
 type syncSlice struct {
 	values []string
-	_m     sync.Mutex
+	sync.Mutex
 }
 
 func (s *syncSlice) append(elems ...string) {
-	s._m.Lock()
-	defer s._m.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	s.values = append(s.values, elems...)
 }
@@ -88,14 +93,14 @@ func (s *syncSlice) append(elems ...string) {
 func newSyncSlice() *syncSlice {
 	return &syncSlice{
 		values: []string{},
-		_m:     sync.Mutex{},
+		Mutex:  sync.Mutex{},
 	}
 }
 
 func newRegistry() *syncRegistry {
 	return &syncRegistry{
 		values: make(map[string]map[string]int),
-		_m:     sync.Mutex{},
+		Mutex:  sync.Mutex{},
 	}
 }
 

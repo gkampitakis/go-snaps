@@ -2,9 +2,11 @@ package snaps
 
 import (
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
+	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
 	"github.com/gkampitakis/go-snaps/snaps/internal/difflib"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
@@ -31,6 +33,12 @@ func isSingleline(s string) bool {
 	return i == len(s)-1 || i == -1
 }
 
+// shouldPrintHighlights checks if the two strings are going to be presented with
+// inline highlights
+func shouldPrintHighlights(a, b string) bool {
+	return a != "\n" && b != "\n" && isSingleline(a) && isSingleline(b)
+}
+
 // Compare two sequences of lines; generate the delta as a unified diff.
 //
 // Unified diffs are a compact way of showing line changes and a few
@@ -52,10 +60,7 @@ func getUnifiedDiff(a, b string) (string, int, int) {
 		// aLines is a product of splitNewLines(), some items are just \"n"
 		// if change is less than 10 items don't print the range
 		if len(aLines) > 10 || len(bLines) > 10 {
-			first, last := g[0], g[len(g)-1]
-			range1 := difflib.FormatRangeUnified(first.I1, last.I2)
-			range2 := difflib.FormatRangeUnified(first.J1, last.J2)
-			fprintRange(&s, range1, range2)
+			printRange(&s, g)
 		}
 
 		for _, c := range g {
@@ -66,8 +71,7 @@ func getUnifiedDiff(a, b string) (string, int, int) {
 				expected := strings.Join(bLines[j1:j2], "")
 				received := strings.Join(aLines[i1:i2], "")
 
-				if expected != "\n" && received != "\n" &&
-					isSingleline(received) && isSingleline(expected) {
+				if shouldPrintHighlights(expected, received) {
 					i, d := singlelineDiff(&s, received, expected)
 					inserted += i
 					deleted += d
@@ -80,32 +84,27 @@ func getUnifiedDiff(a, b string) (string, int, int) {
 
 			if c.Tag == difflib.OpEqual {
 				for _, line := range aLines[i1:i2] {
-					fprintEqual(&s, line)
+					colors.FprintEqual(&s, line)
 				}
 
 				continue
 			}
 
-			// no continue, if fallback = true we want both lines printed
+			// no continue, if fallback == true we want both lines printed
 			if fallback || c.Tag == difflib.OpDelete {
 				for _, line := range aLines[i1:i2] {
-					fprintDelete(&s, line)
+					colors.FprintDelete(&s, line)
 					deleted++
 				}
 			}
 
 			if fallback || c.Tag == difflib.OpInsert {
 				for _, line := range bLines[j1:j2] {
-					fprintInsert(&s, line)
+					colors.FprintInsert(&s, line)
 					inserted++
 				}
 			}
 		}
-	}
-
-	if s.Len() == 0 {
-		// -1 means no diffs
-		return "", -1, 0
 	}
 
 	return s.String(), inserted, deleted
@@ -121,11 +120,18 @@ func header(inserted, deleted int) string {
 	iPadding, dPadding := intPadding(inserted, deleted)
 
 	s.WriteString("\n")
-	fprintDelete(&s, fmt.Sprintf("Snapshot %s- %d\n", dPadding, deleted))
-	fprintInsert(&s, fmt.Sprintf("Received %s+ %d\n", iPadding, inserted))
+	colors.FprintDelete(&s, fmt.Sprintf("Snapshot %s- %d\n", dPadding, deleted))
+	colors.FprintInsert(&s, fmt.Sprintf("Received %s+ %d\n", iPadding, inserted))
 	s.WriteString("\n")
 
 	return s.String()
+}
+
+func printRange(w io.Writer, opcodes []difflib.OpCode) {
+	first, last := opcodes[0], opcodes[len(opcodes)-1]
+	range1 := difflib.FormatRangeUnified(first.I1, last.I2)
+	range2 := difflib.FormatRangeUnified(first.J1, last.J2)
+	colors.FprintRange(w, range1, range2)
 }
 
 // IntPadding accepts two integers and returns two strings working as padding for aligning printed numbers
@@ -157,7 +163,6 @@ func singlelineDiff(s *strings.Builder, expected, received string) (int, int) {
 		dmp.DiffMain(expected, received, false),
 	)
 	if len(diffs) == 1 && diffs[0].Type == diffEqual {
-		s.Reset()
 		// -1 means no diffs
 		return -1, 0
 	}
@@ -165,20 +170,20 @@ func singlelineDiff(s *strings.Builder, expected, received string) (int, int) {
 	var inserted, deleted int
 	var i strings.Builder
 
-	fprintBgColored(s, redBG, reddiff, "- ")
-	fprintBgColored(&i, greenBG, greendiff, "+ ")
+	colors.FprintBg(s, colors.RedBg, colors.Reddiff, "- ")
+	colors.FprintBg(&i, colors.GreenBG, colors.Greendiff, "+ ")
 
 	for _, diff := range diffs {
 		switch diff.Type {
 		case diffDelete:
 			deleted++
-			fprintDeleteBold(s, diff.Text)
+			colors.FprintDeleteBold(s, diff.Text)
 		case diffInsert:
 			inserted++
-			fprintInsertBold(&i, diff.Text)
+			colors.FprintInsertBold(&i, diff.Text)
 		case diffEqual:
-			fprintBgColored(s, redBG, reddiff, diff.Text)
-			fprintBgColored(&i, greenBG, greendiff, diff.Text)
+			colors.FprintBg(s, colors.RedBg, colors.Reddiff, diff.Text)
+			colors.FprintBg(&i, colors.GreenBG, colors.Greendiff, diff.Text)
 		}
 	}
 
@@ -188,7 +193,7 @@ func singlelineDiff(s *strings.Builder, expected, received string) (int, int) {
 }
 
 func prettyDiff(expected, received string) string {
-	if isSingleline(expected) && isSingleline(received) {
+	if shouldPrintHighlights(expected, received) {
 		var diff strings.Builder
 		if i, d := singlelineDiff(&diff, expected, received); i != -1 {
 			return header(i, d) + diff.String()
@@ -197,7 +202,7 @@ func prettyDiff(expected, received string) string {
 		return ""
 	}
 
-	if diff, i, d := getUnifiedDiff(expected, received); i != -1 {
+	if diff, i, d := getUnifiedDiff(expected, received); diff != "" {
 		return header(i, d) + diff
 	}
 

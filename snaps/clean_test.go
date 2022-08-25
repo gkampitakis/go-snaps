@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"sort"
 	"testing"
+
+	"github.com/gkampitakis/go-snaps/snaps/internal/test"
 )
 
 const mockSnap1 = `
@@ -139,8 +141,8 @@ func TestExamineFiles(t *testing.T) {
 		sort.Strings(obsolete)
 		sort.Strings(used)
 
-		Equal(t, obsoleteExpected, obsolete)
-		Equal(t, usedExpected, used)
+		test.Equal(t, obsoleteExpected, obsolete)
+		test.Equal(t, usedExpected, used)
 	})
 
 	t.Run("should remove outdate files", func(t *testing.T) {
@@ -175,8 +177,8 @@ func TestExamineSnaps(t *testing.T) {
 
 		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
 
-		Equal(t, []string{}, obsolete)
-		Equal(t, err, nil)
+		test.Equal(t, []string{}, obsolete)
+		test.Equal(t, err, nil)
 	})
 
 	t.Run("should report two obsolete snapshots and not change content", func(t *testing.T) {
@@ -196,12 +198,12 @@ func TestExamineSnaps(t *testing.T) {
 		content1 := getFileContent(t, used[0])
 		content2 := getFileContent(t, used[1])
 
-		Equal(t, []string{"TestDir1_3/TestSimple - 2", "TestDir2_2/TestSimple - 1"}, obsolete)
-		Equal(t, err, nil)
+		test.Equal(t, []string{"TestDir1_3/TestSimple - 2", "TestDir2_2/TestSimple - 1"}, obsolete)
+		test.Equal(t, err, nil)
 
 		// Content of snaps is not changed
-		Equal(t, mockSnap1, content1)
-		Equal(t, mockSnap2, content2)
+		test.Equal(t, mockSnap1, content1)
+		test.Equal(t, mockSnap2, content2)
 	})
 
 	t.Run("should update the obsolete snap files", func(t *testing.T) {
@@ -240,7 +242,7 @@ string hello world 2 2 1
 ---
 `
 
-		Equal(t, []string{
+		test.Equal(t, []string{
 			"TestDir1_3/TestSimple - 1",
 			"TestDir1_3/TestSimple - 2",
 			"TestDir2_1/TestSimple - 1",
@@ -249,11 +251,11 @@ string hello world 2 2 1
 		},
 			obsolete,
 		)
-		Equal(t, err, nil)
+		test.Equal(t, err, nil)
 
 		// Content of snaps is not changed
-		Equal(t, expected1, content1)
-		Equal(t, expected2, content2)
+		test.Equal(t, expected1, content1)
+		test.Equal(t, expected2, content2)
 	})
 }
 
@@ -273,7 +275,7 @@ func TestOccurrences(t *testing.T) {
 		"divide - 2":   {},
 	}
 
-	Equal(t, expected, occurrences(tests))
+	test.Equal(t, expected, occurrences(tests))
 }
 
 func TestSummary(t *testing.T) {
