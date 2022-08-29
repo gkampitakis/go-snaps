@@ -41,7 +41,7 @@ func TestExample(t *testing.T) {
 }
 ```
 
-### Usage
+## Usage
 
 You can pass multiple parameters to `MatchSnapshot` or call `MatchSnapshot` multiple
 times inside the same test. The difference is in the latter, it will
@@ -62,7 +62,7 @@ func TestSimple(t *testing.T) {
 
 ```
 
-`go-snaps` save the snapshots in `__snapshots__` directory and the file
+`go-snaps` saves the snapshots in `__snapshots__` directory and the file
 name is the test file name with extension `.snap`.
 
 So for example if your test is called `add_test.go` when you run your tests at the same
@@ -76,29 +76,16 @@ UPDATE_SNAPS=true go test ./...
 
 You can also see some example usages in `./examples` in this project.
 
-### Snapshots
+### No Color
 
-Snapshots have the form 
+`go-snaps` supports disabling color outputs by running your tests with the env variable
+`NO_COLOR` set to any value.
 
-```text
-[ TestName - Number ]
-<data>
----
+```bash
+NO_COLOR=true go test ./...
 ```
 
-`TestID` is the test name plus an increasing number ( allowing to do multiple calls
-of `MatchSnapshot` inside a test ).
-
-```txt
-[TestSimple/should_make_a_map_snapshot - 1]
-map[string]interface {}{
-    "mock-0": "value",
-    "mock-1": int(2),
-    "mock-2": func() {...},
-    "mock-3": float32(10.399999618530273),
-}
----
-```
+For more information around [NO_COLOR](https://no-color.org).
 
 ### Clean obsolete snapshots
 
@@ -145,20 +132,44 @@ You can skip, or only run specific tests by using the `-run` flag. `go-snaps`
 can "understand" which tests are being skipped and parse only the relevant tests
 for obsolete snapshots.
 
-### Acknowledgments
+### Snapshots
+
+Snapshots have the form 
+
+```text
+[ TestName - Number ]
+<data>
+---
+```
+
+`TestID` is the test name plus an increasing number ( allowing to do multiple calls
+of `MatchSnapshot` inside a test ).
+
+```txt
+[TestSimple/should_make_a_map_snapshot - 1]
+map[string]interface {}{
+    "mock-0": "value",
+    "mock-1": int(2),
+    "mock-2": func() {...},
+    "mock-3": float32(10.399999618530273),
+}
+---
+```
+
+## Acknowledgments
 
 This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) and [Cupaloy](https://github.com/bradleyjkemp/cupaloy) as inspiration.
 
 - Jest is a full-fledged Javascript testing framework and has robust snapshoting features.
 - Cupaloy is a great and simple Golang snapshoting solution.
 
-### Run examples
+## Run examples
 
 ```bash
 go test ./examples/... -v -count=1
 ```
 
-### Notes
+## Notes
 
 1. ⚠️ When running a specific test file by specifying a path
 `go test ./my_test.go`, `go-snaps` can't track the path so it will mistakenly mark snapshots as obsolete.

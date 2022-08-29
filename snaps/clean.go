@@ -25,7 +25,7 @@ import (
 //	}
 func Clean() {
 	if _, fName := baseCaller(); fName == "testing.tRunner" {
-		colors.FprintF(os.Stdout, colors.Yellow, "[Warning]: snaps.Clean should only be called in 'TestMain'\n")
+		colors.Fprint(os.Stdout, colors.Yellow, "[Warning]: snaps.Clean should only be called in 'TestMain'\n")
 		return
 	}
 	runOnly := flag.Lookup("test.run").Value.String()
@@ -190,14 +190,14 @@ func summary(obsoleteFiles, obsoleteTests []string, shouldUpdate bool) string {
 			color = colors.Green
 		}
 
-		colors.FprintF(
+		colors.Fprint(
 			&s,
 			color,
 			fmt.Sprintf("%s%d snapshot %s %s.\n", arrowPoint, len(objects), subject, action),
 		)
 
 		for _, object := range objects {
-			colors.FprintF(&s, colors.Dim, fmt.Sprintf("  %s%s\n", bulletPoint, object))
+			colors.Fprint(&s, colors.Dim, fmt.Sprintf("  %s%s\n", bulletPoint, object))
 		}
 
 		s.WriteString("\n")
@@ -214,7 +214,7 @@ func summary(obsoleteFiles, obsoleteTests []string, shouldUpdate bool) string {
 	}
 
 	if !shouldUpdate {
-		colors.FprintF(
+		colors.Fprint(
 			&s,
 			colors.Dim,
 			"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",

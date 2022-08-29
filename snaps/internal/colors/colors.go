@@ -3,6 +3,7 @@ package colors
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -22,20 +23,48 @@ const (
 	Green     = "\x1b[32;1m"
 )
 
+var NOCOLOR = isNoColor()
+
+func isNoColor() bool {
+	// https://no-color.org (with any value)
+	_, ok := os.LookupEnv("NO_COLOR")
+	return ok
+}
+
 func Sprint(color, s string) string {
+	if NOCOLOR {
+		return s
+	}
+
 	return fmt.Sprintf("%s%s%s", color, s, reset)
 }
 
-func FprintF(w io.Writer, color, s string) {
+func Fprint(w io.Writer, color, s string) {
+	if NOCOLOR {
+		io.WriteString(w, s)
+		return
+	}
+
 	fmt.Fprintf(w, "%s%s%s", color, s, reset)
 }
 
 /** Only used for the pretty_diff */
 func FprintEqual(w io.Writer, s string) {
+	if NOCOLOR {
+		fmt.Fprintf(w, "  %s", s)
+		return
+	}
+
+	// we use the space here for aligning with insert and delete sign
 	fmt.Fprintf(w, "  %s%s%s", Dim, s, reset)
 }
 
 func FprintDelete(w io.Writer, s string) {
+	if NOCOLOR {
+		fmt.Fprintf(w, "- %s", s)
+		return
+	}
+
 	// this is for mitigating https://unix.stackexchange.com/q/212933
 	// couldn't find a better way.
 	if hasNewlineSuffix(s) {
@@ -46,6 +75,11 @@ func FprintDelete(w io.Writer, s string) {
 }
 
 func FprintInsert(w io.Writer, s string) {
+	if NOCOLOR {
+		fmt.Fprintf(w, "+ %s", s)
+		return
+	}
+
 	if hasNewlineSuffix(s) {
 		fmt.Fprintf(w, "%s%s+ %s%s\n", Greendiff, GreenBG, trimSuffix(s), reset)
 	} else {
@@ -54,18 +88,38 @@ func FprintInsert(w io.Writer, s string) {
 }
 
 func FprintDeleteBold(w io.Writer, s string) {
+	if NOCOLOR {
+		io.WriteString(w, s)
+		return
+	}
+
 	fmt.Fprintf(w, "%s%s%s%s", BoldRedBg, White, s, reset)
 }
 
 func FprintInsertBold(w io.Writer, s string) {
+	if NOCOLOR {
+		io.WriteString(w, s)
+		return
+	}
+
 	fmt.Fprintf(w, "%s%s%s%s", BoldGreenBG, White, s, reset)
 }
 
 func FprintRange(w io.Writer, r1, r2 string) {
+	if NOCOLOR {
+		fmt.Fprintf(w, "@@ -%s +%s @@\n\n", r1, r2)
+		return
+	}
+
 	fmt.Fprintf(w, "%s@@ -%s +%s @@%s\n\n", Yellow, r1, r2, reset)
 }
 
 func FprintBg(w io.Writer, bgColor, color, s string) {
+	if NOCOLOR {
+		io.WriteString(w, s)
+		return
+	}
+
 	if hasNewlineSuffix(s) {
 		fmt.Fprintf(w, "%s%s%s%s\n", bgColor, color, trimSuffix(s), reset)
 	} else {
