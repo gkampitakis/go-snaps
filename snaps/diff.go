@@ -36,7 +36,7 @@ func isSingleline(s string) bool {
 // shouldPrintHighlights checks if the two strings are going to be presented with
 // inline highlights
 func shouldPrintHighlights(a, b string) bool {
-	return a != "\n" && b != "\n" && isSingleline(a) && isSingleline(b)
+	return !colors.NOCOLOR && a != "\n" && b != "\n" && isSingleline(a) && isSingleline(b)
 }
 
 // Compare two sequences of lines; generate the delta as a unified diff.
