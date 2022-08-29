@@ -4,11 +4,11 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/gkampitakis/ciinfo"
+	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
+	"github.com/gkampitakis/go-snaps/snaps/internal/test"
 )
 
 const mockSnap = `
@@ -32,28 +32,6 @@ string hello world 1 3 2
 
 // Testing Helper Functions - Start
 
-func Equal(t *testing.T, expected interface{}, received interface{}) {
-	t.Helper()
-
-	if !reflect.DeepEqual(expected, received) {
-		t.Errorf("\n[expected]: %v\n[received]: %v", expected, received)
-	}
-}
-
-func Contains(t *testing.T, s string, substr string) {
-	t.Helper()
-
-	if !strings.Contains(s, substr) {
-		t.Errorf("\n [expected] %s to contain %s", s, substr)
-	}
-}
-
-func NotCalled(t *testing.T) {
-	t.Helper()
-
-	t.Errorf("function was not expected to be called")
-}
-
 func createTempFile(t *testing.T, data string) string {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "mock.file")
@@ -70,8 +48,8 @@ func TestInternalMethods(t *testing.T) {
 		t.Run("should return errSnapNotFound", func(t *testing.T) {
 			snap, err := getPrevSnapshot("", "")
 
-			Equal(t, "", snap)
-			Equal(t, err, errSnapNotFound)
+			test.Equal(t, "", snap)
+			test.Equal(t, err, errSnapNotFound)
 		})
 
 		t.Run("should return errSnapNotFound if no match found", func(t *testing.T) {
@@ -79,8 +57,8 @@ func TestInternalMethods(t *testing.T) {
 			path := createTempFile(t, fileData)
 			snap, err := getPrevSnapshot("", path)
 
-			Equal(t, "", snap)
-			Equal(t, errSnapNotFound, err)
+			test.Equal(t, "", snap)
+			test.Equal(t, errSnapNotFound, err)
 		})
 
 		for _, scenario := range []struct {
@@ -133,8 +111,8 @@ func TestInternalMethods(t *testing.T) {
 				path := createTempFile(t, s.fileData)
 				snap, err := getPrevSnapshot(s.testID, path)
 
-				Equal(t, s.err, err)
-				Equal(t, s.snap, snap)
+				test.Equal(t, s.err, err)
+				test.Equal(t, s.snap, snap)
 			})
 		}
 	})
@@ -144,19 +122,19 @@ func TestInternalMethods(t *testing.T) {
 		name := filepath.Join(dir, "mock-test.snap")
 		err := addNewSnapshot("[mock-id]", "my-snap\n", dir, name)
 
-		Equal(t, nil, err)
+		test.Equal(t, nil, err)
 
 		snap, err := snapshotFileToString(name)
 
-		Equal(t, nil, err)
-		Equal(t, "\n[mock-id]\nmy-snap\n---\n", snap)
+		test.Equal(t, nil, err)
+		test.Equal(t, "\n[mock-id]\nmy-snap\n---\n", snap)
 	})
 
 	t.Run("snapPathAndFile", func(t *testing.T) {
 		path, file := snapDirAndName()
 
-		Contains(t, path, filepath.FromSlash("/snaps/__snapshots__"))
-		Contains(t, file, filepath.FromSlash("/snaps/__snapshots__/snaps_test.snap"))
+		test.Contains(t, path, filepath.FromSlash("/snaps/__snapshots__"))
+		test.Contains(t, file, filepath.FromSlash("/snaps/__snapshots__/snaps_test.snap"))
 	})
 
 	t.Run("updateSnapshot", func(t *testing.T) {
@@ -183,8 +161,8 @@ string hello world 1 3 2
 		err := updateSnapshot("[Test_3/TestSimple - 1]", newSnapshot, snapPath)
 		snap, _ := os.ReadFile(snapPath)
 
-		Equal(t, nil, err)
-		Equal(t, updatedSnap, string(snap))
+		test.Equal(t, nil, err)
+		test.Equal(t, updatedSnap, string(snap))
 	})
 }
 
@@ -202,7 +180,7 @@ func TestMatchSnapshot(t *testing.T) {
 
 		_, err := os.Stat(snapPath)
 
-		Equal(t, true, errors.Is(err, os.ErrNotExist))
+		test.Equal(t, true, errors.Is(err, os.ErrNotExist))
 
 		mockT := MockTestingT{
 			mockHelper: func() {},
@@ -210,18 +188,18 @@ func TestMatchSnapshot(t *testing.T) {
 				return "mock-name"
 			},
 			mockError: func(args ...interface{}) {
-				NotCalled(t)
+				test.NotCalled(t)
 			},
 			mockLog: func(args ...interface{}) {
-				Equal(t, sprintColored(green, arrowPoint+"New snapshot written.\n"), args[0])
+				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"), args[0])
 			},
 		}
 
 		matchSnapshot(mockT, []interface{}{10, "hello world"})
 
 		snap, err := snapshotFileToString(snapPath)
-		Equal(t, nil, err)
-		Equal(t, "\n[mock-name - 1]\nint(10)\nhello world\n---\n", snap)
+		test.Equal(t, nil, err)
+		test.Equal(t, "\n[mock-name - 1]\nint(10)\nhello world\n---\n", snap)
 	})
 
 	t.Run("if it's running on ci should skip", func(t *testing.T) {
@@ -237,7 +215,7 @@ func TestMatchSnapshot(t *testing.T) {
 
 		_, err := os.Stat(snapPath)
 
-		Equal(t, true, errors.Is(err, os.ErrNotExist))
+		test.Equal(t, true, errors.Is(err, os.ErrNotExist))
 
 		mockT := MockTestingT{
 			mockHelper: func() {},
@@ -245,17 +223,17 @@ func TestMatchSnapshot(t *testing.T) {
 				return "mock-name"
 			},
 			mockError: func(args ...interface{}) {
-				Equal(t, errSnapNotFound, args[0])
+				test.Equal(t, errSnapNotFound, args[0])
 			},
 			mockLog: func(args ...interface{}) {
-				NotCalled(t)
+				test.NotCalled(t)
 			},
 		}
 
 		matchSnapshot(mockT, []interface{}{10, "hello world"})
 
 		_, err = snapshotFileToString(snapPath)
-		Equal(t, errSnapNotFound, err)
+		test.Equal(t, errSnapNotFound, err)
 	})
 
 	t.Run("should return error when diff is found", func(t *testing.T) {
@@ -263,9 +241,9 @@ func TestMatchSnapshot(t *testing.T) {
 		snapPath := filepath.Join(dir, "__snapshots__", "snaps_test.snap")
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) {
-				Equal(t, sprintColored(green, arrowPoint+"New snapshot written.\n"), received)
+				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"), received)
 			},
-			func(received interface{}) { NotCalled(t) },
+			func(received interface{}) { test.NotCalled(t) },
 		}
 		isCI = false
 
@@ -277,7 +255,7 @@ func TestMatchSnapshot(t *testing.T) {
 
 		_, err := os.Stat(snapPath)
 		// This is for checking we are starting with a clean state testing
-		Equal(t, true, errors.Is(err, os.ErrNotExist))
+		test.Equal(t, true, errors.Is(err, os.ErrNotExist))
 
 		mockT := MockTestingT{
 			mockHelper: func() {},
@@ -290,7 +268,7 @@ func TestMatchSnapshot(t *testing.T) {
 					"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ bye world\x1b[0m\n  \x1b[2m\n\x1b[0m"
 
-				Equal(t, expected, args[0])
+				test.Equal(t, expected, args[0])
 			},
 			mockLog: func(args ...interface{}) {
 				printerExpectedCalls[0](args[0])
@@ -318,10 +296,10 @@ func TestMatchSnapshot(t *testing.T) {
 		shouldUpdate = true
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) {
-				Equal(t, sprintColored(green, arrowPoint+"New snapshot written.\n"), received)
+				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"), received)
 			},
 			func(received interface{}) {
-				Equal(t, sprintColored(green, arrowPoint+"Snapshot updated.\n"), received)
+				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"Snapshot updated.\n"), received)
 			},
 		}
 
@@ -334,7 +312,7 @@ func TestMatchSnapshot(t *testing.T) {
 
 		_, err := os.Stat(snapPath)
 		// This is for checking we are starting with a clean state testing
-		Equal(t, true, errors.Is(err, os.ErrNotExist))
+		test.Equal(t, true, errors.Is(err, os.ErrNotExist))
 
 		mockT := MockTestingT{
 			mockHelper: func() {},
@@ -342,7 +320,7 @@ func TestMatchSnapshot(t *testing.T) {
 				return "mock-name"
 			},
 			mockError: func(args ...interface{}) {
-				NotCalled(t)
+				test.NotCalled(t)
 			},
 			mockLog: func(args ...interface{}) {
 				printerExpectedCalls[0](args[0])
@@ -362,15 +340,15 @@ func TestMatchSnapshot(t *testing.T) {
 		matchSnapshot(mockT, []interface{}{100, "bye world"})
 
 		snap, err := snapshotFileToString(snapPath)
-		Equal(t, nil, err)
-		Equal(t, "\n[mock-name - 1]\nint(100)\nbye world\n---\n", snap)
+		test.Equal(t, nil, err)
+		test.Equal(t, "\n[mock-name - 1]\nint(100)\nbye world\n---\n", snap)
 	})
 
 	t.Run("should print warning if no params provided", func(t *testing.T) {
 		mockT := MockTestingT{
 			mockHelper: func() {},
 			mockLog: func(args ...interface{}) {
-				Equal(t, sprintColored(yellow, "[warning] MatchSnapshot call without params\n"), args[0])
+				test.Equal(t, colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"), args[0])
 			},
 		}
 
@@ -383,9 +361,9 @@ func TestMatchSnapshot(t *testing.T) {
 		snapPath := filepath.Join(dir, "__snapshots__", "snaps_test.snap")
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) {
-				Equal(t, sprintColored(green, arrowPoint+"New snapshot written.\n"), received)
+				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"), received)
 			},
-			func(received interface{}) { NotCalled(t) },
+			func(received interface{}) { test.NotCalled(t) },
 		}
 		isCI = false
 
@@ -397,7 +375,7 @@ func TestMatchSnapshot(t *testing.T) {
 
 		_, err := os.Stat(snapPath)
 		// This is for checking we are starting with a clean state testing
-		Equal(t, true, errors.Is(err, os.ErrNotExist))
+		test.Equal(t, true, errors.Is(err, os.ErrNotExist))
 
 		mockT := MockTestingT{
 			mockHelper: func() {},
@@ -411,7 +389,7 @@ func TestMatchSnapshot(t *testing.T) {
 					"+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ bye world----\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ --\x1b[0m\n  \x1b[2m\n\x1b[0m"
 
-				Equal(t, expected, args[0])
+				test.Equal(t, expected, args[0])
 			},
 			mockLog: func(args ...interface{}) {
 				printerExpectedCalls[0](args[0])
@@ -439,10 +417,10 @@ func TestEscapeEndChars(t *testing.T) {
 		snapshot := takeSnapshot([]interface{}{"my-snap", "---"})
 		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
-		Equal(t, nil, err)
+		test.Equal(t, nil, err)
 		snap, err := snapshotFileToString(name)
-		Equal(t, nil, err)
-		Equal(t, "\n[mock-id]\nmy-snap\n/-/-/-/\n---\n", snap)
+		test.Equal(t, nil, err)
+		test.Equal(t, "\n[mock-id]\nmy-snap\n/-/-/-/\n---\n", snap)
 	})
 
 	t.Run("should not escape --- if not end chars", func(t *testing.T) {
@@ -451,9 +429,9 @@ func TestEscapeEndChars(t *testing.T) {
 		snapshot := takeSnapshot([]interface{}{"my-snap---", "---"})
 		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
-		Equal(t, nil, err)
+		test.Equal(t, nil, err)
 		snap, err := snapshotFileToString(name)
-		Equal(t, nil, err)
-		Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", snap)
+		test.Equal(t, nil, err)
+		test.Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", snap)
 	})
 }

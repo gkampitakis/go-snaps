@@ -3,15 +3,25 @@ linters:
     - unconvert
     - stylecheck
     - lll
-    - ifshort
+    - unparam
     - goimports
     - unparam
+    - gofumpt
+    - revive
+    - unconvert
+    - gocognit
 
   disable:
     - errcheck
 
 linters-settings:
   gocognit:
-    min-complexity: 15
+    min-complexity: 40
   lll:
     line-length: 130
+  gofumpt:
+    extra-rules: true
+
+run:
+  skip-files:
+    - snaps/internal/difflib/difflib.go
