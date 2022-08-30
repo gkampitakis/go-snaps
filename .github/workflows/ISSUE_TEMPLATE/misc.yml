@@ -1,0 +1,9 @@
+name: ❔ Other
+description: Open an issue that is not feature or bug related
+
+body:
+  - type: textarea
+    id: text
+    attributes:
+      label: Issue
+      description: Give as much detail as you can to help us understand.

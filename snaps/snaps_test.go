@@ -191,7 +191,11 @@ func TestMatchSnapshot(t *testing.T) {
 				test.NotCalled(t)
 			},
 			mockLog: func(args ...interface{}) {
-				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"), args[0])
+				test.Equal(
+					t,
+					colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"),
+					args[0],
+				)
 			},
 		}
 
@@ -241,7 +245,11 @@ func TestMatchSnapshot(t *testing.T) {
 		snapPath := filepath.Join(dir, "__snapshots__", "snaps_test.snap")
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) {
-				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"), received)
+				test.Equal(
+					t,
+					colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"),
+					received,
+				)
 			},
 			func(received interface{}) { test.NotCalled(t) },
 		}
@@ -296,10 +304,18 @@ func TestMatchSnapshot(t *testing.T) {
 		shouldUpdate = true
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) {
-				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"), received)
+				test.Equal(
+					t,
+					colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"),
+					received,
+				)
 			},
 			func(received interface{}) {
-				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"Snapshot updated.\n"), received)
+				test.Equal(
+					t,
+					colors.Sprint(colors.Green, arrowPoint+"Snapshot updated.\n"),
+					received,
+				)
 			},
 		}
 
@@ -348,7 +364,11 @@ func TestMatchSnapshot(t *testing.T) {
 		mockT := MockTestingT{
 			mockHelper: func() {},
 			mockLog: func(args ...interface{}) {
-				test.Equal(t, colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"), args[0])
+				test.Equal(
+					t,
+					colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"),
+					args[0],
+				)
 			},
 		}
 
@@ -361,7 +381,11 @@ func TestMatchSnapshot(t *testing.T) {
 		snapPath := filepath.Join(dir, "__snapshots__", "snaps_test.snap")
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) {
-				test.Equal(t, colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"), received)
+				test.Equal(
+					t,
+					colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"),
+					received,
+				)
 			},
 			func(received interface{}) { test.NotCalled(t) },
 		}

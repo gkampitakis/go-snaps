@@ -15,6 +15,18 @@
 
 [![Go](https://github.com/gkampitakis/go-snaps/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/gkampitakis/go-snaps/actions/workflows/go.yml)
 
+## Highlights
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Update Snapshots](#update-snapshots)
+- [No Color](#no-color)
+- [Clean obsolete Snapshots](#clean-obsolete-snapshots)
+- [Snapshots Structure](#snapshots-structure)
+- [Acknowledgments](#acknowledgments)
+- [Run examples](#run-examples)
+- [Notes](#notes)
+
 ## Installation
 
 To install `go-snaps`, use `go get`:
@@ -48,35 +60,39 @@ times inside the same test. The difference is in the latter, it will
 create multiple entries in the snapshot file.
 
 ```go
+// test_simple.go
 
 func TestSimple(t *testing.T) {
-
   t.Run("should make multiple entries in snapshot", func(t *testing.T) {
-  
     snaps.MatchSnapshot(t, 5, 10, 20, 25)
     snaps.MatchSnapshot(t, "some value")
-  
   })
-
 }
-
 ```
 
 `go-snaps` saves the snapshots in `__snapshots__` directory and the file
 name is the test file name with extension `.snap`.
 
-So for example if your test is called `add_test.go` when you run your tests at the same
-directory a new folder will be created `./__snapshots__/add_test.snaps`.
+So for example if your test is called `test_simple.go` when you run your tests, a snapshot file
+will be created at `./__snapshots__/test_simple.snaps`.
 
-Finally you can update your failing snapshots by setting `UPDATE_SNAPS` env variable to true.
+## Update Snapshots
+
+You can update your failing snapshots by setting `UPDATE_SNAPS` env variable to true.
 
 ```bash
 UPDATE_SNAPS=true go test ./...
 ```
 
-You can also see some example usages in `./examples` in this project.
+If you don't want to update all failing snapshots, or you want to update one of
+them you can you use the `-run` flag to target the test/s you want.
 
-### No Color
+For more information for `go test` flags you can run
+```go
+go help testflag
+```
+
+## No Color
 
 `go-snaps` supports disabling color outputs by running your tests with the env variable
 `NO_COLOR` set to any value.
@@ -87,7 +103,7 @@ NO_COLOR=true go test ./...
 
 For more information around [NO_COLOR](https://no-color.org).
 
-### Clean obsolete snapshots
+## Clean obsolete snapshots
 
 <p align="center">
 <img src="./images/summary-obsolete.png" alt="Summary Obsolete" width="400"/>
@@ -132,7 +148,7 @@ You can skip, or only run specific tests by using the `-run` flag. `go-snaps`
 can "understand" which tests are being skipped and parse only the relevant tests
 for obsolete snapshots.
 
-### Snapshots
+## Snapshots Structure
 
 Snapshots have the form 
 

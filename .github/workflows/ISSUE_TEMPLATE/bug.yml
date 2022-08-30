@@ -1,0 +1,29 @@
+name: 🐛 Bug report
+description: Something doesn't work 🔥
+title: '[Bug]: '
+labels: ['bug']
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: |
+        List of steps, sample code, screenshot(if visual bug), or a link to code or a project that reproduces the behavior.
+        The more details the faster will be to respond and potentially resolve the issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.

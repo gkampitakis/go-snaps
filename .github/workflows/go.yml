@@ -1,17 +1,16 @@
-   
 name: Go
 
 on:
   pull_request:
     paths-ignore:
-      - "images/**"
-      - "*.md"
+      - 'images/**'
+      - '**/*.md'
     branches:
       - main
   push:
     paths-ignore:
-      - "images/**"
-      - "*.md"
+      - 'images/**'
+      - '**/*.md'
     branches:
       - main
 
@@ -27,15 +26,20 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: "latest"
+          version: 'latest'
           args: -c ./golangci.yml
+      - name: Golines
+        run: |
+          go install github.com/segmentio/golines@latest && \
+          golines . -w && \
+          git diff --quiet
   test:
     name: Run tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        go: ["1.16.x", "1.17.x", "1.18.x", "1.19.x"]
+        go: ['1.16.x', '1.17.x', '1.18.x', '1.19.x']
     steps:
       - name: Set git to use LF
         run: |

@@ -169,7 +169,11 @@ func TestSkip(t *testing.T) {
 				SkipNow(mockT)
 
 				test.Equal(t, true, testSkipped("TestMock/Skip", runOnly))
-				test.Equal(t, true, testSkipped("TestMock/Skip/child_should_also_be_skipped", runOnly))
+				test.Equal(
+					t,
+					true,
+					testSkipped("TestMock/Skip/child_should_also_be_skipped", runOnly),
+				)
 				test.Equal(t, false, testSkipped("TestAnotherTest", runOnly))
 			},
 		)
@@ -210,7 +214,11 @@ func TestSkip(t *testing.T) {
 		t.Run("should return 'true' if test is not included in the test file", func(t *testing.T) {
 			dir, _ := os.Getwd()
 
-			test.Equal(t, true, isFileSkipped(dir+"/__snapshots__", "skip_test.snap", "TestNonExistent"))
+			test.Equal(
+				t,
+				true,
+				isFileSkipped(dir+"/__snapshots__", "skip_test.snap", "TestNonExistent"),
+			)
 		})
 
 		t.Run("should return 'false' if test is included in the test file", func(t *testing.T) {
