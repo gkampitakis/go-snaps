@@ -25,7 +25,11 @@ import (
 //	}
 func Clean() {
 	if _, fName := baseCaller(); fName == "testing.tRunner" {
-		colors.Fprint(os.Stdout, colors.Yellow, "[Warning]: snaps.Clean should only be called in 'TestMain'\n")
+		colors.Fprint(
+			os.Stdout,
+			colors.Yellow,
+			"[Warning]: snaps.Clean should only be called in 'TestMain'\n",
+		)
 		return
 	}
 	runOnly := flag.Lookup("test.run").Value.String()
