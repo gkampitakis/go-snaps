@@ -28,11 +28,9 @@ jobs:
         with:
           version: 'latest'
           args: -c ./golangci.yml
-      - name: Golines
+      - name: Format lint
         run: |
-          go install github.com/segmentio/golines@latest && \
-          golines . -w && \
-          git diff --quiet
+          make install-tools && make format && git diff --quiet
   test:
     name: Run tests
     runs-on: ${{ matrix.os }}
@@ -51,4 +49,4 @@ jobs:
         with:
           go-version: ${{matrix.go}}
       - name: Run Tests
-        run: go test -cover -race -v ./...
+        run: make test-verbose

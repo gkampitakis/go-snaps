@@ -24,7 +24,7 @@ import (
 //	 os.Exit(v)
 //	}
 func Clean() {
-	if _, fName := baseCaller(); fName == "testing.tRunner" {
+	if _, fName := baseCaller(); fName != "TestMain" {
 		colors.Fprint(
 			os.Stdout,
 			colors.Yellow,
