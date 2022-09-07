@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"regexp"
 	"runtime"
+	"strings"
 	"sync"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/gkampitakis/ciinfo"
 	"github.com/kr/pretty"
@@ -133,7 +136,7 @@ func baseCaller() (string, string) {
 		prevFile = file
 		pc, file, _, ok = runtime.Caller(i)
 		if !ok {
-			break
+			return "", ""
 		}
 
 		f := runtime.FuncForPC(pc)
@@ -142,12 +145,48 @@ func baseCaller() (string, string) {
 		}
 
 		funcName = f.Name()
-		if f.Name() == "testing.tRunner" {
+		if funcName == "testing.tRunner" {
 			break
+		}
+
+		// special case handling test runners
+		// tested with testify/suite, packagestest and testcase
+		segments := strings.Split(funcName, ".")
+		for _, segment := range segments {
+			if !isTest(segment, "Test") {
+				continue
+			}
+
+			// packagestest is same as tRunner where we step one caller further
+			// so we need to return the prevFile in testcase and testify/suite we return the current file
+			// e.g. funcName golang.org/x/tools/go/packages/packagestest.TestAll.func1
+			if strings.Contains(funcName, "packagestest") {
+				// return only the Function Name
+				// e.g. "go-snaps-testing-suite/src/issues.(*ExampleTestSuite).TestExampleSnapshot"
+				// will return TestExampleSnapshot
+				return prevFile, segment
+			}
+
+			return file, segment
 		}
 	}
 
 	return prevFile, funcName
+}
+
+// Stolen from the `go test` tool
+//
+// isTest tells whether name looks like a test
+// It is a Test (say) if there is a character after Test that is not a lower-case letter
+func isTest(name, prefix string) bool {
+	if !strings.HasPrefix(name, prefix) {
+		return false
+	}
+	if len(name) == len(prefix) { // "Test" is ok
+		return true
+	}
+	r, _ := utf8.DecodeRuneInString(name[len(prefix):])
+	return !unicode.IsLower(r)
 }
 
 func unescapeEndChars(input string) string {
