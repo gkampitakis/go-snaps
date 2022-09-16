@@ -107,14 +107,8 @@ func newRegistry() *syncRegistry {
 	}
 }
 
-func takeSnapshot(objects []interface{}) string {
-	var snapshot string
-
-	for i := 0; i < len(objects); i++ {
-		snapshot += pretty.Sprint(objects[i]) + "\n"
-	}
-
-	return escapeEndChars(snapshot)
+func takeSnapshot(snap interface{}) string {
+	return escapeEndChars(pretty.Sprint(snap) + "\n")
 }
 
 // Matches a specific testID

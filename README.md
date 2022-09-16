@@ -55,16 +55,14 @@ func TestExample(t *testing.T) {
 
 ## Usage
 
-You can pass multiple parameters to `MatchSnapshot` or call `MatchSnapshot` multiple
-times inside the same test. The difference is in the latter, it will
-create multiple entries in the snapshot file.
+You can call `MatchSnapshot` multiple times inside the same test.
 
 ```go
 // test_simple.go
 
 func TestSimple(t *testing.T) {
   t.Run("should make multiple entries in snapshot", func(t *testing.T) {
-    snaps.MatchSnapshot(t, 5, 10, 20, 25)
+    snaps.MatchSnapshot(t, 5)
     snaps.MatchSnapshot(t, "some value")
   })
 }

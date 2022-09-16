@@ -16,13 +16,6 @@ map[string]interface {}{
 }
 ---
 
-[TestSimple/should_make_multiple_entries_in_snapshot - 1]
-int(5)
-int(10)
-int(20)
-int(25)
----
-
 [TestSimple/should_make_create_multiple_snapshot - 1]
 int(1000)
 ---

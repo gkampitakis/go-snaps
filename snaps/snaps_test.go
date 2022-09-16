@@ -199,11 +199,11 @@ func TestMatchSnapshot(t *testing.T) {
 			},
 		}
 
-		matchSnapshot(mockT, []interface{}{10, "hello world"})
+		MatchSnapshot(mockT, "10\nhello world")
 
 		snap, err := snapshotFileToString(snapPath)
 		test.Equal(t, nil, err)
-		test.Equal(t, "\n[mock-name - 1]\nint(10)\nhello world\n---\n", snap)
+		test.Equal(t, "\n[mock-name - 1]\n10\nhello world\n---\n", snap)
 	})
 
 	t.Run("if it's running on ci should skip", func(t *testing.T) {
@@ -234,7 +234,7 @@ func TestMatchSnapshot(t *testing.T) {
 			},
 		}
 
-		matchSnapshot(mockT, []interface{}{10, "hello world"})
+		MatchSnapshot(mockT, "10\nhello world")
 
 		_, err = snapshotFileToString(snapPath)
 		test.Equal(t, errSnapNotFound, err)
@@ -272,8 +272,8 @@ func TestMatchSnapshot(t *testing.T) {
 			},
 			mockError: func(args ...interface{}) {
 				expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 2\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ Received + 2\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
-					"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+					"+ Received + 2\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- 10\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
+					"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ 100\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ bye world\x1b[0m\n  \x1b[2m\n\x1b[0m"
 
 				test.Equal(t, expected, args[0])
@@ -287,13 +287,13 @@ func TestMatchSnapshot(t *testing.T) {
 		}
 
 		// First call for creating the snapshot
-		matchSnapshot(mockT, []interface{}{10, "hello world"})
+		MatchSnapshot(mockT, "10\nhello world")
 
 		// Resetting registry to emulate the same matchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params
-		matchSnapshot(mockT, []interface{}{100, "bye world"})
+		MatchSnapshot(mockT, "100\nbye world")
 	})
 
 	t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
@@ -347,33 +347,17 @@ func TestMatchSnapshot(t *testing.T) {
 		}
 
 		// First call for creating the snapshot
-		matchSnapshot(mockT, []interface{}{10, "hello world"})
+		MatchSnapshot(mockT, "10\nhello world")
 
 		// Resetting registry to emulate the same matchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params
-		matchSnapshot(mockT, []interface{}{100, "bye world"})
+		MatchSnapshot(mockT, "100\nbye world")
 
 		snap, err := snapshotFileToString(snapPath)
 		test.Equal(t, nil, err)
-		test.Equal(t, "\n[mock-name - 1]\nint(100)\nbye world\n---\n", snap)
-	})
-
-	t.Run("should print warning if no params provided", func(t *testing.T) {
-		mockT := MockTestingT{
-			mockHelper: func() {},
-			mockLog: func(args ...interface{}) {
-				test.Equal(
-					t,
-					colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"),
-					args[0],
-				)
-			},
-		}
-
-		matchSnapshot(mockT, []interface{}{})
-		matchSnapshot(mockT, nil)
+		test.Equal(t, "\n[mock-name - 1]\n100\nbye world\n---\n", snap)
 	})
 
 	t.Run("diff should not print the escaped characters", func(t *testing.T) {
@@ -408,9 +392,9 @@ func TestMatchSnapshot(t *testing.T) {
 			},
 			mockError: func(args ...interface{}) {
 				expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 3\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ Received + 3\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
+					"+ Received + 3\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- 10\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
 					"- hello world----\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m- ---\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ bye world----\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+					"+ 100\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ bye world----\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ --\x1b[0m\n  \x1b[2m\n\x1b[0m"
 
 				test.Equal(t, expected, args[0])
@@ -424,13 +408,13 @@ func TestMatchSnapshot(t *testing.T) {
 		}
 
 		// First call for creating the snapshot ( adding ending chars inside the diff )
-		matchSnapshot(mockT, []interface{}{10, "hello world----", "---"})
+		MatchSnapshot(mockT, "10\nhello world----\n---")
 
 		// Resetting registry to emulate the same matchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params
-		matchSnapshot(mockT, []interface{}{100, "bye world----", "--"})
+		MatchSnapshot(mockT, "100\nbye world----\n--")
 	})
 }
 
@@ -438,7 +422,7 @@ func TestEscapeEndChars(t *testing.T) {
 	t.Run("should escape end chars inside data", func(t *testing.T) {
 		dir := filepath.Join(t.TempDir(), "__snapshots__")
 		name := filepath.Join(dir, "mock-test.snap")
-		snapshot := takeSnapshot([]interface{}{"my-snap", "---"})
+		snapshot := takeSnapshot("my-snap\n---")
 		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
 		test.Equal(t, nil, err)
@@ -450,7 +434,7 @@ func TestEscapeEndChars(t *testing.T) {
 	t.Run("should not escape --- if not end chars", func(t *testing.T) {
 		dir := filepath.Join(t.TempDir(), "__snapshots__")
 		name := filepath.Join(dir, "mock-test.snap")
-		snapshot := takeSnapshot([]interface{}{"my-snap---", "---"})
+		snapshot := takeSnapshot("my-snap---\n---")
 		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
 		test.Equal(t, nil, err)

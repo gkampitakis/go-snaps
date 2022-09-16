@@ -7,31 +7,26 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
 )
 
 // Clean runs checks for identifying obsolete snapshots and prints a Test Summary.
 //
-// Should be called in a TestMain
+// Must be called in a TestMain
 //
 //	func TestMain(t *testing.M) {
 //	 v := t.Run()
 //
 //	 // After all tests have run `go-snaps` can check for not used snapshots
-//	 snaps.Clean()
+//	 snaps.Clean(t)
 //
 //	 os.Exit(v)
 //	}
-func Clean() {
-	if _, fName := baseCaller(); fName != "TestMain" {
-		colors.Fprint(
-			os.Stdout,
-			colors.Yellow,
-			"[Warning]: snaps.Clean should only be called in 'TestMain'\n",
-		)
-		return
-	}
+func Clean(t *testing.M) {
+	// This is just for making sure Clean is called from TestMain
+	_ = t
 	runOnly := flag.Lookup("test.run").Value.String()
 
 	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldUpdate)

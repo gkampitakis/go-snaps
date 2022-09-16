@@ -8,13 +8,6 @@ import (
 )
 
 func TestUtils(t *testing.T) {
-	t.Run("should create a string from multiple params", func(t *testing.T) {
-		expected := "test\nint(5)\nmap[string]string{\"test\":\"test\"}\n"
-		received := takeSnapshot([]interface{}{"test", 5, map[string]string{"test": "test"}})
-
-		test.Equal(t, expected, received)
-	})
-
 	t.Run("getTestID should increment id on each call [concurrent safe]", func(t *testing.T) {
 		wg := sync.WaitGroup{}
 		registry := newRegistry()

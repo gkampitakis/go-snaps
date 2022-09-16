@@ -11,7 +11,7 @@ import (
 func TestMain(t *testing.M) {
 	v := t.Run()
 
-	snaps.Clean()
+	snaps.Clean(t)
 
 	os.Exit(v)
 }
@@ -34,10 +34,6 @@ func TestSimple(t *testing.T) {
 		}
 
 		snaps.MatchSnapshot(t, m)
-	})
-
-	t.Run("should make multiple entries in snapshot", func(t *testing.T) {
-		snaps.MatchSnapshot(t, 5, 10, 20, 25)
 	})
 
 	t.Run("should make create multiple snapshot", func(t *testing.T) {

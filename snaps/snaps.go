@@ -6,40 +6,22 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
 )
 
 // MatchSnapshot verifies the values match the most recent snap file
 //
-// You can pass multiple values
-//
-//	MatchSnapshot(t, 10, "hello world")
-//
-// or call MatchSnapshot multiples times inside a test
+// you can call MatchSnapshot multiples times inside a test
 //
 //	MatchSnapshot(t, 10)
 //	MatchSnapshot(t, "hello world")
-//
-// The difference is the latter will create multiple entries.
-func MatchSnapshot(t *testing.T, values ...interface{}) {
+func MatchSnapshot(t testingT, value interface{}) {
 	t.Helper()
-
-	matchSnapshot(t, values)
-}
-
-func matchSnapshot(t testingT, o []interface{}) {
-	t.Helper()
-
-	if len(o) == 0 {
-		t.Log(colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"))
-		return
-	}
 
 	dir, snapPath := snapDirAndName()
 	testID := testsRegistry.getTestID(t.Name(), snapPath)
-	snapshot := takeSnapshot(o)
+	snapshot := takeSnapshot(value)
 	prevSnapshot, err := getPrevSnapshot(testID, snapPath)
 
 	if errors.Is(err, errSnapNotFound) {
