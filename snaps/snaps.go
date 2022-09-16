@@ -119,7 +119,7 @@ Returns the dir for snapshots [where the tests run + /snapsDirName]
 and the name [dir + /snapsDirName + /<test-name>.snapsExtName]
 */
 func snapDirAndName() (dir, name string) {
-	callerPath, _ := baseCaller()
+	callerPath := baseCaller(2)
 	base := filepath.Base(callerPath)
 
 	dir = filepath.Join(filepath.Dir(callerPath), snapsDir)

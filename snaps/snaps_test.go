@@ -131,7 +131,16 @@ func TestInternalMethods(t *testing.T) {
 	})
 
 	t.Run("snapPathAndFile", func(t *testing.T) {
-		path, file := snapDirAndName()
+		var (
+			path string
+			file string
+		)
+
+		func() {
+			// This is for emulating being called from a func so we can find the correct file
+			// of the caller
+			path, file = snapDirAndName()
+		}()
 
 		test.Contains(t, path, filepath.FromSlash("/snaps/__snapshots__"))
 		test.Contains(t, file, filepath.FromSlash("/snaps/__snapshots__/snaps_test.snap"))
