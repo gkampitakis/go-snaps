@@ -1,65 +1,79 @@
 package snaps
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"sync"
 
-	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
+	"github.com/kr/pretty"
 )
 
-// MatchSnapshot verifies the values match the most recent snap file
-//
-// you can call MatchSnapshot multiples times inside a test
-//
-//	MatchSnapshot(t, 10)
-//	MatchSnapshot(t, "hello world")
-func MatchSnapshot(t testingT, value interface{}) {
-	t.Helper()
+var (
+	testsRegistry = newRegistry()
+	_m            = sync.Mutex{}
+	// Matches [ Test... - number ] testIDs
+	testIDRegexp         = regexp.MustCompile(`(?m)^\[(Test.* - \d)\]$`)
+	endCharRegexp        = regexp.MustCompile(`(?m)(^---$)`)
+	endCharEscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
+)
 
-	dir, snapPath := snapDirAndName()
-	testID := testsRegistry.getTestID(t.Name(), snapPath)
-	snapshot := takeSnapshot(value)
-	prevSnapshot, err := getPrevSnapshot(testID, snapPath)
+/*
+We track occurrence as in the same test we can run multiple snapshots
+This also helps with keeping track with obsolete snaps
+map[snap path]: map[testname]: <number of snapshots>
+*/
+type syncRegistry struct {
+	values map[string]map[string]int
+	sync.Mutex
+}
 
-	if errors.Is(err, errSnapNotFound) {
-		if isCI {
-			t.Error(err)
-			return
-		}
+// Returns the id of the test in the snapshot
+// Form [<test-name> - <occurrence>]
+func (s *syncRegistry) getTestID(tName, snapPath string) string {
+	occurrence := 1
+	s.Lock()
 
-		err := addNewSnapshot(testID, snapshot, dir, snapPath)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-
-		t.Log(colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"))
-		return
-	}
-	if err != nil {
-		t.Error(err)
-		return
+	if _, exists := s.values[snapPath]; !exists {
+		s.values[snapPath] = make(map[string]int)
 	}
 
-	diff := prettyDiff(unescapeEndChars(prevSnapshot), unescapeEndChars(snapshot))
-	if diff == "" {
-		return
+	if c, exists := s.values[snapPath][tName]; exists {
+		occurrence = c + 1
 	}
 
-	if !shouldUpdate {
-		t.Error(diff)
-		return
-	}
+	s.values[snapPath][tName] = occurrence
+	s.Unlock()
 
-	if err = updateSnapshot(testID, snapshot, snapPath); err != nil {
-		t.Error(err)
-		return
-	}
+	return fmt.Sprintf("[%s - %d]", tName, occurrence)
+}
 
-	t.Log(colors.Sprint(colors.Green, arrowPoint+"Snapshot updated.\n"))
+func newRegistry() *syncRegistry {
+	return &syncRegistry{
+		values: make(map[string]map[string]int),
+		Mutex:  sync.Mutex{},
+	}
+}
+
+func takeSnapshot(snap interface{}) string {
+	return escapeEndChars(pretty.Sprint(snap) + "\n")
+}
+
+// Matches a specific testID
+func dynamicTestIDRegexp(testID string) *regexp.Regexp {
+	// e.g (?m)(?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:^---$)
+	return regexp.MustCompile(`(?m)(?:` + regexp.QuoteMeta(testID) + `[\s\S])(.*[\s\S]*?)(?:^---$)`)
+}
+
+func unescapeEndChars(input string) string {
+	return endCharEscapedRegexp.ReplaceAllLiteralString(input, "---")
+}
+
+func escapeEndChars(input string) string {
+	// This is for making sure a snapshot doesn't contain an ending char
+	return endCharRegexp.ReplaceAllLiteralString(input, "/-/-/-/")
 }
 
 func getPrevSnapshot(testID, snapPath string) (string, error) {
