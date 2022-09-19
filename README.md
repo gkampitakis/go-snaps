@@ -113,7 +113,7 @@ For more information around [NO_COLOR](https://no-color.org).
 `go-snaps` can identify obsolete snapshots.
 
 In order to enable this functionality you need to use the `TestMain(t*testing.M)` 
-and call `snaps.Clean()`. This will also print a **Snapshot Summary**. (if running tests 
+and call `snaps.Clean(t)`. This will also print a **Snapshot Summary**. (if running tests 
 with verbose flag `-v`)
 
 If you want to remove the obsolete snap files and snapshots you can run 
@@ -129,7 +129,7 @@ func TestMain(t *testing.M) {
   v := t.Run()
 
   // After all tests have run `go-snaps` can check for not used snapshots
-  snaps.Clean()
+  snaps.Clean(t)
 
   os.Exit(v)
 }

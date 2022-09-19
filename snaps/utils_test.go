@@ -45,40 +45,33 @@ func TestUtils(t *testing.T) {
 }
 
 func TestBaseCallerNested(t *testing.T) {
-	file, fName := baseCaller()
+	file := baseCaller(0)
 
 	test.Contains(t, file, "/snaps/utils_test.go")
-	test.Contains(t, fName, "TestBaseCallerNested")
 }
 
 func testBaseCallerNested(t *testing.T) {
-	file, fName := baseCaller()
+	file := baseCaller(0)
 
 	test.Contains(t, file, "/snaps/utils_test.go")
-	test.Contains(t, fName, "TestBaseCaller")
 }
 
 func TestBaseCallerHelper(t *testing.T) {
 	t.Helper()
-	file, fName := baseCaller()
+	file := baseCaller(0)
 
 	test.Contains(t, file, "/snaps/utils_test.go")
-	test.Contains(t, fName, "TestBaseCaller")
 }
 
 func TestBaseCaller(t *testing.T) {
 	t.Run("should return correct baseCaller", func(t *testing.T) {
-		var (
-			file  string
-			fName string
-		)
+		var file string
 
 		func() {
-			file, fName = baseCaller()
+			file = baseCaller(1)
 		}()
 
 		test.Contains(t, file, "/snaps/utils_test.go")
-		test.Contains(t, fName, "TestBaseCaller")
 	})
 
 	t.Run("should return parent function", func(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 func TestMain(t *testing.M) {
 	v := t.Run()
 
-	snaps.Clean()
+	snaps.Clean(t)
 
 	os.Exit(v)
 }
