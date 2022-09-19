@@ -100,51 +100,23 @@ func newSyncSlice() *syncSlice {
 	}
 }
 
-func newRegistry() *syncRegistry {
-	return &syncRegistry{
-		values: make(map[string]map[string]int),
-		Mutex:  sync.Mutex{},
-	}
-}
-
-func takeSnapshot(objects []interface{}) string {
-	var snapshot string
-
-	for i := 0; i < len(objects); i++ {
-		snapshot += pretty.Sprint(objects[i]) + "\n"
-	}
-
-	return escapeEndChars(snapshot)
-}
-
-// Matches a specific testID
-func dynamicTestIDRegexp(testID string) *regexp.Regexp {
-	// e.g (?m)(?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:^---$)
-	return regexp.MustCompile(`(?m)(?:` + regexp.QuoteMeta(testID) + `[\s\S])(.*[\s\S]*?)(?:^---$)`)
-}
-
-// Returns the path where the "user" tests are running and the function name
-func baseCaller() (string, string) {
+// Returns the path where the "user" tests are running
+func baseCaller(skip int) string {
 	var (
-		ok             bool
 		pc             uintptr
 		file, prevFile string
-		funcName       string
 	)
 
-	for i := 0; ; i++ {
+	for i := skip + 1; ; i++ {
 		prevFile = file
-		pc, file, _, ok = runtime.Caller(i)
-		if !ok {
-			return "", ""
-		}
+		pc, file, _, _ = runtime.Caller(i)
 
 		f := runtime.FuncForPC(pc)
 		if f == nil {
 			break
 		}
 
-		funcName = f.Name()
+		funcName := f.Name()
 		if funcName == "testing.tRunner" {
 			break
 		}
@@ -164,14 +136,14 @@ func baseCaller() (string, string) {
 				// return only the Function Name
 				// e.g. "go-snaps-testing-suite/src/issues.(*ExampleTestSuite).TestExampleSnapshot"
 				// will return TestExampleSnapshot
-				return prevFile, segment
+				return prevFile
 			}
 
-			return file, segment
+			return file
 		}
 	}
 
-	return prevFile, funcName
+	return prevFile
 }
 
 // Stolen from the `go test` tool
