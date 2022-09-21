@@ -7,9 +7,14 @@ import (
 	"path"
 	"regexp"
 	"strings"
+
+	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
 )
 
-var skippedTests = newSyncSlice()
+var (
+	skippedTests = newSyncSlice()
+	skippedMsg   = colors.Sprint(colors.Yellow, skipSymbol+"Snapshot skipped\n")
+)
 
 // Wrapper of testing.Skip
 //
@@ -17,7 +22,7 @@ var skippedTests = newSyncSlice()
 func Skip(t testingT, args ...interface{}) {
 	t.Helper()
 
-	skippedTests.append(t.Name())
+	trackSkip(t)
 	t.Skip(args...)
 }
 
@@ -27,7 +32,7 @@ func Skip(t testingT, args ...interface{}) {
 func Skipf(t testingT, format string, args ...interface{}) {
 	t.Helper()
 
-	skippedTests.append(t.Name())
+	trackSkip(t)
 	t.Skipf(format, args...)
 }
 
@@ -37,8 +42,15 @@ func Skipf(t testingT, format string, args ...interface{}) {
 func SkipNow(t testingT) {
 	t.Helper()
 
-	skippedTests.append(t.Name())
+	trackSkip(t)
 	t.SkipNow()
+}
+
+func trackSkip(t testingT) {
+	t.Helper()
+
+	t.Log(skippedMsg)
+	skippedTests.append(t.Name())
 }
 
 /*

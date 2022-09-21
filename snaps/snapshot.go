@@ -7,12 +7,25 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
 )
 
 var (
 	testsRegistry = newRegistry()
 	_m            = sync.Mutex{}
 )
+
+var (
+	addedMsg   = colors.Sprint(colors.Green, updateSymbol+"Snapshot added\n")
+	updatedMsg = colors.Sprint(colors.Green, updateSymbol+"Snapshot updated\n")
+)
+
+func handleError(t testingT, err interface{}) {
+	t.Helper()
+	t.Error(err)
+	testEvents.register(erred)
+}
 
 /*
 We track occurrence as in the same test we can run multiple snapshots

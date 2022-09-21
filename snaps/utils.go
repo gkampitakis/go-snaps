@@ -19,10 +19,16 @@ var (
 )
 
 const (
-	arrowPoint  = "› "
-	bulletPoint = "• "
-	snapsDir    = "__snapshots__"
-	snapsExt    = ".snap"
+	arrowSymbol   = "› "
+	bulletSymbol  = "• "
+	errorSymbol   = "✕ "
+	successSymbol = "✓ "
+	updateSymbol  = "✎ "
+	skipSymbol    = "⟳ "
+	enterSymbol   = "↳ "
+
+	snapsDir = "__snapshots__"
+	snapsExt = ".snap"
 )
 
 type (

@@ -16,12 +16,15 @@ func TestSkip(t *testing.T) {
 		skipArgs := []interface{}{1, 2, 3, 4, 5}
 
 		mockT := test.MockTestingT{
+			MockHelper: func() {},
 			MockSkip: func(args ...interface{}) {
 				test.Equal(t, skipArgs, args)
 			},
-			MockHelper: func() {},
 			MockName: func() string {
 				return "mock-test"
+			},
+			MockLog: func(args ...interface{}) {
+				test.Equal(t, skippedMsg, args[0])
 			},
 		}
 		Skip(mockT, 1, 2, 3, 4, 5)
@@ -35,13 +38,16 @@ func TestSkip(t *testing.T) {
 		})
 
 		mockT := test.MockTestingT{
+			MockHelper: func() {},
 			MockSkipf: func(format string, args ...interface{}) {
 				test.Equal(t, "mock", format)
 				test.Equal(t, []interface{}{1, 2, 3, 4, 5}, args)
 			},
-			MockHelper: func() {},
 			MockName: func() string {
 				return "mock-test"
+			},
+			MockLog: func(args ...interface{}) {
+				test.Equal(t, skippedMsg, args[0])
 			},
 		}
 		Skipf(mockT, "mock", 1, 2, 3, 4, 5)
@@ -55,10 +61,13 @@ func TestSkip(t *testing.T) {
 		})
 
 		mockT := test.MockTestingT{
-			MockSkipNow: func() {},
 			MockHelper:  func() {},
+			MockSkipNow: func() {},
 			MockName: func() string {
 				return "mock-test"
+			},
+			MockLog: func(args ...interface{}) {
+				test.Equal(t, skippedMsg, args[0])
 			},
 		}
 		SkipNow(mockT)
@@ -72,10 +81,13 @@ func TestSkip(t *testing.T) {
 		})
 
 		mockT := test.MockTestingT{
-			MockSkipNow: func() {},
 			MockHelper:  func() {},
+			MockSkipNow: func() {},
 			MockName: func() string {
 				return "mock-test"
+			},
+			MockLog: func(args ...interface{}) {
+				test.Equal(t, skippedMsg, args[0])
 			},
 		}
 
@@ -121,10 +133,13 @@ func TestSkip(t *testing.T) {
 
 				runOnly := ""
 				mockT := test.MockTestingT{
-					MockSkipNow: func() {},
 					MockHelper:  func() {},
+					MockSkipNow: func() {},
 					MockName: func() string {
 						return "TestMock/Skip"
+					},
+					MockLog: func(args ...interface{}) {
+						test.Equal(t, skippedMsg, args[0])
 					},
 				}
 				// This is for populating skippedTests.values and following the normal flow
@@ -147,10 +162,13 @@ func TestSkip(t *testing.T) {
 
 			runOnly := ""
 			mockT := test.MockTestingT{
-				MockSkipNow: func() {},
 				MockHelper:  func() {},
+				MockSkipNow: func() {},
 				MockName: func() string {
 					return "Test"
+				},
+				MockLog: func(args ...interface{}) {
+					test.Equal(t, skippedMsg, args[0])
 				},
 			}
 			// This is for populating skippedTests.values and following the normal flow

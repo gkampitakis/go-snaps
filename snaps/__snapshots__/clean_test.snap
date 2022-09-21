@@ -1,44 +1,88 @@
 
-[TestSummary/should_print_updated_file - 1]
+[TestSummary/should_print_obsolete_file - 1]
 
-[48;5;159m[38;5;22mSnapshot Summary[0m
+[1;38;5;255mSnapshot Summary[0m
 
-[32;1m› 1 snapshot file removed.
-[0m[2m  • test0.snap
+[33;1m
+› 1 snapshot file obsolete
+[0m[2m  ↳  • test0.snap
+[0m[2m
+To remove it, re-run tests with `UPDATE_SNAPS=true go test ./...`
 [0m
-
----
-
-[TestSummary/should_print_updated_test - 1]
-
-[48;5;159m[38;5;22mSnapshot Summary[0m
-
-[32;1m› 1 snapshot test removed.
-[0m[2m  • TestMock/should_pass - 1
-[0m
-
 ---
 
 [TestSummary/should_print_obsolete_tests - 1]
 
-[48;5;159m[38;5;22mSnapshot Summary[0m
+[1;38;5;255mSnapshot Summary[0m
 
-[33;1m› 2 snapshot tests obsolete.
-[0m[2m  • TestMock/should_pass - 1
-[0m[2m  • TestMock/should_pass - 2
-[0m
-[2mYou can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'
+[33;1m
+› 2 snapshot tests obsolete
+[0m[2m  ↳  • TestMock/should_pass - 1
+[0m[2m  ↳  • TestMock/should_pass - 2
+[0m[2m
+To remove them, re-run tests with `UPDATE_SNAPS=true go test ./...`
 [0m
 ---
 
-[TestSummary/should_print_obsolete_files - 1]
+[TestSummary/should_print_updated_file - 1]
 
-[48;5;159m[38;5;22mSnapshot Summary[0m
+[1;38;5;255mSnapshot Summary[0m
 
-[33;1m› 2 snapshot files obsolete.
-[0m[2m  • test0.snap
-[0m[2m  • test1.snap
+[32;1m
+› 1 snapshot file removed
+[0m[2m  ↳  • test0.snap
 [0m
-[2mYou can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'
+---
+
+[TestSummary/should_print_updated_test - 1]
+
+[1;38;5;255mSnapshot Summary[0m
+
+[32;1m
+› 1 snapshot test removed
+[0m[2m  ↳  • TestMock/should_pass - 1
+[0m
+---
+
+[TestSummary/should_return_empty_string - 1]
+
+---
+
+[TestSummary/should_print_events - 1]
+
+[1;38;5;255mSnapshot Summary[0m
+
+[32;1m✓ 10 snapshots passed
+[0m[31;1m✕ 100 snapshots failed
+[0m[32;1m✎ 5 snapshots added
+[0m[32;1m✎ 3 snapshots updated
+[0m
+---
+
+[TestSummary/should_print_number_of_skipped_tests - 1]
+
+[1;38;5;255mSnapshot Summary[0m
+
+[33;1m⟳ 1 snapshot skipped
+[0m
+---
+
+[TestSummary/should_print_all_summary - 1]
+
+[1;38;5;255mSnapshot Summary[0m
+
+[32;1m✓ 10 snapshots passed
+[0m[31;1m✕ 100 snapshots failed
+[0m[32;1m✎ 5 snapshots added
+[0m[32;1m✎ 3 snapshots updated
+[0m[33;1m⟳ 5 snapshots skipped
+[0m[33;1m
+› 1 snapshot file obsolete
+[0m[2m  ↳  • test0.snap
+[0m[33;1m
+› 1 snapshot test obsolete
+[0m[2m  ↳  • TestMock/should_pass - 1
+[0m[2m
+To remove them, re-run tests with `UPDATE_SNAPS=true go test ./...`
 [0m
 ---

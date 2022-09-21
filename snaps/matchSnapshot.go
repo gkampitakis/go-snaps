@@ -34,40 +34,43 @@ func MatchSnapshot(t testingT, values ...interface{}) {
 
 	if errors.Is(err, errSnapNotFound) {
 		if isCI {
-			t.Error(err)
+			handleError(t, err)
 			return
 		}
 
 		err := addNewSnapshot(testID, snapshot, dir, snapPath)
 		if err != nil {
-			t.Error(err)
+			handleError(t, err)
 			return
 		}
 
-		t.Log(colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"))
+		t.Log(addedMsg)
+		testEvents.register(added)
 		return
 	}
 	if err != nil {
-		t.Error(err)
+		handleError(t, err)
 		return
 	}
 
 	diff := prettyDiff(unescapeEndChars(prevSnapshot), unescapeEndChars(snapshot))
 	if diff == "" {
+		testEvents.register(passed)
 		return
 	}
 
 	if !shouldUpdate {
-		t.Error(diff)
+		handleError(t, diff)
 		return
 	}
 
 	if err = updateSnapshot(testID, snapshot, snapPath); err != nil {
-		t.Error(err)
+		handleError(t, err)
 		return
 	}
 
-	t.Log(colors.Sprint(colors.Green, arrowPoint+"Snapshot updated.\n"))
+	t.Log(updatedMsg)
+	testEvents.register(updated)
 }
 
 func takeSnapshot(objects []interface{}) string {

@@ -284,24 +284,58 @@ func TestSummary(t *testing.T) {
 		snapshot string
 	}{
 		{
-			name:     "should print obsolete files",
-			snapshot: summary([]string{"test0.snap", "test1.snap"}, nil, false),
+			name:     "should print obsolete file",
+			snapshot: summary([]string{"test0.snap"}, nil, 0, nil, false),
 		},
 		{
 			name: "should print obsolete tests",
 			snapshot: summary(
 				nil,
 				[]string{"TestMock/should_pass - 1", "TestMock/should_pass - 2"},
+				0,
+				nil,
 				false,
 			),
 		},
 		{
 			name:     "should print updated file",
-			snapshot: summary([]string{"test0.snap"}, nil, true),
+			snapshot: summary([]string{"test0.snap"}, nil, 0, nil, true),
 		},
 		{
 			name:     "should print updated test",
-			snapshot: summary(nil, []string{"TestMock/should_pass - 1"}, true),
+			snapshot: summary(nil, []string{"TestMock/should_pass - 1"}, 0, nil, true),
+		},
+		{
+			name:     "should return empty string",
+			snapshot: summary(nil, nil, 0, nil, false),
+		},
+		{
+			name: "should print events",
+			snapshot: summary(nil, nil, 0, map[uint8]int{
+				added:   5,
+				erred:   100,
+				updated: 3,
+				passed:  10,
+			}, false),
+		},
+		{
+			name:     "should print number of skipped tests",
+			snapshot: summary(nil, nil, 1, nil, true),
+		},
+		{
+			name: "should print all summary",
+			snapshot: summary(
+				[]string{"test0.snap"},
+				[]string{"TestMock/should_pass - 1"},
+				5,
+				map[uint8]int{
+					added:   5,
+					erred:   100,
+					updated: 3,
+					passed:  10,
+				},
+				false,
+			),
 		},
 	} {
 		// capture v
