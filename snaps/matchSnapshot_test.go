@@ -39,6 +39,7 @@ func TestMatchSnapshot(t *testing.T) {
 		t.Cleanup(func() {
 			os.Remove(snapPath)
 			testsRegistry = newRegistry()
+			testEvents = newTestEvents()
 			isCI = ciinfo.IsCI
 		})
 
@@ -54,13 +55,7 @@ func TestMatchSnapshot(t *testing.T) {
 			MockError: func(args ...interface{}) {
 				test.NotCalled(t)
 			},
-			MockLog: func(args ...interface{}) {
-				test.Equal(
-					t,
-					colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"),
-					args[0],
-				)
-			},
+			MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0]) },
 		}
 
 		MatchSnapshot(mockT, 10, "hello world")
@@ -68,6 +63,7 @@ func TestMatchSnapshot(t *testing.T) {
 		snap, err := snapshotFileToString(snapPath)
 		test.Equal(t, nil, err)
 		test.Equal(t, "\n[mock-name - 1]\nint(10)\nhello world\n---\n", snap)
+		test.Equal(t, 1, testEvents.items[added])
 	})
 
 	t.Run("if it's running on ci should skip", func(t *testing.T) {
@@ -78,6 +74,7 @@ func TestMatchSnapshot(t *testing.T) {
 		t.Cleanup(func() {
 			os.Remove(snapPath)
 			testsRegistry = newRegistry()
+			testEvents = newTestEvents()
 			isCI = ciinfo.IsCI
 		})
 
@@ -102,19 +99,14 @@ func TestMatchSnapshot(t *testing.T) {
 
 		_, err = snapshotFileToString(snapPath)
 		test.Equal(t, errSnapNotFound, err)
+		test.Equal(t, 1, testEvents.items[erred])
 	})
 
 	t.Run("should return error when diff is found", func(t *testing.T) {
 		dir, _ := os.Getwd()
 		snapPath := filepath.Join(dir, "__snapshots__", "matchSnapshot_test.snap")
 		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) {
-				test.Equal(
-					t,
-					colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"),
-					received,
-				)
-			},
+			func(received interface{}) { test.Equal(t, addedMsg, received) },
 			func(received interface{}) { test.NotCalled(t) },
 		}
 		isCI = false
@@ -122,6 +114,7 @@ func TestMatchSnapshot(t *testing.T) {
 		t.Cleanup(func() {
 			os.Remove(snapPath)
 			testsRegistry = newRegistry()
+			testEvents = newTestEvents()
 			isCI = ciinfo.IsCI
 		})
 
@@ -152,12 +145,14 @@ func TestMatchSnapshot(t *testing.T) {
 
 		// First call for creating the snapshot
 		MatchSnapshot(mockT, 10, "hello world")
+		test.Equal(t, 1, testEvents.items[added])
 
 		// Resetting registry to emulate the same MatchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params
 		MatchSnapshot(mockT, 100, "bye world")
+		test.Equal(t, 1, testEvents.items[erred])
 	})
 
 	t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
@@ -167,25 +162,14 @@ func TestMatchSnapshot(t *testing.T) {
 		shouldUpdatePrev := shouldUpdate
 		shouldUpdate = true
 		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) {
-				test.Equal(
-					t,
-					colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"),
-					received,
-				)
-			},
-			func(received interface{}) {
-				test.Equal(
-					t,
-					colors.Sprint(colors.Green, arrowPoint+"Snapshot updated.\n"),
-					received,
-				)
-			},
+			func(received interface{}) { test.Equal(t, addedMsg, received) },
+			func(received interface{}) { test.Equal(t, updatedMsg, received) },
 		}
 
 		t.Cleanup(func() {
 			os.Remove(snapPath)
 			testsRegistry = newRegistry()
+			testEvents = newTestEvents()
 			isCI = ciinfo.IsCI
 			shouldUpdate = shouldUpdatePrev
 		})
@@ -212,6 +196,7 @@ func TestMatchSnapshot(t *testing.T) {
 
 		// First call for creating the snapshot
 		MatchSnapshot(mockT, 10, "hello world")
+		test.Equal(t, 1, testEvents.items[added])
 
 		// Resetting registry to emulate the same MatchSnapshot call
 		testsRegistry = newRegistry()
@@ -222,6 +207,7 @@ func TestMatchSnapshot(t *testing.T) {
 		snap, err := snapshotFileToString(snapPath)
 		test.Equal(t, nil, err)
 		test.Equal(t, "\n[mock-name - 1]\nint(100)\nbye world\n---\n", snap)
+		test.Equal(t, 1, testEvents.items[updated])
 	})
 
 	t.Run("should print warning if no params provided", func(t *testing.T) {
@@ -243,13 +229,7 @@ func TestMatchSnapshot(t *testing.T) {
 		dir, _ := os.Getwd()
 		snapPath := filepath.Join(dir, "__snapshots__", "matchSnapshot_test.snap")
 		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) {
-				test.Equal(
-					t,
-					colors.Sprint(colors.Green, arrowPoint+"New snapshot written.\n"),
-					received,
-				)
-			},
+			func(received interface{}) { test.Equal(t, addedMsg, received) },
 			func(received interface{}) { test.NotCalled(t) },
 		}
 		isCI = false

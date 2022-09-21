@@ -15,12 +15,15 @@ const (
 	BoldGreenBG = "\x1b[48;5;23m"
 	BoldRedBg   = "\x1b[48;5;127m"
 
+	BoldWhite = "\x1b[1;38;5;255m"
+
 	Dim       = "\x1b[2m"
 	Greendiff = "\x1b[38;5;22m"
 	Reddiff   = "\x1b[38;5;52m"
 	Yellow    = "\x1b[33;1m"
 	White     = "\x1b[38;5;255m"
 	Green     = "\x1b[32;1m"
+	Red       = "\x1b[31;1m"
 )
 
 var NOCOLOR = isNoColor()

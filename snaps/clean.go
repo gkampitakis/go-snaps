@@ -4,17 +4,47 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
 )
 
 // Matches [ Test... - number ] testIDs
-var testIDRegexp = regexp.MustCompile(`(?m)^\[(Test.* - \d+)\]$`)
+var (
+	testIDRegexp = regexp.MustCompile(`(?m)^\[(Test.* - \d+)\]$`)
+	testEvents   = newTestEvents()
+)
+
+const (
+	erred uint8 = iota
+	added
+	updated
+	passed
+)
+
+type events struct {
+	items map[uint8]int
+	sync.Mutex
+}
+
+func (e *events) register(event uint8) {
+	e.Lock()
+	defer e.Unlock()
+	e.items[event]++
+}
+
+func newTestEvents() *events {
+	return &events{
+		items: make(map[uint8]int),
+		Mutex: sync.Mutex{},
+	}
+}
 
 // Clean runs checks for identifying obsolete snapshots and prints a Test Summary.
 //
@@ -40,11 +70,14 @@ func Clean(t *testing.M) {
 		return
 	}
 
-	if len(obsoleteFiles) == 0 && len(obsoleteTests) == 0 {
-		return
+	if s := summary(
+		obsoleteFiles,
+		obsoleteTests,
+		len(skippedTests.values),
+		testEvents.items,
+		shouldUpdate); s != "" {
+		fmt.Print(s)
 	}
-
-	fmt.Print(summary(obsoleteFiles, obsoleteTests, shouldUpdate))
 }
 
 /*
@@ -178,7 +211,18 @@ func scanSnapshot(s *bufio.Scanner) string {
 	return snapshot.String()
 }
 
-func summary(obsoleteFiles, obsoleteTests []string, shouldUpdate bool) string {
+func summary(
+	obsoleteFiles, obsoleteTests []string, NOskippedTests int,
+	testEvents map[uint8]int,
+	shouldUpdate bool,
+) string {
+	if len(obsoleteFiles) == 0 &&
+		len(obsoleteTests) == 0 &&
+		len(testEvents) == 0 &&
+		NOskippedTests == 0 {
+		return ""
+	}
+
 	var s strings.Builder
 
 	objectSummaryList := func(objects []string, name string) {
@@ -196,17 +240,25 @@ func summary(obsoleteFiles, obsoleteTests []string, shouldUpdate bool) string {
 		colors.Fprint(
 			&s,
 			color,
-			fmt.Sprintf("%s%d snapshot %s %s.\n", arrowPoint, len(objects), subject, action),
+			fmt.Sprintf("\n%s%d snapshot %s %s\n", arrowSymbol, len(objects), subject, action),
 		)
 
 		for _, object := range objects {
-			colors.Fprint(&s, colors.Dim, fmt.Sprintf("  %s%s\n", bulletPoint, object))
+			colors.Fprint(
+				&s,
+				colors.Dim,
+				fmt.Sprintf("  %s %s%s\n", enterSymbol, bulletSymbol, object),
+			)
 		}
-
-		s.WriteString("\n")
 	}
 
-	fmt.Fprintf(&s, "\n%s\n\n", colors.Sprint(colors.GreenBG+colors.Greendiff, "Snapshot Summary"))
+	fmt.Fprintf(&s, "\n%s\n\n", colors.Sprint(colors.BoldWhite, "Snapshot Summary"))
+
+	printEvent(&s, colors.Green, successSymbol, "passed", testEvents[passed])
+	printEvent(&s, colors.Red, errorSymbol, "failed", testEvents[erred])
+	printEvent(&s, colors.Green, updateSymbol, "added", testEvents[added])
+	printEvent(&s, colors.Green, updateSymbol, "updated", testEvents[updated])
+	printEvent(&s, colors.Yellow, skipSymbol, "skipped", NOskippedTests)
 
 	if len(obsoleteFiles) > 0 {
 		objectSummaryList(obsoleteFiles, "file")
@@ -216,15 +268,36 @@ func summary(obsoleteFiles, obsoleteTests []string, shouldUpdate bool) string {
 		objectSummaryList(obsoleteTests, "test")
 	}
 
-	if !shouldUpdate {
+	if !shouldUpdate && len(obsoleteFiles)+len(obsoleteTests) > 0 {
+		it := "it"
+
+		if len(obsoleteFiles)+len(obsoleteTests) > 1 {
+			it = "them"
+		}
+
 		colors.Fprint(
 			&s,
 			colors.Dim,
-			"You can remove obsolete files and snapshots by running 'UPDATE_SNAPS=true go test ./...'\n",
+			fmt.Sprintf(
+				"\nTo remove %s, re-run tests with `UPDATE_SNAPS=true go test ./...`\n",
+				it,
+			),
 		)
 	}
 
 	return s.String()
+}
+
+func printEvent(w io.Writer, color, symbol, verb string, events int) {
+	if events == 0 {
+		return
+	}
+	subject := "snapshot"
+	if events > 1 {
+		subject += "s"
+	}
+
+	colors.Fprint(w, color, fmt.Sprintf("%s%v %s %s\n", symbol, events, subject, verb))
 }
 
 /*

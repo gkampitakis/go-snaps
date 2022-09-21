@@ -106,8 +106,8 @@ For more information around [NO_COLOR](https://no-color.org).
 ## Clean obsolete snapshots
 
 <p align="center">
-<img src="./images/summary-obsolete.png" alt="Summary Obsolete" width="400"/>
-<img src="./images/summary-removed.png" alt="Summary Removed" width="500"/>
+<img src="./images/summary-obsolete.png" alt="Summary Obsolete" width="700"/>
+<img src="./images/summary-removed.png" alt="Summary Removed" width="700"/>
 </p>
 
 `go-snaps` can identify obsolete snapshots.
