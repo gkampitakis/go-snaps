@@ -313,3 +313,41 @@ func TestSummary(t *testing.T) {
 		})
 	}
 }
+
+func TestTestIDRegex(t *testing.T) {
+	for _, tc := range []struct {
+		input   string
+		id      string
+		matched bool
+	}{
+		{
+			input:   "[Test/something - 10]",
+			id:      "Test/something - 10",
+			matched: true,
+		},
+		{
+			// must have [
+			input:   "Test/something - 10]",
+			matched: false,
+		},
+		{
+			// must have Test at the start
+			input:   "[Tes/something - 10]",
+			matched: false,
+		},
+		{
+			// must have dash between test name and number
+			input:   "[Test something 10]",
+			matched: false,
+		},
+	} {
+		t.Run(tc.input, func(t *testing.T) {
+			if tc.matched {
+				test.Equal(t, tc.id, testIDRegexp.FindStringSubmatch(tc.input)[1])
+				return
+			}
+
+			test.Equal(t, 0, len(testIDRegexp.FindStringSubmatch(tc.input)))
+		})
+	}
+}

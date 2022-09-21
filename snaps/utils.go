@@ -20,7 +20,7 @@ var (
 	_m              = sync.Mutex{}
 	isCI            = ciinfo.IsCI
 	// Matches [ Test... - number ] testIDs
-	testIDRegexp         = regexp.MustCompile(`(?m)^\[(Test.* - \d)\]$`)
+	testIDRegexp         = regexp.MustCompile(`(?m)^\[(Test.* - \d+)\]$`)
 	endCharRegexp        = regexp.MustCompile(`(?m)(^---$)`)
 	endCharEscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
 	shouldUpdate         = getEnvBool("UPDATE_SNAPS", false) && !isCI
