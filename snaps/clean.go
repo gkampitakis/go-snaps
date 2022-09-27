@@ -6,11 +6,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
 )
+
+// Matches [ Test... - number ] testIDs
+var testIDRegexp = regexp.MustCompile(`(?m)^\[(Test.* - \d+)\]$`)
 
 // Clean runs checks for identifying obsolete snapshots and prints a Test Summary.
 //

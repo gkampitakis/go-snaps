@@ -8,44 +8,6 @@ import (
 	"github.com/gkampitakis/go-snaps/snaps/internal/test"
 )
 
-type MockTestingT struct {
-	mockHelper  func()
-	mockName    func() string
-	mockSkip    func(args ...interface{})
-	mockSkipf   func(format string, args ...interface{})
-	mockSkipNow func()
-	mockError   func(args ...interface{})
-	mockLog     func(args ...interface{})
-}
-
-func (m MockTestingT) Error(args ...interface{}) {
-	m.mockError(args...)
-}
-
-func (m MockTestingT) Helper() {
-	m.mockHelper()
-}
-
-func (m MockTestingT) Skip(args ...interface{}) {
-	m.mockSkip(args...)
-}
-
-func (m MockTestingT) Skipf(format string, args ...interface{}) {
-	m.mockSkipf(format, args...)
-}
-
-func (m MockTestingT) SkipNow() {
-	m.mockSkipNow()
-}
-
-func (m MockTestingT) Name() string {
-	return m.mockName()
-}
-
-func (m MockTestingT) Log(args ...interface{}) {
-	m.mockLog(args...)
-}
-
 func TestSkip(t *testing.T) {
 	t.Run("should call Skip", func(t *testing.T) {
 		t.Cleanup(func() {
@@ -53,12 +15,12 @@ func TestSkip(t *testing.T) {
 		})
 		skipArgs := []interface{}{1, 2, 3, 4, 5}
 
-		mockT := MockTestingT{
-			mockSkip: func(args ...interface{}) {
+		mockT := test.MockTestingT{
+			MockSkip: func(args ...interface{}) {
 				test.Equal(t, skipArgs, args)
 			},
-			mockHelper: func() {},
-			mockName: func() string {
+			MockHelper: func() {},
+			MockName: func() string {
 				return "mock-test"
 			},
 		}
@@ -72,13 +34,13 @@ func TestSkip(t *testing.T) {
 			skippedTests = newSyncSlice()
 		})
 
-		mockT := MockTestingT{
-			mockSkipf: func(format string, args ...interface{}) {
+		mockT := test.MockTestingT{
+			MockSkipf: func(format string, args ...interface{}) {
 				test.Equal(t, "mock", format)
 				test.Equal(t, []interface{}{1, 2, 3, 4, 5}, args)
 			},
-			mockHelper: func() {},
-			mockName: func() string {
+			MockHelper: func() {},
+			MockName: func() string {
 				return "mock-test"
 			},
 		}
@@ -92,10 +54,10 @@ func TestSkip(t *testing.T) {
 			skippedTests = newSyncSlice()
 		})
 
-		mockT := MockTestingT{
-			mockSkipNow: func() {},
-			mockHelper:  func() {},
-			mockName: func() string {
+		mockT := test.MockTestingT{
+			MockSkipNow: func() {},
+			MockHelper:  func() {},
+			MockName: func() string {
 				return "mock-test"
 			},
 		}
@@ -109,10 +71,10 @@ func TestSkip(t *testing.T) {
 			skippedTests = newSyncSlice()
 		})
 
-		mockT := MockTestingT{
-			mockSkipNow: func() {},
-			mockHelper:  func() {},
-			mockName: func() string {
+		mockT := test.MockTestingT{
+			MockSkipNow: func() {},
+			MockHelper:  func() {},
+			MockName: func() string {
 				return "mock-test"
 			},
 		}
@@ -158,10 +120,10 @@ func TestSkip(t *testing.T) {
 				})
 
 				runOnly := ""
-				mockT := MockTestingT{
-					mockSkipNow: func() {},
-					mockHelper:  func() {},
-					mockName: func() string {
+				mockT := test.MockTestingT{
+					MockSkipNow: func() {},
+					MockHelper:  func() {},
+					MockName: func() string {
 						return "TestMock/Skip"
 					},
 				}
@@ -184,10 +146,10 @@ func TestSkip(t *testing.T) {
 			})
 
 			runOnly := ""
-			mockT := MockTestingT{
-				mockSkipNow: func() {},
-				mockHelper:  func() {},
-				mockName: func() string {
+			mockT := test.MockTestingT{
+				MockSkipNow: func() {},
+				MockHelper:  func() {},
+				MockName: func() string {
 					return "Test"
 				},
 			}

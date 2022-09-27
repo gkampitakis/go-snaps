@@ -2,8 +2,7 @@ package snaps
 
 import (
 	"errors"
-	"fmt"
-	"regexp"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -11,19 +10,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/gkampitakis/ciinfo"
-	"github.com/kr/pretty"
 )
 
 var (
-	testsRegistry   = newRegistry()
 	errSnapNotFound = errors.New("snapshot not found")
-	_m              = sync.Mutex{}
 	isCI            = ciinfo.IsCI
-	// Matches [ Test... - number ] testIDs
-	testIDRegexp         = regexp.MustCompile(`(?m)^\[(Test.* - \d+)\]$`)
-	endCharRegexp        = regexp.MustCompile(`(?m)(^---$)`)
-	endCharEscapedRegexp = regexp.MustCompile(`(?m)(^/-/-/-/$)`)
-	shouldUpdate         = getEnvBool("UPDATE_SNAPS", false) && !isCI
+	shouldUpdate    = getEnvBool("UPDATE_SNAPS", false) && !isCI
 )
 
 const (
@@ -49,36 +41,6 @@ type (
 func (s set) Has(i string) bool {
 	_, has := s[i]
 	return has
-}
-
-/*
-We track occurrence as in the same test we can run multiple snapshots
-This also helps with keeping track with obsolete snaps
-map[snap path]: map[testname]: <number of snapshots>
-*/
-type syncRegistry struct {
-	values map[string]map[string]int
-	sync.Mutex
-}
-
-// Returns the id of the test in the snapshot
-// Form [<test-name> - <occurrence>]
-func (s *syncRegistry) getTestID(tName, snapPath string) string {
-	occurrence := 1
-	s.Lock()
-
-	if _, exists := s.values[snapPath]; !exists {
-		s.values[snapPath] = make(map[string]int)
-	}
-
-	if c, exists := s.values[snapPath][tName]; exists {
-		occurrence = c + 1
-	}
-
-	s.values[snapPath][tName] = occurrence
-	s.Unlock()
-
-	return fmt.Sprintf("[%s - %d]", tName, occurrence)
 }
 
 type syncSlice struct {
@@ -161,11 +123,11 @@ func isTest(name, prefix string) bool {
 	return !unicode.IsLower(r)
 }
 
-func unescapeEndChars(input string) string {
-	return endCharEscapedRegexp.ReplaceAllLiteralString(input, "---")
-}
+func getEnvBool(variable string, fallback bool) bool {
+	e, exists := os.LookupEnv(variable)
+	if !exists {
+		return fallback
+	}
 
-func escapeEndChars(input string) string {
-	// This is for making sure a snapshot doesn't contain an ending char
-	return endCharRegexp.ReplaceAllLiteralString(input, "/-/-/-/")
+	return e == "true"
 }
