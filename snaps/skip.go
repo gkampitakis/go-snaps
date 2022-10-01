@@ -67,11 +67,6 @@ e.g
 Then every "child" test should be skipped
 */
 func testSkipped(testID, runOnly string) bool {
-	matched, _ := regexp.Match(runOnly, []byte(testID))
-
-	if runOnly != "" && !matched {
-		return true
-	}
 
 	// testID form: Test.*/runName - 1
 	testName := strings.Split(testID, " - ")[0]
@@ -81,8 +76,9 @@ func testSkipped(testID, runOnly string) bool {
 			return true
 		}
 	}
-
-	return false
+	
+	matched, _ := regexp.MatchString(runOnly, testID)
+	return !matched
 }
 
 func isFileSkipped(dir, filename, runOnly string) bool {
@@ -108,7 +104,8 @@ func isFileSkipped(dir, filename, runOnly string) bool {
 		}
 
 		// If the TestFunction is inside the file then it's not skipped
-		if funcDecl.Name.String() == runOnly {
+		matched, _ := regexp.MatchString(runOnly, funcDecl.Name.String())
+		if matched {
 			isSkipped = false
 		}
 	}
