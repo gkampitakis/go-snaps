@@ -15,11 +15,16 @@ type MockTestingT struct {
 	MockSkipf   func(format string, args ...interface{})
 	MockSkipNow func()
 	MockError   func(args ...interface{})
+	MockErrorf  func(format string, args ...interface{})
 	MockLog     func(args ...interface{})
 }
 
 func (m MockTestingT) Error(args ...interface{}) {
 	m.MockError(args...)
+}
+
+func (m MockTestingT) Errorf(format string, args ...interface{}) {
+	m.MockErrorf(format, args...)
 }
 
 func (m MockTestingT) Helper() {

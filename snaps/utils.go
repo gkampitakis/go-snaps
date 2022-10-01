@@ -40,6 +40,7 @@ type (
 		SkipNow()
 		Name() string
 		Error(args ...interface{})
+		Errorf(format string, args ...interface{})
 		Log(args ...interface{})
 	}
 )
