@@ -3,7 +3,6 @@ package snaps
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/gkampitakis/go-snaps/match"
 	"github.com/tidwall/gjson"
@@ -14,22 +13,24 @@ import (
 // they should accept
 func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 	t.Helper()
+	dir, snapPath := snapDirAndName()
+	testID := testsRegistry.getTestID(t.Name(), snapPath)
 
 	j, err := validateJSON(input)
 	if err != nil {
 		handleError(t, err)
 		return
 	}
-
-	if len(matchers) > 0 {
-		// here the matchers are validate
-		// and the json input has all the values replaced with placeholders
-		// and it's ready to be passed down for string diffing
-		j = validateMatchers(j, matchers...)
+	// here the matchers are validated
+	// and the json input has all the values replaced with placeholders
+	// and it's ready to be passed down for string diffing
+	replacedJSON, matcherError := validateMatchers(j, matchers...)
+	if matcherError != "" {
+		handleError(t, matcherError)
+		return
 	}
+	j = replacedJSON
 
-	dir, snapPath := snapDirAndName()
-	testID := testsRegistry.getTestID(t.Name(), snapPath)
 	snapshot := takeJSONSnapshot(j)
 	if err != nil {
 		handleError(t, err)
@@ -106,13 +107,13 @@ func takeJSONSnapshot(b []byte) string {
 	}))
 }
 
-func validateMatchers(b []byte, matchers ...match.JSONMatcher) []byte {
+func validateMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, string) {
 	for _, m := range matchers {
-		bb, errString := m(b)
-		if errString != "" {
-			log.Println(errString)
+		bb, diff := m(b)
+		if diff != "" {
+			return nil, diff
 		}
 		b = bb
 	}
-	return b
+	return b, ""
 }

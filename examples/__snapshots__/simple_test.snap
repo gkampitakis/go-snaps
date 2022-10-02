@@ -82,9 +82,23 @@ ignore regex patterns on names
  "age": 10,
  "nested": {
   "now": [
-   "<ignore value>"
+   "<Any value>"
   ]
  },
+ "user": "mock-user"
+}
+---
+
+[TestJSON/should_allow_specifying_custom_matcher - 1]
+{
+ "value": "blue"
+}
+---
+
+[TestJSON/should_allow_using_custom_matcher - 1]
+{
+ "age": "<less than 5 age>",
+ "email": "mock@email.com",
  "user": "mock-user"
 }
 ---

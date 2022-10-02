@@ -108,4 +108,27 @@ func TestJSON(t *testing.T) {
 		value := fmt.Sprintf(`{"user":"mock-user","age":10,"nested":{"now":["%s"]}}`, time.Now())
 		snaps.MatchJSON(t, value, match.Any("nested.now.0").JSONMatcher())
 	})
+
+	t.Run("should allow specifying custom matcher", func(t *testing.T) {
+		// hacky way
+		value := `{"user":"mock-user","age":10,"email":"mock@email.com"}`
+
+		var tmp match.JSONMatcher = func(s []byte) ([]byte, string) {
+			return []byte(`{"value":"blue"}`), ""
+		}
+
+		snaps.MatchJSON(t, value, tmp)
+	})
+
+	t.Run("should allow using custom matcher", func(t *testing.T) {
+		value := `{"user":"mock-user","age":2,"email":"mock@email.com"}`
+
+		snaps.MatchJSON(t, value, match.Custom("age", func(val interface{}) ([]byte, error) {
+			if valInt, ok := val.(float64); !ok || valInt >= 5 {
+				return nil, fmt.Errorf("expecting number less than 5")
+			}
+
+			return []byte("<less than 5 age>"), nil
+		}))
+	})
 }
