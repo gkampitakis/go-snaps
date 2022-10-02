@@ -2,9 +2,12 @@ package examples
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/gkampitakis/go-snaps/match"
 	"github.com/gkampitakis/go-snaps/snaps"
 )
 
@@ -93,4 +96,16 @@ func TestSimpleTable(t *testing.T) {
 			snaps.MatchSnapshot(t, scenario.input)
 		})
 	}
+}
+
+func TestJSON(t *testing.T) {
+	t.Run("should create a prettyJSON snap", func(t *testing.T) {
+		value := `{"user":"mock-user","age":10,"email":"mock@email.com"}`
+		snaps.MatchJSON(t, value)
+	})
+
+	t.Run("should ignore fields", func(t *testing.T) {
+		value := fmt.Sprintf(`{"user":"mock-user","age":10,"nested":{"now":["%s"]}}`, time.Now())
+		snaps.MatchJSON(t, value, match.Any("nested.now.0").JSONMatcher())
+	})
 }

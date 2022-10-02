@@ -3,15 +3,16 @@ package snaps
 import (
 	"errors"
 	"fmt"
+	"log"
 
+	"github.com/gkampitakis/go-snaps/match"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/pretty"
-	"github.com/tidwall/sjson"
 )
 
 // TODO: matchers need a type and some scoping
 // they should accept
-func MatchJSON(t testingT, input interface{}, matchers ...func([]byte) []byte) {
+func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 	t.Helper()
 
 	j, err := validateJSON(input)
@@ -94,7 +95,7 @@ func validateJSON(input interface{}) ([]byte, error) {
 
 		return j, nil
 	default:
-		return nil, errors.New(fmt.Sprintf("type: %T not supported\n", j))
+		return nil, fmt.Errorf("type: %T not supported", j)
 	}
 }
 
@@ -105,19 +106,13 @@ func takeJSONSnapshot(b []byte) string {
 	}))
 }
 
-func Ignore(pattern ...string) func([]byte) []byte {
-	return func(s []byte) []byte {
-		newJSON := s
-		for _, p := range pattern {
-			newJSON, _ = sjson.SetBytes(newJSON, p, "<ignore value>")
-		}
-		return newJSON
-	}
-}
-
-func validateMatchers(b []byte, matchers ...func([]byte) []byte) []byte {
+func validateMatchers(b []byte, matchers ...match.JSONMatcher) []byte {
 	for _, m := range matchers {
-		b = m(b)
+		bb, errString := m(b)
+		if errString != "" {
+			log.Println(errString)
+		}
+		b = bb
 	}
 	return b
 }

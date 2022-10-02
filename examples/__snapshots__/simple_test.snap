@@ -68,3 +68,23 @@ it's okay
 [TestSimple/.* - 1]
 ignore regex patterns on names
 ---
+
+[TestJSON/should_create_a_prettyJSON_snap - 1]
+{
+ "age": 10,
+ "email": "mock@email.com",
+ "user": "mock-user"
+}
+---
+
+[TestJSON/should_ignore_fields - 1]
+{
+ "age": 10,
+ "nested": {
+  "now": [
+   "<ignore value>"
+  ]
+ },
+ "user": "mock-user"
+}
+---
