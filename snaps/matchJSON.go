@@ -9,8 +9,6 @@ import (
 	"github.com/tidwall/pretty"
 )
 
-// TODO: matchers need a type and some scoping
-// they should accept
 func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 	t.Helper()
 	dir, snapPath := snapDirAndName()
@@ -21,15 +19,19 @@ func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 		handleError(t, err)
 		return
 	}
+
 	// here the matchers are validated
-	// and the json input has all the values replaced with placeholders
-	// and it's ready to be passed down for string diffing
-	replacedJSON, matcherError := validateMatchers(j, matchers...)
-	if matcherError != "" {
-		handleError(t, matcherError)
+	j, matchersErrors := validateMatchers(j, matchers...)
+	if len(matchersErrors) > 0 {
+		// NOTE: add better formatting
+		s := "\nMatchers failed\n"
+		for _, err := range matchersErrors {
+			s += fmt.Sprintf("- match.%s(\"%s\") x %s\n", err.Matcher, err.Path, err.Reason)
+		}
+
+		handleError(t, s)
 		return
 	}
-	j = replacedJSON
 
 	snapshot := takeJSONSnapshot(j)
 	if err != nil {
@@ -107,13 +109,17 @@ func takeJSONSnapshot(b []byte) string {
 	}))
 }
 
-func validateMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, string) {
+func validateMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.MatcherError) {
+	errors := []match.MatcherError{}
+
 	for _, m := range matchers {
-		bb, diff := m(b)
-		if diff != "" {
-			return nil, diff
+		json, err := m.JSON(b)
+		if err != nil {
+			errors = append(errors, err...)
+			continue
 		}
-		b = bb
+		b = json
 	}
-	return b, ""
+
+	return b, errors
 }
