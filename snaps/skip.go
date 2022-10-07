@@ -67,7 +67,6 @@ e.g
 Then every "child" test should be skipped
 */
 func testSkipped(testID, runOnly string) bool {
-
 	// testID form: Test.*/runName - 1
 	testName := strings.Split(testID, " - ")[0]
 
@@ -76,7 +75,7 @@ func testSkipped(testID, runOnly string) bool {
 			return true
 		}
 	}
-	
+
 	matched, _ := regexp.MatchString(runOnly, testID)
 	return !matched
 }

@@ -210,7 +210,11 @@ func TestSkip(t *testing.T) {
 		t.Run("should use regex match for runOnly", func(t *testing.T) {
 			dir, _ := os.Getwd()
 
-			test.Equal(t, false, isFileSkipped(dir+"/__snapshots__", "skip_test.snap", "	TestSkip.*"))
+			test.Equal(
+				t,
+				false,
+				isFileSkipped(dir+"/__snapshots__", "skip_test.snap", "TestSkip.*"),
+			)
 		})
 	})
 }
