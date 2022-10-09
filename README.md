@@ -1,7 +1,17 @@
 # Go Snaps
 
+[![Go](https://github.com/gkampitakis/go-snaps/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/gkampitakis/go-snaps/actions/workflows/go.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gkampitakis/go-snaps)](https://goreportcard.com/report/github.com/gkampitakis/go-snaps)
+[![Go Reference](https://pkg.go.dev/badge/github.com/gkampitakis/go-snaps.svg)](https://pkg.go.dev/github.com/gkampitakis/go-snaps)
+
 <p align="center">
 <b>Jest-like snapshot testing in Golang</b>
+</p>
+
+<br>
+
+<p align="center">
+<img src="./images/logo.svg" alt="Logo" width="400"/>
 </p>
 
 <br>
@@ -11,9 +21,6 @@
 <img src="./images/new_snapshot.png" alt="App Preview New" width="500"/>
 </p>
 
-<br>
-
-[![Go](https://github.com/gkampitakis/go-snaps/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/gkampitakis/go-snaps/actions/workflows/go.yml)
 
 ## Highlights
 
@@ -24,7 +31,7 @@
 - [Clean obsolete Snapshots](#clean-obsolete-snapshots)
 - [Snapshots Structure](#snapshots-structure)
 - [Acknowledgments](#acknowledgments)
-- [Run examples](#run-examples)
+- [Contributing](./contributing.md)
 - [Notes](#notes)
 
 ## Installation
@@ -178,12 +185,7 @@ This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) an
 
 - Jest is a full-fledged Javascript testing framework and has robust snapshoting features.
 - Cupaloy is a great and simple Golang snapshoting solution.
-
-## Run examples
-
-```bash
-go test ./examples/... -v -count=1
-```
+- The [logo](https://github.com/MariaLetta/free-gophers-pack) was made by [MariaLetta](https://github.com/MariaLetta).
 
 ## Notes
 
@@ -195,6 +197,10 @@ go test ./examples/... -v -count=1
 3. If your snapshot data contain the termination characters `---` at the start of a line
 and after a new line, `go-snaps` will "escape" them and save them as `/-/-/-/`. This 
 should not cause any diff issues (false-positives).
+
+4. Snapshots should be treated as code.
+
+5. `.snap` files are not meant to be edited manually, this might cause unexpected results.
 
 #### License 
 
