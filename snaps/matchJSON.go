@@ -1,6 +1,7 @@
 package snaps
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -98,7 +99,8 @@ func validateJSON(input interface{}) ([]byte, error) {
 
 		return j, nil
 	default:
-		return nil, fmt.Errorf("type: %T not supported", j)
+		// NOTE: can we add support for marshalling
+		return json.Marshal(input)
 	}
 }
 

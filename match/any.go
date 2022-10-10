@@ -55,10 +55,21 @@ func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 			continue
 		}
 
-		newJSON, _ = sjson.SetBytesOptions(newJSON, path, a.placeholder, &sjson.Options{
+		j, err := sjson.SetBytesOptions(newJSON, path, a.placeholder, &sjson.Options{
 			Optimistic:     true,
 			ReplaceInPlace: true,
 		})
+		if err != nil {
+			errors = append(errors, MatcherError{
+				Reason:  err.Error(),
+				Matcher: a.name,
+				Path:    path,
+			})
+
+			continue
+		}
+
+		newJSON = j
 	}
 
 	return newJSON, errors

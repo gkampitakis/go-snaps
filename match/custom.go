@@ -22,19 +22,21 @@ func Custom(path string, callback func(val interface{}) (interface{}, error)) *c
 	}
 }
 
+func (c *customMatcher) ErrOnMissingPath() *customMatcher {
+	c.errOnMissingPath = true
+	return c
+}
+
 func (c *customMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 	r := gjson.GetBytes(s, c.path)
-	if !r.Exists() {
-		if c.errOnMissingPath {
-			return s, []MatcherError{
-				{
-					Reason:  fmt.Sprintf("path %s does not exist", c.path),
-					Matcher: c.name,
-					Path:    c.path,
-				},
-			}
+	if !r.Exists() && c.errOnMissingPath {
+		return s, []MatcherError{
+			{
+				Reason:  fmt.Sprintf("path %s does not exist", c.path),
+				Matcher: c.name,
+				Path:    c.path,
+			},
 		}
-		return s, nil
 	}
 
 	value, err := c.callback(r.Value())
@@ -48,9 +50,18 @@ func (c *customMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 		}
 	}
 
-	s, _ = sjson.SetBytesOptions(s, c.path, value, &sjson.Options{
+	s, err = sjson.SetBytesOptions(s, c.path, value, &sjson.Options{
 		Optimistic:     true,
 		ReplaceInPlace: true,
 	})
+	if err != nil {
+		return s, []MatcherError{
+			{
+				Reason:  err.Error(),
+				Matcher: c.name,
+				Path:    c.path,
+			},
+		}
+	}
 	return s, nil
 }

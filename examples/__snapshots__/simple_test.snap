@@ -102,3 +102,17 @@ ignore regex patterns on names
  "user": "mock-user"
 }
 ---
+
+[TestJSON/struct_marshalling - 1]
+{
+ "email": "george@mail.com",
+ "keys": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "name": "george"
+}
+---

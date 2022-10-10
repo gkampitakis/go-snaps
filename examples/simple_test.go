@@ -134,4 +134,31 @@ func TestJSON(t *testing.T) {
 			return "<less than 5 age>", nil
 		}))
 	})
+
+	t.Run("struct marshalling", func(t *testing.T) {
+		type User struct {
+			Name  string `json:"name"`
+			Email string `json:"email"`
+			Keys  []int  `json:"keys"`
+		}
+
+		u := User{
+			Name:  "george",
+			Email: "george@mail.com",
+			Keys:  []int{1, 2, 3, 4, 5},
+		}
+
+		snaps.MatchJSON(t, u, match.Custom("keys", func(val interface{}) (interface{}, error) {
+			keys, ok := val.([]interface{})
+			if !ok {
+				return nil, fmt.Errorf("expected []interface{} but got %T", val)
+			}
+
+			if len(keys) > 5 {
+				return nil, fmt.Errorf("expected less than 5 keys")
+			}
+
+			return val, nil
+		}))
+	})
 }
