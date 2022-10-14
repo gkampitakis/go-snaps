@@ -1,6 +1,8 @@
 package match
 
 import (
+	"errors"
+
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -12,8 +14,15 @@ type anyMatcher struct {
 	name             string
 }
 
-// NOTE: order matters
-// TODO: add comments on public fns
+/*
+Any matcher acts as a placeholder for any value
+
+It replaces any targeted path with a placeholder string
+
+	Any("user.name")
+	// or with multiple paths
+	Any("user.name", "user.email")
+*/
 func Any(paths ...string) *anyMatcher {
 	return &anyMatcher{
 		paths:            paths,
@@ -23,31 +32,29 @@ func Any(paths ...string) *anyMatcher {
 	}
 }
 
+// Placeholder allows to define the placeholder string for Any matcher
 func (a *anyMatcher) Placeholder(p string) *anyMatcher {
 	a.placeholder = p
 	return a
 }
 
+// ErrOnMissingPath will make the fail in case a path accessed doesn't exist
 func (a *anyMatcher) ErrOnMissingPath() *anyMatcher {
 	a.errOnMissingPath = true
 	return a
 }
 
-// NOTE: we need to finalize the JSONMatcher return values
-// Finalize the any functionality
-// the matcher needs to be extensible. If not it's done
-
-// internal method
+// JSON is intended to be called internally on snaps.MatchJSON for applying Any matchers
 func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
-	var errors []MatcherError
+	var merrors []MatcherError
 
 	newJSON := s
 	for _, path := range a.paths {
 		r := gjson.GetBytes(newJSON, path)
 		if !r.Exists() {
 			if a.errOnMissingPath {
-				errors = append(errors, MatcherError{
-					Reason:  "path does not exist",
+				merrors = append(merrors, MatcherError{
+					Reason:  errors.New("path does not exist"),
 					Matcher: a.name,
 					Path:    path,
 				})
@@ -60,8 +67,8 @@ func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 			ReplaceInPlace: true,
 		})
 		if err != nil {
-			errors = append(errors, MatcherError{
-				Reason:  err.Error(),
+			merrors = append(merrors, MatcherError{
+				Reason:  err,
 				Matcher: a.name,
 				Path:    path,
 			})
@@ -72,5 +79,5 @@ func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 		newJSON = j
 	}
 
-	return newJSON, errors
+	return newJSON, merrors
 }

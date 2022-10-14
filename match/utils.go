@@ -5,7 +5,7 @@ type JSONMatcher interface {
 }
 
 type MatcherError struct {
-	Reason  string
+	Reason  error
 	Matcher string
 	Path    string
 }

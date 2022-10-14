@@ -14,6 +14,18 @@ type customMatcher struct {
 	callback         func(val interface{}) (interface{}, error)
 }
 
+/*
+Custom matcher provides a matcher where you can define your own validation and placeholder
+
+	match.Custom("user.age", func(val interface{})) (interface{}, error) {
+		age, ok := val.(float64)
+		if !ok {
+				return nil, fmt.Errorf("expected number but got %T", val)
+		}
+
+		return "some number>", nil
+	}
+*/
 func Custom(path string, callback func(val interface{}) (interface{}, error)) *customMatcher {
 	return &customMatcher{
 		path:     path,
@@ -22,17 +34,19 @@ func Custom(path string, callback func(val interface{}) (interface{}, error)) *c
 	}
 }
 
+// ErrOnMissingPath will make the fail in case a path accessed doesn't exist
 func (c *customMatcher) ErrOnMissingPath() *customMatcher {
 	c.errOnMissingPath = true
 	return c
 }
 
+// JSON is intended to be called internally on snaps.MatchJSON for applying Custom matcher
 func (c *customMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 	r := gjson.GetBytes(s, c.path)
 	if !r.Exists() && c.errOnMissingPath {
 		return s, []MatcherError{
 			{
-				Reason:  fmt.Sprintf("path %s does not exist", c.path),
+				Reason:  fmt.Errorf("path %s does not exist", c.path),
 				Matcher: c.name,
 				Path:    c.path,
 			},
@@ -43,7 +57,7 @@ func (c *customMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 	if err != nil {
 		return s, []MatcherError{
 			{
-				Reason:  err.Error(),
+				Reason:  err,
 				Matcher: c.name,
 				Path:    c.path,
 			},
@@ -57,7 +71,7 @@ func (c *customMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 	if err != nil {
 		return s, []MatcherError{
 			{
-				Reason:  err.Error(),
+				Reason:  err,
 				Matcher: c.name,
 				Path:    c.path,
 			},

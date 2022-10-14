@@ -10,12 +10,18 @@ import (
 	"unicode/utf8"
 
 	"github.com/gkampitakis/ciinfo"
+	"github.com/tidwall/pretty"
 )
 
 var (
 	errSnapNotFound = errors.New("snapshot not found")
+	errInvalidJSON  = errors.New("invalid json")
 	isCI            = ciinfo.IsCI
 	shouldUpdate    = getEnvBool("UPDATE_SNAPS", false) && !isCI
+	jsonOptions     = &pretty.Options{
+		SortKeys: true,
+		Indent:   " ",
+	}
 )
 
 const (

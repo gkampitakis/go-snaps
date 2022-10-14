@@ -10,6 +10,15 @@ import (
 	"github.com/tidwall/pretty"
 )
 
+/*
+MatchJSON verifies the input matches the most recent snap file.
+Input can be a valid json string or []byte or a struct that can marshalled to a json
+
+MatchJSON also supports passing matchers as a third argument. Those matchers can act either as
+validators or placeholders for data that might change on each invocation e.g. dates.
+
+	MatchJSON(`{"user":{"bday":"10/10/2010","name":"gkampitakis"}}`, match.Any("user.bday"))
+*/
 func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 	t.Helper()
 	dir, snapPath := snapDirAndName()
@@ -21,10 +30,8 @@ func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 		return
 	}
 
-	// here the matchers are validated
-	j, matchersErrors := validateMatchers(j, matchers...)
+	j, matchersErrors := applyMatchers(j, matchers...)
 	if len(matchersErrors) > 0 {
-		// NOTE: add better formatting
 		s := "\nMatchers failed\n"
 		for _, err := range matchersErrors {
 			s += fmt.Sprintf("- match.%s(\"%s\") x %s\n", err.Matcher, err.Path, err.Reason)
@@ -82,36 +89,30 @@ func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 	testEvents.register(updated)
 }
 
-// TODO: we can write our own validator here maybe
-// and put more meaningful errors
 func validateJSON(input interface{}) ([]byte, error) {
 	switch j := input.(type) {
 	case string:
 		if !gjson.Valid(j) {
-			return nil, errors.New("invalid json")
+			return nil, errInvalidJSON
 		}
 
 		return []byte(j), nil
 	case []byte:
 		if !gjson.ValidBytes(j) {
-			return nil, errors.New("invalid json")
+			return nil, errInvalidJSON
 		}
 
 		return j, nil
 	default:
-		// NOTE: can we add support for marshalling
 		return json.Marshal(input)
 	}
 }
 
 func takeJSONSnapshot(b []byte) string {
-	return string(pretty.PrettyOptions(b, &pretty.Options{
-		SortKeys: true,
-		Indent:   " ",
-	}))
+	return string(pretty.PrettyOptions(b, jsonOptions))
 }
 
-func validateMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.MatcherError) {
+func applyMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.MatcherError) {
 	errors := []match.MatcherError{}
 
 	for _, m := range matchers {
