@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/gkampitakis/ciinfo"
-	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
-	"github.com/gkampitakis/go-snaps/snaps/internal/test"
+	"github.com/gkampitakis/go-snaps/internal/colors"
+	"github.com/gkampitakis/go-snaps/internal/test"
 )
 
 const mockSnap = `

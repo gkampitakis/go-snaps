@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
+	"github.com/gkampitakis/go-snaps/internal/colors"
 )
 
 var (
