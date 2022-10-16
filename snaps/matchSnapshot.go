@@ -2,9 +2,9 @@ package snaps
 
 import (
 	"errors"
+	"github.com/gkampitakis/go-snaps/snaps/internal/formatter"
 
 	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
-	"github.com/kr/pretty"
 )
 
 // MatchSnapshot verifies the values match the most recent snap file
@@ -77,7 +77,7 @@ func takeSnapshot(objects []interface{}) string {
 	var snapshot string
 
 	for i := 0; i < len(objects); i++ {
-		snapshot += pretty.Sprint(objects[i]) + "\n"
+		snapshot += formatter.Sprint(objects[i]) + "\n"
 	}
 
 	return escapeEndChars(snapshot)
