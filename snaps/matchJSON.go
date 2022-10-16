@@ -116,9 +116,9 @@ func applyMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.Mat
 	errors := []match.MatcherError{}
 
 	for _, m := range matchers {
-		json, err := m.JSON(b)
-		if err != nil {
-			errors = append(errors, err...)
+		json, errs := m.JSON(b)
+		if len(errs) > 0 {
+			errors = append(errors, errs...)
 			continue
 		}
 		b = json

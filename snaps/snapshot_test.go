@@ -117,11 +117,11 @@ func TestAddNewSnapshot(t *testing.T) {
 	name := filepath.Join(dir, "mock-test.snap")
 	err := addNewSnapshot("[mock-id]", "my-snap\n", dir, name)
 
-	test.Equal(t, nil, err)
+	test.Nil(t, err)
 
 	snap, err := snapshotFileToString(name)
 
-	test.Equal(t, nil, err)
+	test.Nil(t, err)
 	test.Equal(t, "\n[mock-id]\nmy-snap\n---\n", snap)
 }
 
@@ -165,7 +165,7 @@ string hello world 1 3 2
 	err := updateSnapshot("[Test_3/TestSimple - 1]", newSnapshot, snapPath)
 	snap, _ := os.ReadFile(snapPath)
 
-	test.Equal(t, nil, err)
+	test.Nil(t, err)
 	test.Equal(t, updatedSnap, string(snap))
 }
 
@@ -176,9 +176,9 @@ func TestEscapeEndChars(t *testing.T) {
 		snapshot := takeSnapshot([]interface{}{"my-snap", "---"})
 		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
-		test.Equal(t, nil, err)
+		test.Nil(t, err)
 		snap, err := snapshotFileToString(name)
-		test.Equal(t, nil, err)
+		test.Nil(t, err)
 		test.Equal(t, "\n[mock-id]\nmy-snap\n/-/-/-/\n---\n", snap)
 	})
 
@@ -188,9 +188,9 @@ func TestEscapeEndChars(t *testing.T) {
 		snapshot := takeSnapshot([]interface{}{"my-snap---", "---"})
 		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
-		test.Equal(t, nil, err)
+		test.Nil(t, err)
 		snap, err := snapshotFileToString(name)
-		test.Equal(t, nil, err)
+		test.Nil(t, err)
 		test.Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", snap)
 	})
 }

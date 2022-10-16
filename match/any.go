@@ -9,7 +9,7 @@ import (
 
 type anyMatcher struct {
 	paths            []string
-	placeholder      string
+	placeholder      interface{}
 	errOnMissingPath bool
 	name             string
 }
@@ -25,35 +25,36 @@ It replaces any targeted path with a placeholder string
 */
 func Any(paths ...string) *anyMatcher {
 	return &anyMatcher{
-		paths:            paths,
+		errOnMissingPath: true,
 		placeholder:      "<Any value>",
-		errOnMissingPath: false,
+		paths:            paths,
 		name:             "Any",
 	}
 }
 
 // Placeholder allows to define the placeholder string for Any matcher
-func (a *anyMatcher) Placeholder(p string) *anyMatcher {
+func (a *anyMatcher) Placeholder(p interface{}) *anyMatcher {
 	a.placeholder = p
 	return a
 }
 
-// ErrOnMissingPath will make the fail in case a path accessed doesn't exist
-func (a *anyMatcher) ErrOnMissingPath() *anyMatcher {
-	a.errOnMissingPath = true
+// ErrOnMissingPath determines if Matcher will fail in case of trying to access a json path
+// that doesn't exist
+func (a *anyMatcher) ErrOnMissingPath(e bool) *anyMatcher {
+	a.errOnMissingPath = e
 	return a
 }
 
 // JSON is intended to be called internally on snaps.MatchJSON for applying Any matchers
 func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
-	var merrors []MatcherError
+	var errs []MatcherError
 
-	newJSON := s
+	json := s
 	for _, path := range a.paths {
-		r := gjson.GetBytes(newJSON, path)
+		r := gjson.GetBytes(json, path)
 		if !r.Exists() {
 			if a.errOnMissingPath {
-				merrors = append(merrors, MatcherError{
+				errs = append(errs, MatcherError{
 					Reason:  errors.New("path does not exist"),
 					Matcher: a.name,
 					Path:    path,
@@ -62,12 +63,12 @@ func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 			continue
 		}
 
-		j, err := sjson.SetBytesOptions(newJSON, path, a.placeholder, &sjson.Options{
+		j, err := sjson.SetBytesOptions(json, path, a.placeholder, &sjson.Options{
 			Optimistic:     true,
 			ReplaceInPlace: true,
 		})
 		if err != nil {
-			merrors = append(merrors, MatcherError{
+			errs = append(errs, MatcherError{
 				Reason:  err,
 				Matcher: a.name,
 				Path:    path,
@@ -76,8 +77,8 @@ func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 			continue
 		}
 
-		newJSON = j
+		json = j
 	}
 
-	return newJSON, merrors
+	return json, errs
 }

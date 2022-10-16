@@ -113,7 +113,7 @@ func TestSkip(t *testing.T) {
 			testID := "TestSkip/should_call_Skip - 1"
 
 			received := testSkipped(testID, runOnly)
-			test.Equal(t, true, received)
+			test.True(t, received)
 		})
 
 		t.Run("should return false if testID is part of 'runOnly'", func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestSkip(t *testing.T) {
 			testID := "TestMock/Test/should_be_not_skipped - 2"
 
 			received := testSkipped(testID, runOnly)
-			test.Equal(t, false, received)
+			test.False(t, received)
 		})
 
 		t.Run(
@@ -145,13 +145,13 @@ func TestSkip(t *testing.T) {
 				// This is for populating skippedTests.values and following the normal flow
 				SkipNow(mockT)
 
-				test.Equal(t, true, testSkipped("TestMock/Skip", runOnly))
+				test.True(t, testSkipped("TestMock/Skip", runOnly))
 				test.Equal(
 					t,
 					true,
 					testSkipped("TestMock/Skip/child_should_also_be_skipped", runOnly),
 				)
-				test.Equal(t, false, testSkipped("TestAnotherTest", runOnly))
+				test.False(t, testSkipped("TestAnotherTest", runOnly))
 			},
 		)
 
@@ -174,29 +174,28 @@ func TestSkip(t *testing.T) {
 			// This is for populating skippedTests.values and following the normal flow
 			SkipNow(mockT)
 
-			test.Equal(t, true, testSkipped("Test", runOnly))
-			test.Equal(t, true, testSkipped("Test/chid", runOnly))
-			test.Equal(t, false, testSkipped("TestMock", runOnly))
-			test.Equal(t, false, testSkipped("TestMock/child", runOnly))
+			test.True(t, testSkipped("Test", runOnly))
+			test.True(t, testSkipped("Test/chid", runOnly))
+			test.False(t, testSkipped("TestMock", runOnly))
+			test.False(t, testSkipped("TestMock/child", runOnly))
 		})
 
 		t.Run("should use regex match for runOnly", func(t *testing.T) {
-			test.Equal(t, false, testSkipped("MyTest - 1", "Test"))
-			test.Equal(t, true, testSkipped("MyTest - 1", "^Test"))
+			test.False(t, testSkipped("MyTest - 1", "Test"))
+			test.True(t, testSkipped("MyTest - 1", "^Test"))
 		})
 	})
 
 	t.Run("isFileSkipped", func(t *testing.T) {
 		t.Run("should return 'false'", func(t *testing.T) {
-			test.Equal(t, false, isFileSkipped("", "", ""))
+			test.False(t, isFileSkipped("", "", ""))
 		})
 
 		t.Run("should return 'true' if test is not included in the test file", func(t *testing.T) {
 			dir, _ := os.Getwd()
 
-			test.Equal(
+			test.True(
 				t,
-				true,
 				isFileSkipped(dir+"/__snapshots__", "skip_test.snap", "TestNonExistent"),
 			)
 		})
@@ -204,15 +203,14 @@ func TestSkip(t *testing.T) {
 		t.Run("should return 'false' if test is included in the test file", func(t *testing.T) {
 			dir, _ := os.Getwd()
 
-			test.Equal(t, false, isFileSkipped(dir+"/__snapshots__", "skip_test.snap", "TestSkip"))
+			test.False(t, isFileSkipped(dir+"/__snapshots__", "skip_test.snap", "TestSkip"))
 		})
 
 		t.Run("should use regex match for runOnly", func(t *testing.T) {
 			dir, _ := os.Getwd()
 
-			test.Equal(
+			test.False(
 				t,
-				false,
 				isFileSkipped(dir+"/__snapshots__", "skip_test.snap", "TestSkip.*"),
 			)
 		})
