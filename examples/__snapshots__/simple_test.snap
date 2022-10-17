@@ -68,3 +68,11 @@ it's okay
 [TestSimple/.* - 1]
 ignore regex patterns on names
 ---
+
+[TestSimpleTable/buffer#01 - 1]
+&bytes.Buffer{
+    buf:      {0x42, 0x75, 0x66, 0x66, 0x65, 0x72, 0x20, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67},
+    off:      0,
+    lastRead: 0,
+}
+---
