@@ -14,6 +14,8 @@ type customMatcher struct {
 	path             string
 }
 
+type CustomCallback func(val interface{}) (interface{}, error)
+
 /*
 Custom matcher provides a matcher where you can define your own validation and placeholder
 
@@ -34,7 +36,7 @@ Custom matcher provides a matcher where you can define your own validation and p
 	 map[string]interface{} // for JSON objects
 	 []interface{} // for JSON arrays
 */
-func Custom(path string, callback func(val interface{}) (interface{}, error)) *customMatcher {
+func Custom(path string, callback CustomCallback) *customMatcher {
 	return &customMatcher{
 		errOnMissingPath: true,
 		callback:         callback,

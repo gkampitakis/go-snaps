@@ -11,7 +11,9 @@ import (
 	"github.com/gkampitakis/go-snaps/internal/test"
 )
 
-const mockSnap = `
+const (
+	fileName = "matchSnapshot_test.snap"
+	mockSnap = `
 
 [Test_1/TestSimple - 1]
 int(1)
@@ -29,23 +31,37 @@ string hello world 1 3 2
 ---
 
 `
+)
+
+func setupSnapshot(t *testing.T, filename string, ci bool, update ...bool) string {
+	t.Helper()
+	dir, _ := os.Getwd()
+	snapPath := filepath.Join(dir, "__snapshots__", filename)
+	isCI = ci
+	shouldUpdatePrev := shouldUpdate
+	shouldUpdate = false
+	if len(update) > 0 {
+		shouldUpdate = update[0]
+	}
+
+	t.Cleanup(func() {
+		os.Remove(snapPath)
+		testsRegistry = newRegistry()
+		testEvents = newTestEvents()
+		isCI = ciinfo.IsCI
+		shouldUpdate = shouldUpdatePrev
+	})
+
+	_, err := os.Stat(snapPath)
+	// This is for checking we are starting with a clean state testing
+	test.True(t, errors.Is(err, os.ErrNotExist))
+
+	return snapPath
+}
 
 func TestMatchSnapshot(t *testing.T) {
 	t.Run("should create snapshot", func(t *testing.T) {
-		dir, _ := os.Getwd()
-		snapPath := filepath.Join(dir, "__snapshots__", "matchSnapshot_test.snap")
-		isCI = false
-
-		t.Cleanup(func() {
-			os.Remove(snapPath)
-			testsRegistry = newRegistry()
-			testEvents = newTestEvents()
-			isCI = ciinfo.IsCI
-		})
-
-		_, err := os.Stat(snapPath)
-
-		test.True(t, errors.Is(err, os.ErrNotExist))
+		snapPath := setupSnapshot(t, fileName, false)
 
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
@@ -67,20 +83,7 @@ func TestMatchSnapshot(t *testing.T) {
 	})
 
 	t.Run("if it's running on ci should skip", func(t *testing.T) {
-		dir, _ := os.Getwd()
-		snapPath := filepath.Join(dir, "__snapshots__", "matchSnapshot_test.snap")
-		isCI = true
-
-		t.Cleanup(func() {
-			os.Remove(snapPath)
-			testsRegistry = newRegistry()
-			testEvents = newTestEvents()
-			isCI = ciinfo.IsCI
-		})
-
-		_, err := os.Stat(snapPath)
-
-		test.True(t, errors.Is(err, os.ErrNotExist))
+		snapPath := setupSnapshot(t, fileName, true)
 
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
@@ -97,30 +100,17 @@ func TestMatchSnapshot(t *testing.T) {
 
 		MatchSnapshot(mockT, 10, "hello world")
 
-		_, err = snapshotFileToString(snapPath)
+		_, err := snapshotFileToString(snapPath)
 		test.Equal(t, errSnapNotFound, err)
 		test.Equal(t, 1, testEvents.items[erred])
 	})
 
 	t.Run("should return error when diff is found", func(t *testing.T) {
-		dir, _ := os.Getwd()
-		snapPath := filepath.Join(dir, "__snapshots__", "matchSnapshot_test.snap")
+		setupSnapshot(t, fileName, false)
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) { test.Equal(t, addedMsg, received) },
 			func(received interface{}) { test.NotCalled(t) },
 		}
-		isCI = false
-
-		t.Cleanup(func() {
-			os.Remove(snapPath)
-			testsRegistry = newRegistry()
-			testEvents = newTestEvents()
-			isCI = ciinfo.IsCI
-		})
-
-		_, err := os.Stat(snapPath)
-		// This is for checking we are starting with a clean state testing
-		test.True(t, errors.Is(err, os.ErrNotExist))
 
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
@@ -156,27 +146,11 @@ func TestMatchSnapshot(t *testing.T) {
 	})
 
 	t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
-		dir, _ := os.Getwd()
-		snapPath := filepath.Join(dir, "__snapshots__", "matchSnapshot_test.snap")
-		isCI = false
-		shouldUpdatePrev := shouldUpdate
-		shouldUpdate = true
+		snapPath := setupSnapshot(t, fileName, false, true)
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) { test.Equal(t, addedMsg, received) },
 			func(received interface{}) { test.Equal(t, updatedMsg, received) },
 		}
-
-		t.Cleanup(func() {
-			os.Remove(snapPath)
-			testsRegistry = newRegistry()
-			testEvents = newTestEvents()
-			isCI = ciinfo.IsCI
-			shouldUpdate = shouldUpdatePrev
-		})
-
-		_, err := os.Stat(snapPath)
-		// This is for checking we are starting with a clean state testing
-		test.True(t, errors.Is(err, os.ErrNotExist))
 
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
@@ -226,23 +200,11 @@ func TestMatchSnapshot(t *testing.T) {
 	})
 
 	t.Run("diff should not print the escaped characters", func(t *testing.T) {
-		dir, _ := os.Getwd()
-		snapPath := filepath.Join(dir, "__snapshots__", "matchSnapshot_test.snap")
+		setupSnapshot(t, fileName, false)
 		printerExpectedCalls := []func(received interface{}){
 			func(received interface{}) { test.Equal(t, addedMsg, received) },
 			func(received interface{}) { test.NotCalled(t) },
 		}
-		isCI = false
-
-		t.Cleanup(func() {
-			os.Remove(snapPath)
-			testsRegistry = newRegistry()
-			isCI = ciinfo.IsCI
-		})
-
-		_, err := os.Stat(snapPath)
-		// This is for checking we are starting with a clean state testing
-		test.True(t, errors.Is(err, os.ErrNotExist))
 
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
