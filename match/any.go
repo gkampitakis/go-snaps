@@ -2,6 +2,8 @@ package match
 
 import (
 	"errors"
+	"reflect"
+	"unsafe"
 
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -81,4 +83,29 @@ func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 	}
 
 	return json, errs
+}
+
+func (a anyMatcher) Struct(s interface{}) (interface{}, []MatcherError) {
+	rv := reflect.ValueOf(s).Elem()
+	if rv.Kind() != reflect.Struct {
+		return s, nil
+	}
+
+	for _, p := range a.paths {
+		parts := parsePath(p)
+		f := rv.FieldByName(parts[0])
+
+		if !f.IsValid() {
+			continue
+		}
+
+		if f.CanSet() && f.Kind() == reflect.Slice {
+
+			f.Set(f)
+		} else {
+			reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).
+				Elem().Set(reflect.ValueOf("test"))
+		}
+	}
+	return s, nil
 }

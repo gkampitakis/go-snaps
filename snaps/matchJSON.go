@@ -30,7 +30,7 @@ func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 		return
 	}
 
-	j, matchersErrors := applyMatchers(j, matchers...)
+	j, matchersErrors := applyJSONMatchers(j, matchers...)
 	if len(matchersErrors) > 0 {
 		s := "\nMatchers failed\n"
 		for _, err := range matchersErrors {
@@ -112,7 +112,7 @@ func takeJSONSnapshot(b []byte) string {
 	return string(pretty.PrettyOptions(b, jsonOptions))
 }
 
-func applyMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.MatcherError) {
+func applyJSONMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.MatcherError) {
 	errors := []match.MatcherError{}
 
 	for _, m := range matchers {
@@ -125,4 +125,24 @@ func applyMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.Mat
 	}
 
 	return b, errors
+}
+
+func MatchStruct(s interface{}, matchers ...match.StructMatcher) {
+	res, _ := applyStructMatchers(s, matchers...)
+	fmt.Printf("%#v", res)
+}
+
+func applyStructMatchers(s interface{}, matchers ...match.StructMatcher) (interface{}, []match.MatcherError) {
+	errors := []match.MatcherError{}
+
+	for _, m := range matchers {
+		ss, errs := m.Struct(s)
+		if len(errs) > 0 {
+			errors = append(errors, errs...)
+			continue
+		}
+		s = ss
+	}
+
+	return s, errors
 }
