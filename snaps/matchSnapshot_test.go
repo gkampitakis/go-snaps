@@ -54,7 +54,7 @@ func setupSnapshot(t *testing.T, file string, ci bool, update ...bool) string {
 
 	_, err := os.Stat(snapPath)
 	// This is for checking we are starting with a clean state testing
-	test.Equal(t, true, errors.Is(err, os.ErrNotExist))
+	test.True(t, errors.Is(err, os.ErrNotExist))
 
 	return snapPath
 }
@@ -77,7 +77,7 @@ func TestMatchSnapshot(t *testing.T) {
 		MatchSnapshot(mockT, 10, "hello world")
 
 		snap, err := snapshotFileToString(snapPath)
-		test.Equal(t, nil, err)
+		test.Nil(t, err)
 		test.Equal(t, "\n[mock-name - 1]\nint(10)\nhello world\n---\n", snap)
 		test.Equal(t, 1, testEvents.items[added])
 	})
@@ -179,7 +179,7 @@ func TestMatchSnapshot(t *testing.T) {
 		MatchSnapshot(mockT, 100, "bye world")
 
 		snap, err := snapshotFileToString(snapPath)
-		test.Equal(t, nil, err)
+		test.Nil(t, err)
 		test.Equal(t, "\n[mock-name - 1]\nint(100)\nbye world\n---\n", snap)
 		test.Equal(t, 1, testEvents.items[updated])
 	})

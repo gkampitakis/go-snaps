@@ -57,13 +57,13 @@ func TestStringUtils(t *testing.T) {
 	})
 
 	t.Run("isSingleLine", func(t *testing.T) {
-		test.Equal(t, true, isSingleline("hello world"))
-		test.Equal(t, true, isSingleline("hello world\n"))
-		test.Equal(t, false, isSingleline(`hello 
+		test.True(t, isSingleline("hello world"))
+		test.True(t, isSingleline("hello world\n"))
+		test.False(t, isSingleline(`hello 
 		 world
 		 `))
-		test.Equal(t, false, isSingleline("hello \n world\n"))
-		test.Equal(t, false, isSingleline("hello \n world"))
+		test.False(t, isSingleline("hello \n world\n"))
+		test.False(t, isSingleline("hello \n world"))
 	})
 }
 

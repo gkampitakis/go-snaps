@@ -16,7 +16,7 @@ func TestMain(t *testing.M) {
 	os.Exit(v)
 }
 
-func TestSimple(t *testing.T) {
+func TestMatchSnapshot(t *testing.T) {
 	t.Run("should make an int snapshot", func(t *testing.T) {
 		snaps.MatchSnapshot(t, 5)
 	})

@@ -1,0 +1,41 @@
+
+[TestMatchJSON/should_make_a_json_object_snapshot - 1]
+{
+ "mock-0": "value",
+ "mock-1": 2,
+ "mock-2": {
+  "Msg": "Hello World"
+ },
+ "mock-3": 10.4
+}
+---
+
+[TestMatchJSON/should_create_a_prettyJSON_snap - 1]
+{
+ "age": 10,
+ "email": "mock@email.com",
+ "user": "mock-user"
+}
+---
+
+[TestMatchJSON/should_create_a_prettyJSON_snap - 2]
+{
+ "age": 10,
+ "email": "mock@email.com",
+ "user": "mock-user"
+}
+---
+
+[TestMatchJSON/should_marshal_struct - 1]
+{
+ "email": "mock@email.com",
+ "keys": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "name": "mock-name"
+}
+---

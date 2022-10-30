@@ -94,3 +94,27 @@ func CreateTempFile(t *testing.T, data string) string {
 
 	return path
 }
+
+func True(t *testing.T, val bool) {
+	t.Helper()
+
+	if !val {
+		t.Error("expected true but got false")
+	}
+}
+
+func False(t *testing.T, val bool) {
+	t.Helper()
+
+	if val {
+		t.Error("expected false but got true")
+	}
+}
+
+func Nil(t *testing.T, val interface{}) {
+	v := reflect.ValueOf(val)
+
+	if val != nil && !v.IsNil() {
+		t.Errorf("expected nil but got %v", val)
+	}
+}

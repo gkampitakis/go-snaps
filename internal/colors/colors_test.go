@@ -11,8 +11,8 @@ import (
 func TestPrintColors(t *testing.T) {
 	t.Run("string utils", func(t *testing.T) {
 		t.Run("hasNewlineSuffix", func(t *testing.T) {
-			test.Equal(t, false, hasNewlineSuffix("hello \n world"))
-			test.Equal(t, true, hasNewlineSuffix("hello \n world\n"))
+			test.False(t, hasNewlineSuffix("hello \n world"))
+			test.True(t, hasNewlineSuffix("hello \n world\n"))
 		})
 
 		t.Run("trimSuffix", func(t *testing.T) {

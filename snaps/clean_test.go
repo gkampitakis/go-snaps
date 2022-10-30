@@ -178,7 +178,7 @@ func TestExamineSnaps(t *testing.T) {
 		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
 
 		test.Equal(t, []string{}, obsolete)
-		test.Equal(t, err, nil)
+		test.Nil(t, err)
 	})
 
 	t.Run("should report two obsolete snapshots and not change content", func(t *testing.T) {
@@ -199,7 +199,7 @@ func TestExamineSnaps(t *testing.T) {
 		content2 := getFileContent(t, used[1])
 
 		test.Equal(t, []string{"TestDir1_3/TestSimple - 2", "TestDir2_2/TestSimple - 1"}, obsolete)
-		test.Equal(t, err, nil)
+		test.Nil(t, err)
 
 		// Content of snaps is not changed
 		test.Equal(t, mockSnap1, content1)
@@ -251,7 +251,7 @@ string hello world 2 2 1
 		},
 			obsolete,
 		)
-		test.Equal(t, err, nil)
+		test.Nil(t, err)
 
 		// Content of snaps is not changed
 		test.Equal(t, expected1, content1)

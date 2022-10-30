@@ -62,7 +62,7 @@ func TestMatchJSON(t *testing.T) {
 				MatchJSON(mockT, tc.input)
 
 				snap, err := getPrevSnapshot("mock-name - 1", snapPath)
-				test.Equal(t, nil, err)
+				test.Nil(t, err)
 				test.Equal(t, expected, snap)
 				test.Equal(t, 1, testEvents.items[added])
 			})
@@ -170,7 +170,7 @@ func TestMatchJSON(t *testing.T) {
 		MatchJSON(mockT, "{\"value\":\"bye world\"}")
 
 		snap, err := snapshotFileToString(snapPath)
-		test.Equal(t, nil, err)
+		test.Nil(t, err)
 		test.Equal(t, "\n[mock-name - 1]\n{\n \"value\": \"bye world\"\n}\n---\n", snap)
 		test.Equal(t, 1, testEvents.items[updated])
 	})
