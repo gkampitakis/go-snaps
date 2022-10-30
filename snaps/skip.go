@@ -13,7 +13,7 @@ import (
 
 var (
 	skippedTests = newSyncSlice()
-	skippedMsg   = colors.Sprint(colors.Yellow, skipSymbol+"Snapshot skipped\n")
+	skippedMsg   = colors.Sprint(colors.Yellow, skipSymbol+"Snapshot skipped")
 )
 
 // Wrapper of testing.Skip

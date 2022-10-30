@@ -22,11 +22,16 @@
 </p>
 
 
+> matchJSON and matchers are still under development that means their API can change. Use with caution and please share feedback for improvements.
+
 ## Highlights
 
 - [Installation](#installation)
 - [MatchSnapshot](#matchsnapshot)
 - [MatchJSON](#matchjson)
+  - [Matchers](#matchers)
+      - [match.Any](#matchany)
+      - [match.Custom](#matchcustom)
 - [Update Snapshots](#update-snapshots)
   - [Clean obsolete Snapshots](#clean-obsolete-snapshots)
   - [Skipping Tests](#skipping-tests)
@@ -108,7 +113,78 @@ func TestJSON(t *testing.T) {
 }
 ```
 
-JSON will be saved in snapshot in pretty format for more readability.
+JSON will be saved in snapshot in pretty format for more readability and deterministic diffs.
+
+### Matchers
+
+`MatchJSON`'s third argument can accept a list of matchers. Matchers are functions that can act
+as property matchers and test values.
+
+You can pass a path of the property you want to match and test. 
+
+The path syntax is a series of keys separated by a dot. The dot and colon can be escaped with `\`.
+
+Currently `go-snaps` has two build in matchers
+
+- `match.Any`
+- `match.Custom`
+
+#### match.Any
+
+Any matcher acts as a placeholder for any value. It replaces any targeted path with a 
+placeholder string.
+
+```go
+Any("user.name")
+// or with multiple paths
+Any("user.name", "user.email")
+```
+
+Any matcher provides some methods for setting options
+
+```go
+match.Any("user.name").
+  Placeholder(value). // allows to define a different placeholder value from the default "<Any Value>"
+  ErrOnMissingPath(bool) // determines whether the matcher will err in case of a missing, default true
+```
+
+#### match.Custom
+
+Custom matcher allows you to bring your own validation and placeholder value
+
+```go
+match.Custom("user.age", func(val interface{}) (interface{}, error) {
+		age, ok := val.(float64)
+		if !ok {
+				return nil, fmt.Errorf("expected number but got %T", val)
+		}
+
+		return "some number", nil
+})
+```
+
+The callback parameter value for JSON can be on of these types:
+
+```go
+bool // for JSON booleans
+float64 // for JSON numbers
+string // for JSON string literals
+nil // for JSON null
+map[string]interface{} // for JSON objects
+[]interface{} // for JSON arrays
+```
+
+If Custom matcher returns an error the snapshot test will fail with that error.
+
+Custom matcher provides a method for setting an option
+
+```go
+match.Custom("path",myFunc).
+  Placeholder(value). // allows to define a different placeholder value from the default "<Any Value>"
+  ErrOnMissingPath(bool) // determines whether the matcher will err in case of a missing path, default true
+```
+
+You can see more [examples](./examples/matchJSON_test.go#L93).
 
 ## Update Snapshots
 
