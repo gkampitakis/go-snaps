@@ -25,10 +25,12 @@
 ## Highlights
 
 - [Installation](#installation)
-- [Usage](#usage)
+- [MatchSnapshot](#matchsnapshot)
+- [MatchJSON](#matchjson)
 - [Update Snapshots](#update-snapshots)
+  - [Clean obsolete Snapshots](#clean-obsolete-snapshots)
+  - [Skipping Tests](#skipping-tests)
 - [No Color](#no-color)
-- [Clean obsolete Snapshots](#clean-obsolete-snapshots)
 - [Snapshots Structure](#snapshots-structure)
 - [Acknowledgments](#acknowledgments)
 - [Contributing](./contributing.md)
@@ -60,7 +62,9 @@ func TestExample(t *testing.T) {
 }
 ```
 
-## Usage
+## MatchSnapshot
+
+`MatchSnapshot` can be used to capture any type of data structured or unstructured.
 
 You can pass multiple parameters to `MatchSnapshot` or call `MatchSnapshot` multiple
 times inside the same test. The difference is in the latter, it will
@@ -83,6 +87,29 @@ name is the test file name with extension `.snap`.
 So for example if your test is called `test_simple.go` when you run your tests, a snapshot file
 will be created at `./__snapshots__/test_simple.snaps`.
 
+
+## MatchJSON
+
+`MatchJSON` can be used to capture data that can represent a valid json.
+
+You can pass a valid json in form of `string` or `[]byte` or whatever value can be passed
+successfully on `json.Marshal`.
+
+```go
+func TestJSON(t *testing.T) {
+  type User struct {
+    Age int
+    Email string
+  }
+
+  snaps.MatchJSON(t, `{"user":"mock-user","age":10,"email":"mock@email.com"}`)
+  snaps.MatchJSON(t, []byte(`{"user":"mock-user","age":10,"email":"mock@email.com"}`))
+  snaps.MatchJSON(t, User{10, "mock-email"})
+}
+```
+
+JSON will be saved in snapshot in pretty format for more readability.
+
 ## Update Snapshots
 
 You can update your failing snapshots by setting `UPDATE_SNAPS` env variable to true.
@@ -99,18 +126,7 @@ For more information for `go test` flags you can run
 go help testflag
 ```
 
-## No Color
-
-`go-snaps` supports disabling color outputs by running your tests with the env variable
-`NO_COLOR` set to any value.
-
-```bash
-NO_COLOR=true go test ./...
-```
-
-For more information around [NO_COLOR](https://no-color.org).
-
-## Clean obsolete snapshots
+### Clean obsolete snapshots
 
 <p align="center">
 <img src="./images/summary-obsolete.png" alt="Summary Obsolete" width="700"/>
@@ -144,16 +160,26 @@ func TestMain(t *testing.M) {
 
 For more information around [TestMain](https://pkg.go.dev/testing#hdr-Main).
 
-#### Skipping Tests
+### Skipping Tests
 
 If you want to skip one test using `t.Skip`, `go-snaps` can't keep track
 if the test was skipped or if it was removed. For that reason `go-snaps` exposes 
-a light wrapper for `t.Skip`, `t.Skipf` and `t.SkipNow` which help `go-snaps` identify
-the skipped tests.
+a wrapper for `t.Skip`, `t.Skipf` and `t.SkipNow`, which keep tracks of skipped files.
 
 You can skip, or only run specific tests by using the `-run` flag. `go-snaps` 
-can "understand" which tests are being skipped and parse only the relevant tests
+can identify which tests are being skipped and parse only the relevant tests
 for obsolete snapshots.
+
+## No Color
+
+`go-snaps` supports disabling color outputs by running your tests with the env variable
+`NO_COLOR` set to any value.
+
+```bash
+NO_COLOR=true go test ./...
+```
+
+For more information around [NO_COLOR](https://no-color.org).
 
 ## Snapshots Structure
 
@@ -179,6 +205,8 @@ map[string]interface {}{
 ---
 ```
 
+> `*.snap` files are not meant to be edited manually, this might cause unexpected results.
+
 ## Acknowledgments
 
 This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) and [Cupaloy](https://github.com/bradleyjkemp/cupaloy) as inspiration.
@@ -198,10 +226,4 @@ This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) an
 and after a new line, `go-snaps` will "escape" them and save them as `/-/-/-/`. This 
 should not cause any diff issues (false-positives).
 
-4. Snapshots should be treated as code.
-
-5. `.snap` files are not meant to be edited manually, this might cause unexpected results.
-
-#### License 
-
-MIT
+4. Snapshots should be treated as code. The snapshot artifact should be committed alongside code changes, and reviewed as part of your code review process

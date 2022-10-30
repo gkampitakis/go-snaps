@@ -24,4 +24,4 @@ linters-settings:
 
 run:
   skip-files:
-    - snaps/internal/difflib/difflib.go
+    - internal/difflib/difflib.go

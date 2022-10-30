@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
+	"github.com/gkampitakis/go-snaps/internal/colors"
 )
 
 // Matches [ Test... - number ] testIDs
