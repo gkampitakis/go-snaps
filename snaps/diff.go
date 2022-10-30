@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/gkampitakis/go-diff/diffmatchpatch"
-	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
-	"github.com/gkampitakis/go-snaps/snaps/internal/difflib"
+	"github.com/gkampitakis/go-snaps/internal/colors"
+	"github.com/gkampitakis/go-snaps/internal/difflib"
 )
 
 const (

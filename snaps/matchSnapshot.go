@@ -3,7 +3,7 @@ package snaps
 import (
 	"errors"
 
-	"github.com/gkampitakis/go-snaps/snaps/internal/colors"
+	"github.com/gkampitakis/go-snaps/internal/colors"
 	"github.com/kr/pretty"
 )
 
@@ -31,7 +31,6 @@ func MatchSnapshot(t testingT, values ...interface{}) {
 	testID := testsRegistry.getTestID(t.Name(), snapPath)
 	snapshot := takeSnapshot(values)
 	prevSnapshot, err := getPrevSnapshot(testID, snapPath)
-
 	if errors.Is(err, errSnapNotFound) {
 		if isCI {
 			handleError(t, err)
