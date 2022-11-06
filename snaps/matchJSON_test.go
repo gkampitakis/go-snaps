@@ -1,9 +1,11 @@
 package snaps
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/test"
+	"github.com/gkampitakis/go-snaps/match"
 )
 
 const jsonFilename = "matchJSON_test.snap"
@@ -111,6 +113,71 @@ func TestMatchJSON(t *testing.T) {
 				MatchJSON(mockT, tc.input)
 			})
 		}
+	})
+
+	t.Run("matchers", func(t *testing.T) {
+		t.Run("should apply matchers in order", func(t *testing.T) {
+			setupSnapshot(t, jsonFilename, false)
+
+			mockT := test.MockTestingT{
+				MockHelper: func() {},
+				MockName: func() string {
+					return "mock-name"
+				},
+				MockError: func(args ...interface{}) {
+					test.NotCalled(t)
+				},
+				MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0]) },
+			}
+
+			c1 := func(val interface{}) (interface{}, error) {
+				return map[string]interface{}{"key2": nil}, nil
+			}
+			c2 := func(val interface{}) (interface{}, error) {
+				return map[string]interface{}{"key3": nil}, nil
+			}
+			c3 := func(val interface{}) (interface{}, error) {
+				return map[string]interface{}{"key4": nil}, nil
+			}
+
+			MatchJSON(
+				mockT,
+				`{"key1":""}`,
+				match.Custom("key1", c1),
+				match.Custom("key1.key2", c2),
+				match.Custom("key1.key2.key3", c3),
+			)
+		})
+
+		t.Run("should aggregate errors from matchers", func(t *testing.T) {
+			setupSnapshot(t, jsonFilename, false)
+
+			mockT := test.MockTestingT{
+				MockHelper: func() {},
+				MockName: func() string {
+					return "mock-name"
+				},
+				MockError: func(args ...interface{}) {
+					test.Equal(t,
+						"\x1b[31;1m\n✕ match.Custom(\"age\") - mock error"+
+							"\x1b[0m\x1b[31;1m\n✕ match.Any(\"missing.key.1\") - path does not exist"+
+							"\x1b[0m\x1b[31;1m\n✕ match.Any(\"missing.key.2\") - path does not exist\x1b[0m",
+						args[0],
+					)
+				},
+				MockLog: func(args ...interface{}) { test.NotCalled(t) },
+			}
+
+			c := func(val interface{}) (interface{}, error) {
+				return nil, errors.New("mock error")
+			}
+			MatchJSON(
+				mockT,
+				`{"age":10}`,
+				match.Custom("age", c),
+				match.Any("missing.key.1", "missing.key.2"),
+			)
+		})
 	})
 
 	t.Run("if it's running on ci should skip creating snapshot", func(t *testing.T) {

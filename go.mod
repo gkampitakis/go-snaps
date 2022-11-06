@@ -12,4 +12,5 @@ require (
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/tidwall/gjson v1.14.3
 	github.com/tidwall/pretty v1.2.0
+	github.com/tidwall/sjson v1.2.5
 )

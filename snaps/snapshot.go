@@ -17,8 +17,8 @@ var (
 )
 
 var (
-	addedMsg   = colors.Sprint(colors.Green, updateSymbol+"Snapshot added\n")
-	updatedMsg = colors.Sprint(colors.Green, updateSymbol+"Snapshot updated\n")
+	addedMsg   = colors.Sprint(colors.Green, updateSymbol+"Snapshot added")
+	updatedMsg = colors.Sprint(colors.Green, updateSymbol+"Snapshot updated")
 )
 
 func handleError(t testingT, err interface{}) {

@@ -21,6 +21,10 @@ linters-settings:
     line-length: 130
   gofumpt:
     extra-rules: true
+  revive:
+    rules:
+      - name: exported
+        disabled: true
 
 run:
   skip-files:

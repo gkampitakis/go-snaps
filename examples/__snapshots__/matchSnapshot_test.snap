@@ -39,30 +39,8 @@ another snapshot
         }
 ---
 
-[TestMatchSnapshotTable/string - 1]
-input
----
-
-[TestMatchSnapshotTable/integer - 1]
-int(10)
----
-
-[TestMatchSnapshotTable/map - 1]
-map[string]interface {}{
-    "test": func() {...},
-}
----
-
 [TestMatchSnapshot/nest/more/one_more_nested_test - 1]
 it's okay
----
-
-[TestMatchSnapshotTable/buffer - 1]
-&bytes.Buffer{
-    buf:      {0x42, 0x75, 0x66, 0x66, 0x65, 0x72, 0x20, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67},
-    off:      0,
-    lastRead: 0,
-}
 ---
 
 [TestMatchSnapshot/.* - 1]

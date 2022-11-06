@@ -39,3 +39,52 @@
  "name": "mock-name"
 }
 ---
+
+[TestMatchers/Custom_matcher/struct_marshalling - 1]
+{
+ "email": "mock-user@email.com",
+ "keys": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "name": "mock-user"
+}
+---
+
+[TestMatchers/JSON_string_validation - 1]
+{
+ "age": "<less than 5 age>",
+ "email": "mock@email.com",
+ "user": "mock-user"
+}
+---
+
+[TestMatchers/Any_matcher/should_ignore_fields - 1]
+{
+ "age": 10,
+ "nested": {
+  "now": [
+   "<Any value>"
+  ]
+ },
+ "user": "mock-user"
+}
+---
+
+[TestMatchers/my_matcher/should_allow_using_your_matcher - 1]
+{
+ "value": "blue"
+}
+---
+
+[TestMatchers/http_response - 1]
+{
+ "data": {
+  "createdAt": "<Any value>",
+  "message": "hello world"
+ }
+}
+---
