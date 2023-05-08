@@ -1,10 +1,8 @@
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
-github.com/gkampitakis/ciinfo v0.2.1 h1:LyUKWarjkDRPO6qnoNcj/+pA+Hc2oh4BBEg9Cwn0JeA=
-github.com/gkampitakis/ciinfo v0.2.1/go.mod h1:bVaOGziPqf8PoeYZxatq1HmCsJUmv191hLnFboYxd9Y=
-github.com/gkampitakis/ciinfo v0.2.2 h1:CjsrlahWwk65bIRfNz3sjEQ81GKWKC1c/48UB0ABpSU=
-github.com/gkampitakis/ciinfo v0.2.2/go.mod h1:bVaOGziPqf8PoeYZxatq1HmCsJUmv191hLnFboYxd9Y=
-github.com/gkampitakis/go-diff v1.3.0 h1:Szdbo5w73LSQ9sQ02h+NSSf2ZlW/E8naJCI1ZzQtWgE=
-github.com/gkampitakis/go-diff v1.3.0/go.mod h1:QUJDQRA0JkEX0d7tgDaBHzJv9IH6k6e91TByC+9/RFk=
+github.com/gkampitakis/ciinfo v0.2.4 h1:Ip1hf4K7ISRuVlDrheuhaeffg1VOhlyeFGaQ/vTxrtE=
+github.com/gkampitakis/ciinfo v0.2.4/go.mod h1:1NIwaOcFChN4fa/B0hEBdAb6npDlFL8Bwx4dfRLRqAo=
+github.com/gkampitakis/go-diff v1.3.2 h1:Qyn0J9XJSDTgnsgHRdz9Zp24RaJeKMUHg2+PDZZdC4M=
+github.com/gkampitakis/go-diff v1.3.2/go.mod h1:LLgOrpqleQe26cte8s36HTWcTmMEur6OPYerdAAS9tk=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
