@@ -15,7 +15,9 @@ import (
 var (
 	errSnapNotFound = errors.New("snapshot not found")
 	isCI            = ciinfo.IsCI
-	shouldUpdate    = getEnvBool("UPDATE_SNAPS", false) && !isCI
+	envVar          = os.Getenv("UPDATE_SNAPS")
+	shouldUpdate    = envVar == "true" && !isCI
+	shouldClean     = shouldUpdate || envVar == "clean" && !isCI
 )
 
 const (
@@ -129,11 +131,9 @@ func isTest(name, prefix string) bool {
 	return !unicode.IsLower(r)
 }
 
-func getEnvBool(variable string, fallback bool) bool {
-	e, exists := os.LookupEnv(variable)
-	if !exists {
-		return fallback
-	}
-
-	return e == "true"
+// shouldUpdateSingle returns if a single should be updated or not
+//
+// it depends on the general should update or if the given name on `UPDATE_SNAPS` matches the current test.
+func shouldUpdateSingle(tName string) bool {
+	return shouldUpdate || (!isCI && envVar != "" && strings.HasPrefix(tName, envVar))
 }

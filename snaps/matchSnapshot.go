@@ -58,7 +58,7 @@ func MatchSnapshot(t testingT, values ...interface{}) {
 		return
 	}
 
-	if !shouldUpdate {
+	if !shouldUpdateSingle(t.Name()) {
 		handleError(t, diff)
 		return
 	}

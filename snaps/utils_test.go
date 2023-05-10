@@ -45,32 +45,40 @@ func TestBaseCaller(t *testing.T) {
 	})
 }
 
-func TestEnv(t *testing.T) {
-	t.Run("should return true if env var is 'true'", func(t *testing.T) {
-		test.SetEnv(t, "MOCK_ENV", "true")
+func TestShouldUpdateSingle(t *testing.T) {
+	setup := func() {
+		shouldUpdate = false
+		isCI = false
+		envVar = ""
+	}
 
-		res := getEnvBool("MOCK_ENV", false)
+	t.Run("should be true if shouldUpdate", func(t *testing.T) {
+		setup()
 
-		if !res {
-			t.Error("getEnvBool should return true")
-		}
+		shouldUpdate = true
+		test.True(t, shouldUpdateSingle(""))
 	})
 
-	t.Run("should return false", func(t *testing.T) {
-		test.SetEnv(t, "MOCK_ENV", "")
+	t.Run("should be true if specific test provided from envVar", func(t *testing.T) {
+		setup()
+		envVar = "mock-test/"
+		shouldUpdate = false
 
-		res := getEnvBool("MOCK_ENV", true)
-
-		if res {
-			t.Error("getEnvBool should return false")
-		}
+		test.True(t, shouldUpdateSingle("mock-test/should_pass - 1"))
+		test.False(t, shouldUpdateSingle("mock-test-2/should_pass - 1"))
 	})
 
-	t.Run("should return fallback value for non existing env var", func(t *testing.T) {
-		res := getEnvBool("MISSING_ENV", true)
+	t.Run("should be false if running on CI", func(t *testing.T) {
+		setup()
+		envVar = "mock-test/"
+		isCI = true
 
-		if !res {
-			t.Error("getEnvBool should return false")
-		}
+		test.False(t, shouldUpdateSingle("mock-test/should_pass - 1"))
+	})
+
+	t.Run("should be false if not envVar provided", func(t *testing.T) {
+		setup()
+
+		test.False(t, shouldUpdateSingle("mock-test"))
 	})
 }

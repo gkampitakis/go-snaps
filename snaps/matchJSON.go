@@ -96,7 +96,7 @@ func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 		return
 	}
 
-	if !shouldUpdate {
+	if !shouldUpdateSingle(t.Name()) {
 		handleError(t, diff)
 		return
 	}
