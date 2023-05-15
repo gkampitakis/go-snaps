@@ -63,8 +63,8 @@ func Clean(t *testing.M) {
 	_ = t
 	runOnly := flag.Lookup("test.run").Value.String()
 
-	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldUpdate)
-	obsoleteTests, err := examineSnaps(testsRegistry.values, usedFiles, runOnly, shouldUpdate)
+	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldClean)
+	obsoleteTests, err := examineSnaps(testsRegistry.values, usedFiles, runOnly, shouldClean)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -75,7 +75,7 @@ func Clean(t *testing.M) {
 		obsoleteTests,
 		len(skippedTests.values),
 		testEvents.items,
-		shouldUpdate); s != "" {
+		shouldClean); s != "" {
 		fmt.Print(s)
 	}
 }
@@ -279,7 +279,7 @@ func summary(
 			&s,
 			colors.Dim,
 			fmt.Sprintf(
-				"\nTo remove %s, re-run tests with `UPDATE_SNAPS=true go test ./...`\n",
+				"\nTo remove %s, re-run tests with `UPDATE_SNAPS=clean go test ./...`\n",
 				it,
 			),
 		)

@@ -7,7 +7,7 @@
 › 1 snapshot file obsolete
 [0m[2m  ↳  • test0.snap
 [0m[2m
-To remove it, re-run tests with `UPDATE_SNAPS=true go test ./...`
+To remove it, re-run tests with `UPDATE_SNAPS=clean go test ./...`
 [0m
 ---
 
@@ -20,7 +20,7 @@ To remove it, re-run tests with `UPDATE_SNAPS=true go test ./...`
 [0m[2m  ↳  • TestMock/should_pass - 1
 [0m[2m  ↳  • TestMock/should_pass - 2
 [0m[2m
-To remove them, re-run tests with `UPDATE_SNAPS=true go test ./...`
+To remove them, re-run tests with `UPDATE_SNAPS=clean go test ./...`
 [0m
 ---
 
@@ -83,6 +83,6 @@ To remove them, re-run tests with `UPDATE_SNAPS=true go test ./...`
 › 1 snapshot test obsolete
 [0m[2m  ↳  • TestMock/should_pass - 1
 [0m[2m
-To remove them, re-run tests with `UPDATE_SNAPS=true go test ./...`
+To remove them, re-run tests with `UPDATE_SNAPS=clean go test ./...`
 [0m
 ---

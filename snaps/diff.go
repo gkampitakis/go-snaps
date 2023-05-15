@@ -193,6 +193,10 @@ func singlelineDiff(s *strings.Builder, expected, received string) (int, int) {
 }
 
 func prettyDiff(expected, received string) string {
+	if expected == received {
+		return ""
+	}
+
 	if shouldPrintHighlights(expected, received) {
 		var diff strings.Builder
 		if i, d := singlelineDiff(&diff, expected, received); i != -1 {
