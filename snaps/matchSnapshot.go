@@ -7,19 +7,45 @@ import (
 	"github.com/kr/pretty"
 )
 
-// MatchSnapshot verifies the values match the most recent snap file
-//
-// You can pass multiple values
-//
-//	MatchSnapshot(t, 10, "hello world")
-//
-// or call MatchSnapshot multiples times inside a test
-//
-//	MatchSnapshot(t, 10)
-//	MatchSnapshot(t, "hello world")
-//
-// The difference is the latter will create multiple entries.
+/*
+MatchSnapshot verifies the values match the most recent snap file
+You can pass multiple values
+
+	MatchSnapshot(t, 10, "hello world")
+
+or call MatchSnapshot multiples times inside a test
+
+	MatchSnapshot(t, 10)
+	MatchSnapshot(t, "hello world")
+
+The difference is the latter will create multiple entries.
+*/
+func (c *config) MatchSnapshot(t testingT, values ...interface{}) {
+	t.Helper()
+
+	matchSnapshot(c, t, values...)
+}
+
+/*
+MatchSnapshot verifies the values match the most recent snap file
+You can pass multiple values
+
+	MatchSnapshot(t, 10, "hello world")
+
+or call MatchSnapshot multiples times inside a test
+
+	MatchSnapshot(t, 10)
+	MatchSnapshot(t, "hello world")
+
+The difference is the latter will create multiple entries.
+*/
 func MatchSnapshot(t testingT, values ...interface{}) {
+	t.Helper()
+
+	matchSnapshot(&defaultConfig, t, values...)
+}
+
+func matchSnapshot(c *config, t testingT, values ...interface{}) {
 	t.Helper()
 
 	if len(values) == 0 {
@@ -27,7 +53,7 @@ func MatchSnapshot(t testingT, values ...interface{}) {
 		return
 	}
 
-	dir, snapPath := snapDirAndName()
+	dir, snapPath := snapDirAndName(c)
 	testID := testsRegistry.getTestID(t.Name(), snapPath)
 	snapshot := takeSnapshot(values)
 	prevSnapshot, err := getPrevSnapshot(testID, snapPath)

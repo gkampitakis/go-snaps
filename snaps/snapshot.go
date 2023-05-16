@@ -21,6 +21,44 @@ var (
 	updatedMsg = colors.Sprint(colors.Green, updateSymbol+"Snapshot updated")
 )
 
+type config struct {
+	filename string
+	snapsDir string
+}
+
+// Specify folder name where snapshots are stored
+//
+//	default: __snapshots__
+//
+// this doesn't change the file extension
+func Filename(name string) func(*config) {
+	return func(c *config) {
+		c.filename = name
+	}
+}
+
+// Specify folder name where snapshots are stored
+//
+//	default: __snapshots__
+func Dir(dir string) func(*config) {
+	return func(c *config) {
+		c.snapsDir = dir
+	}
+}
+
+// Create snaps with configuration
+//
+//	e.g WithConfig(Filename("my_test")).MatchSnapshot(t, "hello world")
+func WithConfig(args ...func(*config)) *config {
+	s := defaultConfig
+
+	for _, arg := range args {
+		arg(&s)
+	}
+
+	return &s
+}
+
 func handleError(t testingT, err interface{}) {
 	t.Helper()
 	t.Error(err)
@@ -136,14 +174,17 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 Returns the dir for snapshots [where the tests run + /snapsDirName]
 and the name [dir + /snapsDirName + /<test-name>.snapsExtName]
 */
-func snapDirAndName() (dir, name string) {
+func snapDirAndName(c *config) (string, string) {
 	callerPath := baseCaller(2)
 	base := filepath.Base(callerPath)
+	dir := filepath.Join(filepath.Dir(callerPath), c.snapsDir)
+	filename := c.filename
+	if filename == "" {
+		filename = strings.TrimSuffix(base, filepath.Ext(base))
+	}
+	name := filepath.Join(dir, filename+snapsExt)
 
-	dir = filepath.Join(filepath.Dir(callerPath), snapsDir)
-	name = filepath.Join(dir, strings.TrimSuffix(base, filepath.Ext(base))+snapsExt)
-
-	return
+	return dir, name
 }
 
 // Matches a specific testID

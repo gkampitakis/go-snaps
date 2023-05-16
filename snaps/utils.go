@@ -17,6 +17,9 @@ var (
 	envVar          = os.Getenv("UPDATE_SNAPS")
 	shouldUpdate    = envVar == "true" && !isCI
 	shouldClean     = shouldUpdate || envVar == "clean" && !isCI
+	defaultConfig   = config{
+		snapsDir: "__snapshots__",
+	}
 )
 
 const (
@@ -28,7 +31,6 @@ const (
 	skipSymbol    = "⟳ "
 	enterSymbol   = "↳ "
 
-	snapsDir = "__snapshots__"
 	snapsExt = ".snap"
 )
 

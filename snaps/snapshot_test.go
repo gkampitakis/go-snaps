@@ -134,7 +134,7 @@ func TestSnapPathAndFile(t *testing.T) {
 	func() {
 		// This is for emulating being called from a func so we can find the correct file
 		// of the caller
-		path, file = snapDirAndName()
+		path, file = snapDirAndName(&defaultConfig)
 	}()
 
 	test.Contains(t, path, filepath.FromSlash("/snaps/__snapshots__"))

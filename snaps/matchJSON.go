@@ -34,9 +34,36 @@ validators or placeholders for data that might change on each invocation e.g. da
 
 	MatchJSON(t, User{created: time.Now(), email: "mock-email"}, match.Any("created"))
 */
+func (c *config) MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
+	t.Helper()
+
+	matchJSON(c, t, input, matchers...)
+}
+
+/*
+MatchJSON verifies the input matches the most recent snap file.
+Input can be a valid json string or []byte or whatever value can be passed
+successfully on `json.Marshal`.
+
+	MatchJSON(t, `{"user":"mock-user","age":10,"email":"mock@email.com"}`)
+	MatchJSON(t, []byte(`{"user":"mock-user","age":10,"email":"mock@email.com"}`))
+	MatchJSON(t, User{10, "mock-email"})
+
+MatchJSON also supports passing matchers as a third argument. Those matchers can act either as
+validators or placeholders for data that might change on each invocation e.g. dates.
+
+	MatchJSON(t, User{created: time.Now(), email: "mock-email"}, match.Any("created"))
+*/
 func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 	t.Helper()
-	dir, snapPath := snapDirAndName()
+
+	matchJSON(&defaultConfig, t, input, matchers...)
+}
+
+func matchJSON(c *config, t testingT, input interface{}, matchers ...match.JSONMatcher) {
+	t.Helper()
+
+	dir, snapPath := snapDirAndName(c)
 	testID := testsRegistry.getTestID(t.Name(), snapPath)
 
 	j, err := validateJSON(input)
