@@ -87,29 +87,21 @@ func baseCaller(skip int) string {
 		}
 
 		funcName := f.Name()
-		if funcName == "testing.tRunner" {
+		if funcName == "testing.tRunner" ||
+			// handles godoc case
+			funcName == "reflect.Value.call" ||
+			// e.g. funcName golang.org/x/tools/go/packages/packagestest.TestAll.func1
+			strings.Contains(funcName, "packagestest") {
 			break
 		}
 
 		// special case handling test runners
-		// tested with testify/suite, packagestest and testcase
+		// tested with testify/suite, and testcase
 		segments := strings.Split(funcName, ".")
 		for _, segment := range segments {
-			if !isTest(segment, "Test") {
-				continue
+			if isTest(segment, "Test") {
+				return file
 			}
-
-			// packagestest is same as tRunner where we step one caller further
-			// so we need to return the prevFile in testcase and testify/suite we return the current file
-			// e.g. funcName golang.org/x/tools/go/packages/packagestest.TestAll.func1
-			if strings.Contains(funcName, "packagestest") {
-				// return only the Function Name
-				// e.g. "go-snaps-testing-suite/src/issues.(*ExampleTestSuite).TestExampleSnapshot"
-				// will return TestExampleSnapshot
-				return prevFile
-			}
-
-			return file
 		}
 	}
 
