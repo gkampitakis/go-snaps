@@ -40,6 +40,8 @@ func Filename(name string) func(*config) {
 // Specify folder name where snapshots are stored
 //
 //	default: __snapshots__
+//
+// Accepts absolute paths
 func Dir(dir string) func(*config) {
 	return func(c *config) {
 		c.snapsDir = dir
@@ -171,20 +173,31 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 }
 
 /*
-Returns the dir for snapshots [where the tests run + /snapsDirName]
-and the name [dir + /snapsDirName + /<test-name>.snapsExtName]
+Returns the dir for snapshots
+  - if no config provided returns the directory where tests are running
+  - if snapsDir is relative path just gets appended to directory where tests are running
+  - if snapsDir is absolute path then we are returning this path
+
+Returns the filename
+  - if no config provided we use the test file name with `.snap` extension
+  - if filename provided we return the filename with `.snap` extension
 */
 func snapDirAndName(c *config) (string, string) {
-	callerPath := baseCaller(2)
-	base := filepath.Base(callerPath)
-	dir := filepath.Join(filepath.Dir(callerPath), c.snapsDir)
+	//  skips current func, the wrapper match* and the exported Match* func
+	callerPath := baseCaller(3)
+
+	dir := c.snapsDir
+	if !filepath.IsAbs(dir) {
+		dir = filepath.Join(filepath.Dir(callerPath), c.snapsDir)
+	}
+
 	filename := c.filename
 	if filename == "" {
+		base := filepath.Base(callerPath)
 		filename = strings.TrimSuffix(base, filepath.Ext(base))
 	}
-	name := filepath.Join(dir, filename+snapsExt)
 
-	return dir, name
+	return dir, filepath.Join(dir, filename+snapsExt)
 }
 
 // Matches a specific testID

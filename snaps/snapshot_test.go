@@ -126,19 +126,66 @@ func TestAddNewSnapshot(t *testing.T) {
 }
 
 func TestSnapPathAndFile(t *testing.T) {
-	var (
-		path string
-		file string
-	)
+	t.Run("should return default path and file", func(t *testing.T) {
+		var (
+			dir  string
+			name string
+		)
 
-	func() {
-		// This is for emulating being called from a func so we can find the correct file
-		// of the caller
-		path, file = snapDirAndName(&defaultConfig)
-	}()
+		func() {
+			// This is for emulating being called from a func so we can find the correct file
+			// of the caller
+			func() {
+				dir, name = snapDirAndName(&defaultConfig)
+			}()
+		}()
 
-	test.Contains(t, path, filepath.FromSlash("/snaps/__snapshots__"))
-	test.Contains(t, file, filepath.FromSlash("/snaps/__snapshots__/snapshot_test.snap"))
+		test.Contains(t, dir, filepath.FromSlash("/snaps/__snapshots__"))
+		test.Contains(t, name, filepath.FromSlash("/snaps/__snapshots__/snapshot_test.snap"))
+	})
+
+	t.Run("should return path and file from config", func(t *testing.T) {
+		var (
+			dir  string
+			name string
+		)
+
+		func() {
+			// This is for emulating being called from a func so we can find the correct file
+			// of the caller
+			func() {
+				dir, name = snapDirAndName(&config{
+					filename: "my_file",
+					snapsDir: "my_snapshot_dir",
+				})
+			}()
+		}()
+
+		// returns the current file's path /snaps/*
+		test.Contains(t, dir, filepath.FromSlash("/snaps/my_snapshot_dir"))
+		test.Contains(t, name, filepath.FromSlash("/snaps/my_snapshot_dir/my_file.snap"))
+	})
+
+	t.Run("should return absolute path", func(t *testing.T) {
+		var (
+			dir  string
+			name string
+		)
+
+		func() {
+			// This is for emulating being called from a func so we can find the correct file
+			// of the caller
+			func() {
+				dir, name = snapDirAndName(&config{
+					filename: "my_file",
+					snapsDir: "/path_to/my_snapshot_dir",
+				})
+			}()
+		}()
+
+		test.Contains(t, dir, filepath.FromSlash("/path_to/my_snapshot_dir"))
+		test.Contains(t, name, filepath.FromSlash("/path_to/my_snapshot_dir/my_file.snap"))
+	})
 }
 
 func TestUpdateSnapshot(t *testing.T) {
