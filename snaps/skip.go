@@ -87,7 +87,6 @@ func isFileSkipped(dir, filename, runOnly string) bool {
 	}
 
 	testFilePath := path.Join(dir, "..", strings.TrimSuffix(filename, snapsExt)+".go")
-	isSkipped := true
 
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, testFilePath, nil, parser.ParseComments)
@@ -105,9 +104,9 @@ func isFileSkipped(dir, filename, runOnly string) bool {
 		// If the TestFunction is inside the file then it's not skipped
 		matched, _ := regexp.MatchString(runOnly, funcDecl.Name.String())
 		if matched {
-			isSkipped = false
+			return false
 		}
 	}
 
-	return isSkipped
+	return true
 }
