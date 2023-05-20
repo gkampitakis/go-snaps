@@ -104,7 +104,8 @@ func examineFiles(
 
 		for _, content := range dirContents {
 			// this is a sanity check shouldn't have dirs inside the snapshot dirs
-			if content.IsDir() {
+			// and only delete any `.snap` files
+			if content.IsDir() || filepath.Ext(content.Name()) != snapsExt {
 				continue
 			}
 

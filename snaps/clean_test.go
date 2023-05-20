@@ -86,6 +86,10 @@ func setupTempExamineFiles(t *testing.T) (map[string]map[string]int, string, str
 			name: filepath.FromSlash(dir2 + "/obsolete2.snap"),
 			data: []byte{},
 		},
+		{
+			name: filepath.FromSlash(dir2 + "/should_not_delete.txt"),
+			data: []byte{},
+		},
 	}
 
 	for _, file := range files {
