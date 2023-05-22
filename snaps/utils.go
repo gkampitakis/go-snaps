@@ -3,11 +3,10 @@ package snaps
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/gkampitakis/ciinfo"
 )
@@ -75,60 +74,29 @@ func baseCaller(skip int) string {
 	var (
 		pc             uintptr
 		file, prevFile string
+		ok             bool
 	)
 
 	for i := skip + 1; ; i++ {
 		prevFile = file
-		pc, file, _, _ = runtime.Caller(i)
+		pc, file, _, ok = runtime.Caller(i)
+		if !ok {
+			return prevFile
+		}
 
 		f := runtime.FuncForPC(pc)
 		if f == nil {
-			break
+			return prevFile
 		}
 
-		funcName := f.Name()
-		if funcName == "testing.tRunner" {
-			break
+		if f.Name() == "testing.tRunner" {
+			return prevFile
 		}
 
-		// special case handling test runners
-		// tested with testify/suite, packagestest and testcase
-		segments := strings.Split(funcName, ".")
-		for _, segment := range segments {
-			if !isTest(segment, "Test") {
-				continue
-			}
-
-			// packagestest is same as tRunner where we step one caller further
-			// so we need to return the prevFile in testcase and testify/suite we return the current file
-			// e.g. funcName golang.org/x/tools/go/packages/packagestest.TestAll.func1
-			if strings.Contains(funcName, "packagestest") {
-				// return only the Function Name
-				// e.g. "go-snaps-testing-suite/src/issues.(*ExampleTestSuite).TestExampleSnapshot"
-				// will return TestExampleSnapshot
-				return prevFile
-			}
-
+		if strings.HasSuffix(filepath.Base(file), "_test.go") {
 			return file
 		}
 	}
-
-	return prevFile
-}
-
-// Stolen from the `go test` tool
-//
-// isTest tells whether name looks like a test
-// It is a Test (say) if there is a character after Test that is not a lower-case letter
-func isTest(name, prefix string) bool {
-	if !strings.HasPrefix(name, prefix) {
-		return false
-	}
-	if len(name) == len(prefix) { // "Test" is ok
-		return true
-	}
-	r, _ := utf8.DecodeRuneInString(name[len(prefix):])
-	return !unicode.IsLower(r)
 }
 
 // shouldUpdateSingle returns if a single should be updated or not
