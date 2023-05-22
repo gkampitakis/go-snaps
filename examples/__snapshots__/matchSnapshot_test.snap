@@ -68,3 +68,7 @@ map[string]interface {}{
     lastRead: 0,
 }
 ---
+
+[TestMatchSnapshot/withConfig - 1]
+this should use the default config
+---
