@@ -3,6 +3,8 @@ package examples
 import (
 	"bytes"
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps"
@@ -60,6 +62,32 @@ func TestMatchSnapshot(t *testing.T) {
 
 	t.Run(".*", func(t *testing.T) {
 		snaps.MatchSnapshot(t, "ignore regex patterns on names")
+	})
+
+	t.Run("withConfig", func(t *testing.T) {
+		t.Run("should allow changing filename", func(t *testing.T) {
+			snaps.WithConfig(
+				snaps.Filename("custom_file"),
+			).MatchSnapshot(t, "snapshot data")
+		})
+
+		t.Run("should allow changing dir", func(t *testing.T) {
+			s := snaps.WithConfig(snaps.Dir("testdata"))
+			s.MatchSnapshot(t, "snapshot with different dir name")
+			s.MatchSnapshot(t, "another one", 1, 10)
+		})
+
+		t.Run("should allow absolute path", func(t *testing.T) {
+			_, b, _, _ := runtime.Caller(0)
+			basepath := filepath.Dir(b)
+
+			snaps.WithConfig(snaps.Dir(basepath+"/absolute_path")).
+				MatchSnapshot(t, "supporting absolute path")
+		})
+
+		s := snaps.WithConfig(snaps.Dir("special_data"), snaps.Filename("different_name"))
+		s.MatchSnapshot(t, "different data than the rest")
+		snaps.MatchSnapshot(t, "this should use the default config")
 	})
 }
 

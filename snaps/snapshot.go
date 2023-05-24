@@ -21,6 +21,46 @@ var (
 	updatedMsg = colors.Sprint(colors.Green, updateSymbol+"Snapshot updated")
 )
 
+type config struct {
+	filename string
+	snapsDir string
+}
+
+// Specify folder name where snapshots are stored
+//
+//	default: __snapshots__
+//
+// this doesn't change the file extension
+func Filename(name string) func(*config) {
+	return func(c *config) {
+		c.filename = name
+	}
+}
+
+// Specify folder name where snapshots are stored
+//
+//	default: __snapshots__
+//
+// Accepts absolute paths
+func Dir(dir string) func(*config) {
+	return func(c *config) {
+		c.snapsDir = dir
+	}
+}
+
+// Create snaps with configuration
+//
+//	e.g WithConfig(Filename("my_test")).MatchSnapshot(t, "hello world")
+func WithConfig(args ...func(*config)) *config {
+	s := defaultConfig
+
+	for _, arg := range args {
+		arg(&s)
+	}
+
+	return &s
+}
+
 func handleError(t testingT, err interface{}) {
 	t.Helper()
 	t.Error(err)
@@ -133,17 +173,31 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 }
 
 /*
-Returns the dir for snapshots [where the tests run + /snapsDirName]
-and the name [dir + /snapsDirName + /<test-name>.snapsExtName]
+Returns the dir for snapshots
+  - if no config provided returns the directory where tests are running
+  - if snapsDir is relative path just gets appended to directory where tests are running
+  - if snapsDir is absolute path then we are returning this path
+
+Returns the filename
+  - if no config provided we use the test file name with `.snap` extension
+  - if filename provided we return the filename with `.snap` extension
 */
-func snapDirAndName() (dir, name string) {
-	callerPath := baseCaller(2)
-	base := filepath.Base(callerPath)
+func snapDirAndName(c *config) (string, string) {
+	//  skips current func, the wrapper match* and the exported Match* func
+	callerPath := baseCaller(3)
 
-	dir = filepath.Join(filepath.Dir(callerPath), snapsDir)
-	name = filepath.Join(dir, strings.TrimSuffix(base, filepath.Ext(base))+snapsExt)
+	dir := c.snapsDir
+	if !filepath.IsAbs(dir) {
+		dir = filepath.Join(filepath.Dir(callerPath), c.snapsDir)
+	}
 
-	return
+	filename := c.filename
+	if filename == "" {
+		base := filepath.Base(callerPath)
+		filename = strings.TrimSuffix(base, filepath.Ext(base))
+	}
+
+	return dir, filepath.Join(dir, filename+snapsExt)
 }
 
 // Matches a specific testID

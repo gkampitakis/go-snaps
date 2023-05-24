@@ -1,0 +1,10 @@
+
+[TestMatchSnapshot/withConfig/should_allow_changing_dir - 1]
+snapshot with different dir name
+---
+
+[TestMatchSnapshot/withConfig/should_allow_changing_dir - 2]
+another one
+int(1)
+int(10)
+---

@@ -21,7 +21,6 @@
 <img src="./images/new_snapshot.png" alt="App Preview New" width="500"/>
 </p>
 
-
 > matchJSON and matchers are still under development that means their API can change. Use with caution and please share feedback for improvements.
 
 ## Highlights
@@ -30,8 +29,9 @@
 - [MatchSnapshot](#matchsnapshot)
 - [MatchJSON](#matchjson)
   - [Matchers](#matchers)
-      - [match.Any](#matchany)
-      - [match.Custom](#matchcustom)
+    - [match.Any](#matchany)
+    - [match.Custom](#matchcustom)
+- [Configuration](#configuration)
 - [Update Snapshots](#update-snapshots)
   - [Clean obsolete Snapshots](#clean-obsolete-snapshots)
   - [Skipping Tests](#skipping-tests)
@@ -92,7 +92,6 @@ name is the test file name with extension `.snap`.
 So for example if your test is called `test_simple.go` when you run your tests, a snapshot file
 will be created at `./__snapshots__/test_simple.snaps`.
 
-
 ## MatchJSON
 
 `MatchJSON` can be used to capture data that can represent a valid json.
@@ -120,7 +119,7 @@ JSON will be saved in snapshot in pretty format for more readability and determi
 `MatchJSON`'s third argument can accept a list of matchers. Matchers are functions that can act
 as property matchers and test values.
 
-You can pass a path of the property you want to match and test. 
+You can pass a path of the property you want to match and test.
 
 The path syntax is a series of keys separated by a dot. The dot and colon can be escaped with `\`.
 
@@ -131,7 +130,7 @@ Currently `go-snaps` has two build in matchers
 
 #### match.Any
 
-Any matcher acts as a placeholder for any value. It replaces any targeted path with a 
+Any matcher acts as a placeholder for any value. It replaces any targeted path with a
 placeholder string.
 
 ```go
@@ -186,6 +185,28 @@ match.Custom("path",myFunc).
 
 You can see more [examples](./examples/matchJSON_test.go#L93).
 
+## Configuration
+
+`go-snaps` allows passing configuration for overriding
+
+- the directory where snapshots are stored, _relative or absolute path_
+- the filename where snapshots are stored
+
+```go
+t.Run("snapshot tests", func(t *testing.T) {
+  snaps.WithConfig(snaps.Filename("my_custom_name"), snaps.Dir("my_dir")).MatchSnapshot(t, "Hello Word")
+
+  s := snaps.WithConfig(
+    snaps.Dir("my_dir"),
+    snaps.Filename("json_file"),
+  )
+
+  s.MatchJSON(t, `{"hello":"world"}`)
+})
+```
+
+You can see more on [examples](/examples/matchSnapshot_test.go#L67)
+
 ## Update Snapshots
 
 You can update your failing snapshots by setting `UPDATE_SNAPS` env variable to true.
@@ -198,6 +219,7 @@ If you don't want to update all failing snapshots, or you want to update one of
 them you can you use the `-run` flag to target the test/s you want.
 
 For more information for `go test` flags you can run
+
 ```go
 go help testflag
 ```
@@ -211,15 +233,15 @@ go help testflag
 
 `go-snaps` can identify obsolete snapshots.
 
-In order to enable this functionality you need to use the `TestMain(t*testing.M)` 
-and call `snaps.Clean(t)`. This will also print a **Snapshot Summary**. (if running tests 
+In order to enable this functionality you need to use the `TestMain(t*testing.M)`
+and call `snaps.Clean(t)`. This will also print a **Snapshot Summary**. (if running tests
 with verbose flag `-v`)
 
-If you want to remove the obsolete snap files and snapshots you can run 
+If you want to remove the obsolete snap files and snapshots you can run
 tests with `UPDATE_SNAPS=true` env variable.
 
-The reason for using `TestMain`, is because `go-snaps` needs to be sure that all tests 
-are finished so it can keep track which snapshots were not called. 
+The reason for using `TestMain`, is because `go-snaps` needs to be sure that all tests
+are finished so it can keep track which snapshots were not called.
 
 **Example:**
 
@@ -239,10 +261,10 @@ For more information around [TestMain](https://pkg.go.dev/testing#hdr-Main).
 ### Skipping Tests
 
 If you want to skip one test using `t.Skip`, `go-snaps` can't keep track
-if the test was skipped or if it was removed. For that reason `go-snaps` exposes 
+if the test was skipped or if it was removed. For that reason `go-snaps` exposes
 a wrapper for `t.Skip`, `t.Skipf` and `t.SkipNow`, which keep tracks of skipped files.
 
-You can skip, or only run specific tests by using the `-run` flag. `go-snaps` 
+You can skip, or only run specific tests by using the `-run` flag. `go-snaps`
 can identify which tests are being skipped and parse only the relevant tests
 for obsolete snapshots.
 
@@ -259,7 +281,7 @@ For more information around [NO_COLOR](https://no-color.org).
 
 ## Snapshots Structure
 
-Snapshots have the form 
+Snapshots have the form
 
 ```text
 [ TestName - Number ]
@@ -294,12 +316,12 @@ This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) an
 ## Notes
 
 1. ⚠️ When running a specific test file by specifying a path
-`go test ./my_test.go`, `go-snaps` can't track the path so it will mistakenly mark snapshots as obsolete.
+   `go test ./my_test.go`, `go-snaps` can't track the path so it will mistakenly mark snapshots as obsolete.
 
 2. The order in which tests are written might not be the same order that snapshots are saved in the file.
 
 3. If your snapshot data contain the termination characters `---` at the start of a line
-and after a new line, `go-snaps` will "escape" them and save them as `/-/-/-/`. This 
-should not cause any diff issues (false-positives).
+   and after a new line, `go-snaps` will "escape" them and save them as `/-/-/-/`. This
+   should not cause any diff issues (false-positives).
 
 4. Snapshots should be treated as code. The snapshot artifact should be committed alongside code changes, and reviewed as part of your code review process
