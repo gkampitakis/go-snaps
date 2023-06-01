@@ -178,4 +178,13 @@ func TestMatchers(t *testing.T) {
 
 		snaps.MatchJSON(t, body, match.Any("data.createdAt"))
 	})
+
+	t.Run("type matcher", func(t *testing.T) {
+		snaps.MatchJSON(t, `{"data":10}`, match.Type[float64]("data"))
+		snaps.MatchJSON(
+			t,
+			`{"metadata":{"timestamp":"1687108093142"}}`,
+			match.Type[map[string]interface{}]("metadata"),
+		)
+	})
 }
