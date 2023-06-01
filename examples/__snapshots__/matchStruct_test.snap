@@ -1,0 +1,12 @@
+
+[TestMatchStruct/should_create_a_simple_snapshot - 1]
+examples_test.User{
+    Name:     "george",
+    Age:      10,
+    internal: "metadatav2",
+    Nested:   struct { Metadata string; Date time.Time }{
+        Metadata: "some more data here",
+        Date:     time.Date(2023, time.May, 29, 22, 23, 19, 588925000, time.Local),
+    },
+}
+---

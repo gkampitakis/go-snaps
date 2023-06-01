@@ -1,8 +1,6 @@
 package match
 
 import (
-	"errors"
-
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -58,7 +56,7 @@ func (c *customMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 	if !r.Exists() {
 		if c.errOnMissingPath {
 			return nil, []MatcherError{{
-				Reason:  errors.New("path does not exist"),
+				Reason:  missingPath,
 				Matcher: c.name,
 				Path:    c.path,
 			}}
