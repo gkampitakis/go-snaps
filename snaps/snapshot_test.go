@@ -9,6 +9,16 @@ import (
 	"github.com/gkampitakis/go-snaps/internal/test"
 )
 
+func snapshotFile(t *testing.T, name string) string {
+	t.Helper()
+	f, err := os.ReadFile(name)
+	if err != nil {
+		t.Error(err)
+	}
+
+	return string(f)
+}
+
 func TestTestID(t *testing.T) {
 	t.Run("should increment id on each call [concurrent safe]", func(t *testing.T) {
 		wg := sync.WaitGroup{}
@@ -27,15 +37,6 @@ func TestTestID(t *testing.T) {
 
 		test.Equal(t, "[test - 6]", registry.getTestID("test", "/file"))
 		test.Equal(t, "[test-v2 - 1]", registry.getTestID("test-v2", "/file"))
-	})
-}
-
-func TestDynamicTestIDRegexp(t *testing.T) {
-	t.Run("should escape regular expressions from testID", func(t *testing.T) {
-		escapedTestIDRegexp := dynamicTestIDRegexp(`^\s+$-test`)
-		expectedRegexp := `(?m)(?:\^\\s\+\$-test[\s\S])(.*[\s\S]*?)(?:^---$)`
-
-		test.Equal(t, expectedRegexp, escapedTestIDRegexp.String())
 	})
 }
 
@@ -82,21 +83,18 @@ func TestGetPrevSnapshot(t *testing.T) {
 			testID:      "[my-test - 1]",
 			fileData:    "[my-test - 1]\nmysnapshot\n---\n",
 			snap:        "mysnapshot\n",
-			err:         nil,
 		},
 		{
 			description: "should ignore regex in testID and match correct snap",
 			testID:      "[.*]",
 			fileData:    "\n[my-test]\nwrong snap\n---\n\n[.*]\nmysnapshot\n---\n",
 			snap:        "mysnapshot\n",
-			err:         nil,
 		},
 		{
 			description: "should ignore end chars (---) inside snapshot",
 			testID:      "[mock-test 1]",
 			fileData:    "\n[mock-test 1]\nmysnapshot\n---moredata\n---\n",
 			snap:        "mysnapshot\n---moredata\n",
-			err:         nil,
 		},
 	} {
 		s := scenario
@@ -118,11 +116,7 @@ func TestAddNewSnapshot(t *testing.T) {
 	err := addNewSnapshot("[mock-id]", "my-snap\n", dir, name)
 
 	test.Nil(t, err)
-
-	snap, err := snapshotFileToString(name)
-
-	test.Nil(t, err)
-	test.Equal(t, "\n[mock-id]\nmy-snap\n---\n", snap)
+	test.Equal(t, "\n[mock-id]\nmy-snap\n---\n", snapshotFile(t, name))
 }
 
 func TestSnapPathAndFile(t *testing.T) {
@@ -220,24 +214,20 @@ func TestEscapeEndChars(t *testing.T) {
 	t.Run("should escape end chars inside data", func(t *testing.T) {
 		dir := filepath.Join(t.TempDir(), "__snapshots__")
 		name := filepath.Join(dir, "mock-test.snap")
-		snapshot := takeSnapshot([]interface{}{"my-snap", "---"})
+		snapshot := takeSnapshot([]interface{}{"my-snap", endSequence})
 		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
 		test.Nil(t, err)
-		snap, err := snapshotFileToString(name)
-		test.Nil(t, err)
-		test.Equal(t, "\n[mock-id]\nmy-snap\n/-/-/-/\n---\n", snap)
+		test.Equal(t, "\n[mock-id]\nmy-snap\n/-/-/-/\n---\n", snapshotFile(t, name))
 	})
 
 	t.Run("should not escape --- if not end chars", func(t *testing.T) {
 		dir := filepath.Join(t.TempDir(), "__snapshots__")
 		name := filepath.Join(dir, "mock-test.snap")
-		snapshot := takeSnapshot([]interface{}{"my-snap---", "---"})
+		snapshot := takeSnapshot([]interface{}{"my-snap---", endSequence})
 		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
 		test.Nil(t, err)
-		snap, err := snapshotFileToString(name)
-		test.Nil(t, err)
-		test.Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", snap)
+		test.Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", snapshotFile(t, name))
 	})
 }

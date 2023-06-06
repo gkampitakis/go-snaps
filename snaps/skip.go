@@ -96,7 +96,6 @@ func isFileSkipped(dir, filename, runOnly string) bool {
 
 	for _, decls := range file.Decls {
 		funcDecl, ok := decls.(*ast.FuncDecl)
-
 		if !ok {
 			continue
 		}

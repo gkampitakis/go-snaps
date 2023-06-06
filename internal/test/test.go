@@ -68,24 +68,6 @@ func NotCalled(t *testing.T) {
 	t.Errorf("function was not expected to be called")
 }
 
-// NOTE: this was added at 1.17
-func SetEnv(t *testing.T, key, value string) {
-	t.Helper()
-
-	prevVal, exists := os.LookupEnv(key)
-	os.Setenv(key, value)
-
-	if exists {
-		t.Cleanup(func() {
-			os.Setenv(key, prevVal)
-		})
-	} else {
-		t.Cleanup(func() {
-			os.Unsetenv(key)
-		})
-	}
-}
-
 func CreateTempFile(t *testing.T, data string) string {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "mock.file")
