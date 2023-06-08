@@ -144,10 +144,11 @@ func examineSnaps(
 	obsoleteTests := []string{}
 
 	for _, snapPath := range used {
-		f, err := os.Open(snapPath)
+		f, err := os.OpenFile(snapPath, os.O_RDWR, os.ModePerm)
 		if err != nil {
 			return nil, err
 		}
+		defer f.Close()
 
 		var updatedFile bytes.Buffer
 		if i, err := f.Stat(); err == nil {
@@ -191,12 +192,11 @@ func examineSnaps(
 			}
 		}
 
-		f.Close()
 		if !hasDiffs || !shouldUpdate {
 			continue
 		}
 
-		if err = os.WriteFile(snapPath, updatedFile.Bytes(), os.ModePerm); err != nil {
+		if err = overwriteFile(f, updatedFile.Bytes()); err != nil {
 			fmt.Println(err)
 		}
 	}

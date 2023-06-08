@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -107,12 +108,9 @@ func newRegistry() *syncRegistry {
 }
 
 func getPrevSnapshot(testID, snapPath string) (string, error) {
-	if _, err := os.Stat(snapPath); err != nil {
-		return "", errSnapNotFound
-	}
 	f, err := os.ReadFile(snapPath)
 	if err != nil {
-		return "", err
+		return "", errSnapNotFound
 	}
 
 	tid := []byte(testID)
@@ -159,7 +157,7 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 	// all snapshots
 	_m.Lock()
 	defer _m.Unlock()
-	f, err := os.Open(snapPath)
+	f, err := os.OpenFile(snapPath, os.O_RDWR, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -189,7 +187,14 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 		updatedSnapFile.WriteByte('\n')
 	}
 
-	return os.WriteFile(snapPath, updatedSnapFile.Bytes(), os.ModePerm)
+	return overwriteFile(f, updatedSnapFile.Bytes())
+}
+
+func overwriteFile(f *os.File, b []byte) error {
+	f.Truncate(0)
+	f.Seek(0, io.SeekStart)
+	_, err := f.Write(b)
+	return err
 }
 
 func removeSnapshot(s *bufio.Scanner) {
