@@ -2,6 +2,7 @@ package snaps
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -143,24 +144,29 @@ func examineSnaps(
 	obsoleteTests := []string{}
 
 	for _, snapPath := range used {
-		var updatedFile strings.Builder
-		hasDiffs := false
-
-		f, err := os.Open(snapPath)
+		f, err := os.OpenFile(snapPath, os.O_RDWR, os.ModePerm)
 		if err != nil {
 			return nil, err
 		}
+		defer f.Close()
+
+		var updatedFile bytes.Buffer
+		if i, err := f.Stat(); err == nil {
+			updatedFile.Grow(int(i.Size()))
+		}
+		var hasDiffs bool
 
 		registeredTests := occurrences(registry[snapPath])
 		s := bufio.NewScanner(f)
 
 		for s.Scan() {
+			b := s.Bytes()
 			// Check if line is a test id
-			match := testIDRegexp.FindStringSubmatch(s.Text())
+			match := testIDRegexp.FindSubmatch(b)
 			if len(match) <= 1 {
 				continue
 			}
-			testID := match[1]
+			testID := string(match[1])
 
 			if !registeredTests.Has(testID) && !testSkipped(testID, runOnly) {
 				obsoleteTests = append(obsoleteTests, testID)
@@ -171,45 +177,31 @@ func examineSnaps(
 				continue
 			}
 
-			fmt.Fprintf(&updatedFile, "\n[%s]\n%s---\n", testID, scanSnapshot(s))
+			updatedFile.WriteByte('\n')
+			updatedFile.Write(b)
+			updatedFile.WriteByte('\n')
+
+			for s.Scan() {
+				line := s.Bytes()
+				updatedFile.Write(line)
+				updatedFile.WriteByte('\n')
+
+				if bytes.Equal(line, endSequenceByteSlice) {
+					break
+				}
+			}
 		}
 
-		f.Close()
 		if !hasDiffs || !shouldUpdate {
 			continue
 		}
 
-		if err = stringToSnapshotFile(updatedFile.String(), snapPath); err != nil {
+		if err = overwriteFile(f, updatedFile.Bytes()); err != nil {
 			fmt.Println(err)
 		}
 	}
 
 	return obsoleteTests, nil
-}
-
-func removeSnapshot(s *bufio.Scanner) {
-	for s.Scan() {
-		// skip until ---
-		if s.Text() == "---" {
-			break
-		}
-	}
-}
-
-func scanSnapshot(s *bufio.Scanner) string {
-	var snapshot strings.Builder
-
-	for s.Scan() {
-		line := s.Text()
-		// reached end char
-		if s.Text() == "---" {
-			break
-		}
-
-		snapshot.WriteString(line + "\n")
-	}
-
-	return snapshot.String()
 }
 
 func summary(
@@ -322,7 +314,7 @@ e.g
 as it means there are 3 snapshots created inside TestAdd
 */
 func occurrences(tests map[string]int) set {
-	result := make(set)
+	result := make(set, len(tests))
 	for testID, counter := range tests {
 		if counter > 1 {
 			for i := 1; i <= counter; i++ {

@@ -31,7 +31,8 @@ const (
 	skipSymbol    = "⟳ "
 	enterSymbol   = "↳ "
 
-	snapsExt = ".snap"
+	snapsExt    = ".snap"
+	endSequence = "---"
 )
 
 type (

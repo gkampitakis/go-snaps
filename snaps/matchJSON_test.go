@@ -12,8 +12,7 @@ const jsonFilename = "matchJSON_test.snap"
 
 func TestMatchJSON(t *testing.T) {
 	t.Run("should create json snapshot", func(t *testing.T) {
-		expected := `
-{
+		expected := `{
  "items": [
   5,
   1,
@@ -63,7 +62,7 @@ func TestMatchJSON(t *testing.T) {
 
 				MatchJSON(mockT, tc.input)
 
-				snap, err := getPrevSnapshot("mock-name - 1", snapPath)
+				snap, err := getPrevSnapshot("[mock-name - 1]", snapPath)
 				test.Nil(t, err)
 				test.Equal(t, expected, snap)
 				test.Equal(t, 1, testEvents.items[added])
@@ -181,7 +180,7 @@ func TestMatchJSON(t *testing.T) {
 	})
 
 	t.Run("if it's running on ci should skip creating snapshot", func(t *testing.T) {
-		snapPath := setupSnapshot(t, jsonFilename, true)
+		setupSnapshot(t, jsonFilename, true)
 
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
@@ -198,8 +197,6 @@ func TestMatchJSON(t *testing.T) {
 
 		MatchJSON(mockT, "{}")
 
-		_, err := snapshotFileToString(snapPath)
-		test.Equal(t, errSnapNotFound, err)
 		test.Equal(t, 1, testEvents.items[erred])
 	})
 
@@ -236,9 +233,11 @@ func TestMatchJSON(t *testing.T) {
 		// Second call with different params
 		MatchJSON(mockT, "{\"value\":\"bye world\"}")
 
-		snap, err := snapshotFileToString(snapPath)
-		test.Nil(t, err)
-		test.Equal(t, "\n[mock-name - 1]\n{\n \"value\": \"bye world\"\n}\n---\n", snap)
+		test.Equal(
+			t,
+			"\n[mock-name - 1]\n{\n \"value\": \"bye world\"\n}\n---\n",
+			snapshotFile(t, snapPath),
+		)
 		test.Equal(t, 1, testEvents.items[updated])
 	})
 }

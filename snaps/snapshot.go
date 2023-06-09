@@ -1,10 +1,12 @@
 package snaps
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -12,8 +14,9 @@ import (
 )
 
 var (
-	testsRegistry = newRegistry()
-	_m            = sync.Mutex{}
+	testsRegistry        = newRegistry()
+	_m                   = sync.Mutex{}
+	endSequenceByteSlice = []byte(endSequence)
 )
 
 var (
@@ -105,36 +108,33 @@ func newRegistry() *syncRegistry {
 }
 
 func getPrevSnapshot(testID, snapPath string) (string, error) {
-	f, err := snapshotFileToString(snapPath)
+	f, err := os.ReadFile(snapPath)
 	if err != nil {
-		return "", err
-	}
-
-	match := dynamicTestIDRegexp(testID).FindStringSubmatch(f)
-
-	if len(match) < 2 {
 		return "", errSnapNotFound
 	}
 
-	// The second capture group contains the snapshot data
-	return match[1], nil
-}
+	tid := []byte(testID)
 
-func snapshotFileToString(name string) (string, error) {
-	if _, err := os.Stat(name); err != nil {
-		return "", errSnapNotFound
+	s := bufio.NewScanner(bytes.NewReader(f))
+	for s.Scan() {
+		l := s.Bytes()
+		if !bytes.Equal(l, tid) {
+			continue
+		}
+		var snapshot strings.Builder
+
+		for s.Scan() {
+			line := s.Bytes()
+
+			if bytes.Equal(line, endSequenceByteSlice) {
+				return snapshot.String(), nil
+			}
+			snapshot.Write(line)
+			snapshot.WriteByte('\n')
+		}
 	}
 
-	f, err := os.ReadFile(name)
-	if err != nil {
-		return "", err
-	}
-
-	return string(f), nil
-}
-
-func stringToSnapshotFile(snap, name string) error {
-	return os.WriteFile(name, []byte(snap), os.ModePerm)
+	return "", errSnapNotFound
 }
 
 func addNewSnapshot(testID, snapshot, dir, snapPath string) error {
@@ -149,11 +149,7 @@ func addNewSnapshot(testID, snapshot, dir, snapPath string) error {
 	defer f.Close()
 
 	_, err = fmt.Fprintf(f, "\n%s\n%s---\n", testID, snapshot)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func updateSnapshot(testID, snapshot, snapPath string) error {
@@ -161,15 +157,53 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 	// all snapshots
 	_m.Lock()
 	defer _m.Unlock()
-	f, err := snapshotFileToString(snapPath)
+	f, err := os.OpenFile(snapPath, os.O_RDWR, os.ModePerm)
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
-	updatedSnapFile := dynamicTestIDRegexp(testID).
-		ReplaceAllLiteralString(f, fmt.Sprintf("%s\n%s---", testID, snapshot))
+	tid := []byte(testID)
+	var updatedSnapFile bytes.Buffer
+	i, err := f.Stat()
+	if err == nil {
+		updatedSnapFile.Grow(int(i.Size()))
+	}
 
-	return stringToSnapshotFile(updatedSnapFile, snapPath)
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		b := s.Bytes()
+		updatedSnapFile.Write(b)
+		updatedSnapFile.WriteByte('\n')
+		if !bytes.Equal(b, tid) {
+			continue
+		}
+
+		removeSnapshot(s)
+
+		// add new snapshot
+		updatedSnapFile.WriteString(snapshot)
+		updatedSnapFile.Write(endSequenceByteSlice)
+		updatedSnapFile.WriteByte('\n')
+	}
+
+	return overwriteFile(f, updatedSnapFile.Bytes())
+}
+
+func overwriteFile(f *os.File, b []byte) error {
+	f.Truncate(0)
+	f.Seek(0, io.SeekStart)
+	_, err := f.Write(b)
+	return err
+}
+
+func removeSnapshot(s *bufio.Scanner) {
+	for s.Scan() {
+		// skip until ---
+		if bytes.Equal(s.Bytes(), endSequenceByteSlice) {
+			break
+		}
+	}
 }
 
 /*
@@ -200,17 +234,11 @@ func snapDirAndName(c *config) (string, string) {
 	return dir, filepath.Join(dir, filename+snapsExt)
 }
 
-// Matches a specific testID
-func dynamicTestIDRegexp(testID string) *regexp.Regexp {
-	// e.g (?m)(?:\[TestAdd\/Hello_World\/my-test - 1\][\s\S])(.*[\s\S]*?)(?:^---$)
-	return regexp.MustCompile(`(?m)(?:` + regexp.QuoteMeta(testID) + `[\s\S])(.*[\s\S]*?)(?:^---$)`)
-}
-
 func unescapeEndChars(s string) string {
 	ss := strings.Split(s, "\n")
 	for idx, s := range ss {
 		if s == "/-/-/-/" {
-			ss[idx] = "---"
+			ss[idx] = endSequence
 		}
 	}
 	return strings.Join(ss, "\n")
@@ -219,7 +247,7 @@ func unescapeEndChars(s string) string {
 func escapeEndChars(s string) string {
 	ss := strings.Split(s, "\n")
 	for idx, s := range ss {
-		if s == "---" {
+		if s == endSequence {
 			ss[idx] = "/-/-/-/"
 		}
 	}

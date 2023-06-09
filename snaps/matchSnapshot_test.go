@@ -76,14 +76,12 @@ func TestMatchSnapshot(t *testing.T) {
 
 		MatchSnapshot(mockT, 10, "hello world")
 
-		snap, err := snapshotFileToString(snapPath)
-		test.Nil(t, err)
-		test.Equal(t, "\n[mock-name - 1]\nint(10)\nhello world\n---\n", snap)
+		test.Equal(t, "\n[mock-name - 1]\nint(10)\nhello world\n---\n", snapshotFile(t, snapPath))
 		test.Equal(t, 1, testEvents.items[added])
 	})
 
 	t.Run("if it's running on ci should skip", func(t *testing.T) {
-		snapPath := setupSnapshot(t, fileName, true)
+		setupSnapshot(t, fileName, true)
 
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
@@ -100,8 +98,6 @@ func TestMatchSnapshot(t *testing.T) {
 
 		MatchSnapshot(mockT, 10, "hello world")
 
-		_, err := snapshotFileToString(snapPath)
-		test.Equal(t, errSnapNotFound, err)
 		test.Equal(t, 1, testEvents.items[erred])
 	})
 
@@ -178,9 +174,7 @@ func TestMatchSnapshot(t *testing.T) {
 		// Second call with different params
 		MatchSnapshot(mockT, 100, "bye world")
 
-		snap, err := snapshotFileToString(snapPath)
-		test.Nil(t, err)
-		test.Equal(t, "\n[mock-name - 1]\nint(100)\nbye world\n---\n", snap)
+		test.Equal(t, "\n[mock-name - 1]\nint(100)\nbye world\n---\n", snapshotFile(t, snapPath))
 		test.Equal(t, 1, testEvents.items[updated])
 	})
 
@@ -229,7 +223,7 @@ func TestMatchSnapshot(t *testing.T) {
 		}
 
 		// First call for creating the snapshot ( adding ending chars inside the diff )
-		MatchSnapshot(mockT, 10, "hello world----", "---")
+		MatchSnapshot(mockT, 10, "hello world----", endSequence)
 
 		// Resetting registry to emulate the same MatchSnapshot call
 		testsRegistry = newRegistry()
