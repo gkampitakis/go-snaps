@@ -30,6 +30,7 @@ const (
 	updateSymbol  = "✎ "
 	skipSymbol    = "⟳ "
 	enterSymbol   = "↳ "
+	newLineSymbol = "↵"
 
 	snapsExt    = ".snap"
 	endSequence = "---"
