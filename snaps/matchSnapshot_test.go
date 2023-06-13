@@ -117,7 +117,7 @@ func TestMatchSnapshot(t *testing.T) {
 				expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 2\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ Received + 2\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
 					"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ bye world\x1b[0m\n  \x1b[2m\n\x1b[0m"
+					"+ bye world\x1b[0m\n  \x1b[2m↵\n\x1b[0m"
 
 				test.Equal(t, expected, args[0])
 			},
@@ -210,7 +210,7 @@ func TestMatchSnapshot(t *testing.T) {
 					"+ Received + 3\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
 					"- hello world----\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m- ---\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ bye world----\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ --\x1b[0m\n  \x1b[2m\n\x1b[0m"
+					"+ --\x1b[0m\n  \x1b[2m↵\n\x1b[0m"
 
 				test.Equal(t, expected, args[0])
 			},

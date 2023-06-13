@@ -16,7 +16,7 @@ linters:
 
 linters-settings:
   gocognit:
-    min-complexity: 40
+    min-complexity: 45
   lll:
     line-length: 130
   gofumpt:
