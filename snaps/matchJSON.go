@@ -63,8 +63,8 @@ func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 func matchJSON(c *config, t testingT, input interface{}, matchers ...match.JSONMatcher) {
 	t.Helper()
 
-	dir, snapPath := snapDirAndName(c)
-	testID := testsRegistry.getTestID(t.Name(), snapPath)
+	dir, snapPath, line := snapDirAndName(c)
+	testID := testsRegistry.getTestID(t.Name(), snapPath, line)
 
 	j, err := validateJSON(input)
 	if err != nil {

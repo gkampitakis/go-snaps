@@ -90,7 +90,7 @@ skipped. (We do that by checking if the mod is imported and there is a call to
 and we mark it as one.
 */
 func examineFiles(
-	registry map[string]map[string]int,
+	registry map[string]map[string]*testRuns,
 	runOnly string,
 	shouldUpdate bool,
 ) (obsolete, used []string) {
@@ -136,7 +136,7 @@ func examineFiles(
 }
 
 func examineSnaps(
-	registry map[string]map[string]int,
+	registry map[string]map[string]*testRuns,
 	used []string,
 	runOnly string,
 	shouldUpdate bool,
@@ -313,15 +313,15 @@ e.g
 
 as it means there are 3 snapshots created inside TestAdd
 */
-func occurrences(tests map[string]int) set {
+func occurrences(tests map[string]*testRuns) set {
 	result := make(set, len(tests))
-	for testID, counter := range tests {
-		if counter > 1 {
-			for i := 1; i <= counter; i++ {
+	for testID, run := range tests {
+		if run.times > 1 {
+			for i := 1; i <= run.times; i++ {
 				result[fmt.Sprintf("%s - %d", testID, i)] = struct{}{}
 			}
 		}
-		result[fmt.Sprintf("%s - %d", testID, counter)] = struct{}{}
+		result[fmt.Sprintf("%s - %d", testID, run.times)] = struct{}{}
 	}
 
 	return result

@@ -73,36 +73,52 @@ func handleError(t testingT, err interface{}) {
 /*
 We track occurrence as in the same test we can run multiple snapshots
 This also helps with keeping track with obsolete snaps
-map[snap path]: map[testname]: <number of snapshots>
+map[snap path]: map[testname]: testRuns
 */
 type syncRegistry struct {
-	values map[string]map[string]int
+	values map[string]map[string]*testRuns
 	sync.Mutex
+}
+
+// Tracking number of testRuns by line
+type testRuns struct {
+	lines map[int]int
+	times int
 }
 
 // Returns the id of the test in the snapshot
 // Form [<test-name> - <occurrence>]
-func (s *syncRegistry) getTestID(tName, snapPath string) string {
-	occurrence := 1
+func (s *syncRegistry) getTestID(tName, snapPath string, line int) string {
 	s.Lock()
+	defer s.Unlock()
 
 	if _, exists := s.values[snapPath]; !exists {
-		s.values[snapPath] = make(map[string]int)
+		s.values[snapPath] = make(map[string]*testRuns)
+	}
+	testRun, exists := s.values[snapPath][tName]
+	if !exists {
+		s.values[snapPath][tName] = &testRuns{
+			lines: map[int]int{
+				line: 1,
+			},
+			times: 1,
+		}
+		return fmt.Sprintf("[%s - %d]", tName, 1)
 	}
 
-	if c, exists := s.values[snapPath][tName]; exists {
-		occurrence = c + 1
+	if c, exists := testRun.lines[line]; exists {
+		return fmt.Sprintf("[%s - %d]", tName, c)
 	}
 
-	s.values[snapPath][tName] = occurrence
-	s.Unlock()
+	testRun.times++
+	testRun.lines[line] = testRun.times
 
-	return fmt.Sprintf("[%s - %d]", tName, occurrence)
+	return fmt.Sprintf("[%s - %d]", tName, testRun.times)
 }
 
 func newRegistry() *syncRegistry {
 	return &syncRegistry{
-		values: make(map[string]map[string]int),
+		values: make(map[string]map[string]*testRuns),
 		Mutex:  sync.Mutex{},
 	}
 }
@@ -215,10 +231,12 @@ Returns the dir for snapshots
 Returns the filename
   - if no config provided we use the test file name with `.snap` extension
   - if filename provided we return the filename with `.snap` extension
+
+Returns the line where the snapshot call took place
 */
-func snapDirAndName(c *config) (string, string) {
+func snapDirAndName(c *config) (string, string, int) {
 	//  skips current func, the wrapper match* and the exported Match* func
-	callerPath := baseCaller(3)
+	callerPath, line := baseCaller(3)
 
 	dir := c.snapsDir
 	if !filepath.IsAbs(dir) {
@@ -231,7 +249,7 @@ func snapDirAndName(c *config) (string, string) {
 		filename = strings.TrimSuffix(base, filepath.Ext(base))
 	}
 
-	return dir, filepath.Join(dir, filename+snapsExt)
+	return dir, filepath.Join(dir, filename+snapsExt), line
 }
 
 func unescapeEndChars(s string) string {

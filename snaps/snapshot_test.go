@@ -19,6 +19,75 @@ func snapshotFile(t *testing.T, name string) string {
 	return string(f)
 }
 
+func TestSnapPathAndFile(t *testing.T) {
+	t.Run("should return default path and file", func(t *testing.T) {
+		var (
+			dir  string
+			name string
+			line int
+		)
+
+		func() {
+			// This is for emulating being called from a func so we can find the correct file
+			// of the caller
+			func() {
+				dir, name, line = snapDirAndName(&defaultConfig)
+			}()
+		}()
+
+		test.Contains(t, dir, filepath.FromSlash("/snaps/__snapshots__"))
+		test.Contains(t, name, filepath.FromSlash("/snaps/__snapshots__/snapshot_test.snap"))
+		test.Equal(t, 36, line)
+	})
+
+	t.Run("should return path and file from config", func(t *testing.T) {
+		var (
+			dir  string
+			name string
+			line int
+		)
+
+		func() {
+			// This is for emulating being called from a func so we can find the correct file
+			// of the caller
+			func() {
+				dir, name, line = snapDirAndName(&config{
+					filename: "my_file",
+					snapsDir: "my_snapshot_dir",
+				})
+			}()
+		}()
+
+		// returns the current file's path /snaps/*
+		test.Contains(t, dir, filepath.FromSlash("/snaps/my_snapshot_dir"))
+		test.Contains(t, name, filepath.FromSlash("/snaps/my_snapshot_dir/my_file.snap"))
+		test.Equal(t, 59, line)
+	})
+
+	t.Run("should return absolute path", func(t *testing.T) {
+		var (
+			dir  string
+			name string
+			line int
+		)
+
+		func() {
+			// This is for emulating being called from a func so we can find the correct file
+			// of the caller
+			func() {
+				dir, name, line = snapDirAndName(&config{
+					filename: "my_file",
+					snapsDir: "/path_to/my_snapshot_dir",
+				})
+			}()
+		}() // <= this is the function call reported
+
+		test.Contains(t, dir, filepath.FromSlash("/path_to/my_snapshot_dir"))
+		test.Contains(t, name, filepath.FromSlash("/path_to/my_snapshot_dir/my_file.snap"))
+		test.Equal(t, 83, line)
+	})
+}
+
 func TestTestID(t *testing.T) {
 	t.Run("should increment id on each call [concurrent safe]", func(t *testing.T) {
 		wg := sync.WaitGroup{}
@@ -27,16 +96,19 @@ func TestTestID(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			wg.Add(1)
 
-			go func() {
-				registry.getTestID("test", "/file")
+			go func(idx int) {
+				registry.getTestID("test", "/file", idx)
 				wg.Done()
-			}()
+			}(i)
 		}
 
 		wg.Wait()
 
-		test.Equal(t, "[test - 6]", registry.getTestID("test", "/file"))
-		test.Equal(t, "[test-v2 - 1]", registry.getTestID("test-v2", "/file"))
+		test.Equal(t, "[test - 6]", registry.getTestID("test", "/file", 10))
+		test.Equal(t, "[test-v2 - 1]", registry.getTestID("test-v2", "/file", 10))
+		// an already called test should not increase the id
+		test.Equal(t, "[test-v2 - 1]", registry.getTestID("test-v2", "/file", 10))
+		test.Equal(t, "[test - 6]", registry.getTestID("test", "/file", 10))
 	})
 }
 
@@ -117,69 +189,6 @@ func TestAddNewSnapshot(t *testing.T) {
 
 	test.Nil(t, err)
 	test.Equal(t, "\n[mock-id]\nmy-snap\n---\n", snapshotFile(t, name))
-}
-
-func TestSnapPathAndFile(t *testing.T) {
-	t.Run("should return default path and file", func(t *testing.T) {
-		var (
-			dir  string
-			name string
-		)
-
-		func() {
-			// This is for emulating being called from a func so we can find the correct file
-			// of the caller
-			func() {
-				dir, name = snapDirAndName(&defaultConfig)
-			}()
-		}()
-
-		test.Contains(t, dir, filepath.FromSlash("/snaps/__snapshots__"))
-		test.Contains(t, name, filepath.FromSlash("/snaps/__snapshots__/snapshot_test.snap"))
-	})
-
-	t.Run("should return path and file from config", func(t *testing.T) {
-		var (
-			dir  string
-			name string
-		)
-
-		func() {
-			// This is for emulating being called from a func so we can find the correct file
-			// of the caller
-			func() {
-				dir, name = snapDirAndName(&config{
-					filename: "my_file",
-					snapsDir: "my_snapshot_dir",
-				})
-			}()
-		}()
-
-		// returns the current file's path /snaps/*
-		test.Contains(t, dir, filepath.FromSlash("/snaps/my_snapshot_dir"))
-		test.Contains(t, name, filepath.FromSlash("/snaps/my_snapshot_dir/my_file.snap"))
-	})
-
-	t.Run("should return absolute path", func(t *testing.T) {
-		var (
-			dir  string
-			name string
-		)
-
-		func() {
-			// This is for emulating being called from a func so we can find the correct file
-			// of the caller
-			func() {
-				dir, name = snapDirAndName(&config{
-					filename: "my_file",
-					snapsDir: "/path_to/my_snapshot_dir",
-				})
-			}()
-		}()
-
-		test.Contains(t, dir, filepath.FromSlash("/path_to/my_snapshot_dir"))
-		test.Contains(t, name, filepath.FromSlash("/path_to/my_snapshot_dir/my_file.snap"))
-	})
 }
 
 func TestUpdateSnapshot(t *testing.T) {

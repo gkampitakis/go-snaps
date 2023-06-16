@@ -73,32 +73,34 @@ func newSyncSlice() *syncSlice {
 	}
 }
 
-// Returns the path where the "user" tests are running
-func baseCaller(skip int) string {
+// Returns the path and the line where the "user" tests are running
+func baseCaller(skip int) (string, int) {
 	var (
 		pc             uintptr
 		file, prevFile string
+		line, prevLine int
 		ok             bool
 	)
 
 	for i := skip + 1; ; i++ {
 		prevFile = file
-		pc, file, _, ok = runtime.Caller(i)
+		prevLine = line
+		pc, file, line, ok = runtime.Caller(i)
 		if !ok {
-			return prevFile
+			return prevFile, prevLine
 		}
 
 		f := runtime.FuncForPC(pc)
 		if f == nil {
-			return prevFile
+			return prevFile, prevLine
 		}
 
 		if f.Name() == "testing.tRunner" {
-			return prevFile
+			return prevFile, prevLine
 		}
 
 		if strings.HasSuffix(filepath.Base(file), "_test.go") {
-			return file
+			return file, line
 		}
 	}
 }

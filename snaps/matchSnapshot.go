@@ -53,8 +53,8 @@ func matchSnapshot(c *config, t testingT, values ...interface{}) {
 		return
 	}
 
-	dir, snapPath := snapDirAndName(c)
-	testID := testsRegistry.getTestID(t.Name(), snapPath)
+	dir, snapPath, line := snapDirAndName(c)
+	testID := testsRegistry.getTestID(t.Name(), snapPath, line)
 	snapshot := takeSnapshot(values)
 	prevSnapshot, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {

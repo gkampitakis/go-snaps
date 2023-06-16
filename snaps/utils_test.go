@@ -7,33 +7,38 @@ import (
 )
 
 func TestBaseCallerNested(t *testing.T) {
-	file := baseCaller(0)
+	file, line := baseCaller(0)
 
 	test.Contains(t, file, "/snaps/utils_test.go")
+	test.Equal(t, 10, line)
 }
 
 func testBaseCallerNested(t *testing.T) {
-	file := baseCaller(0)
+	file, line := baseCaller(0)
 
 	test.Contains(t, file, "/snaps/utils_test.go")
+	test.Equal(t, 17, line)
 }
 
 func TestBaseCallerHelper(t *testing.T) {
 	t.Helper()
-	file := baseCaller(0)
+	file, line := baseCaller(0)
 
 	test.Contains(t, file, "/snaps/utils_test.go")
+	test.Equal(t, 25, line)
 }
 
 func TestBaseCaller(t *testing.T) {
 	t.Run("should return correct baseCaller", func(t *testing.T) {
 		var file string
+		var line int
 
 		func() {
-			file = baseCaller(1)
+			file, line = baseCaller(1)
 		}()
 
 		test.Contains(t, file, "/snaps/utils_test.go")
+		test.Equal(t, 38, line)
 	})
 
 	t.Run("should return parent function", func(t *testing.T) {

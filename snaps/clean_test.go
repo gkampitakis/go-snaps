@@ -61,7 +61,7 @@ string hello world 2 2 1
 
 `
 
-func setupTempExamineFiles(t *testing.T) (map[string]map[string]int, string, string) {
+func setupTempExamineFiles(t *testing.T) (map[string]map[string]*testRuns, string, string) {
 	t.Helper()
 	dir1 := t.TempDir()
 	dir2 := t.TempDir()
@@ -99,15 +99,17 @@ func setupTempExamineFiles(t *testing.T) (map[string]map[string]int, string, str
 		}
 	}
 
-	tests := map[string]map[string]int{
+	tests := map[string]map[string]*testRuns{
 		files[0].name: {
-			"TestDir1_1/TestSimple": 1,
-			"TestDir1_2/TestSimple": 1,
-			"TestDir1_3/TestSimple": 2,
+			"TestDir1_1/TestSimple": &testRuns{
+				times: 1,
+			},
+			"TestDir1_2/TestSimple": &testRuns{times: 1},
+			"TestDir1_3/TestSimple": &testRuns{times: 2},
 		},
 		files[1].name: {
-			"TestDir2_1/TestSimple": 3,
-			"TestDir2_2/TestSimple": 1,
+			"TestDir2_1/TestSimple": &testRuns{times: 3},
+			"TestDir2_2/TestSimple": &testRuns{times: 1},
 		},
 	}
 
@@ -194,7 +196,7 @@ func TestExamineSnaps(t *testing.T) {
 		shouldUpdate := false
 
 		// Reducing test occurrence to 1 meaning the second test was removed ( testid - 2 )
-		tests[used[0]]["TestDir1_3/TestSimple"] = 1
+		tests[used[0]]["TestDir1_3/TestSimple"].times = 1
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
@@ -264,19 +266,19 @@ string hello world 2 2 1
 }
 
 func TestOccurrences(t *testing.T) {
-	tests := map[string]int{
-		"add":      3,
-		"subtract": 1,
-		"divide":   2,
+	tests := map[string]*testRuns{
+		"TestArithmetic/should add":      {times: 3},
+		"TestArithmetic/should subtract": {times: 1},
+		"TestArithmetic/should divide":   {times: 2},
 	}
 
 	expected := set{
-		"add - 1":      {},
-		"add - 2":      {},
-		"add - 3":      {},
-		"subtract - 1": {},
-		"divide - 1":   {},
-		"divide - 2":   {},
+		"TestArithmetic/should add - 1":      {},
+		"TestArithmetic/should add - 2":      {},
+		"TestArithmetic/should add - 3":      {},
+		"TestArithmetic/should subtract - 1": {},
+		"TestArithmetic/should divide - 1":   {},
+		"TestArithmetic/should divide - 2":   {},
 	}
 
 	test.Equal(t, expected, occurrences(tests))
