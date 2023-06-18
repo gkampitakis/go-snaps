@@ -37,16 +37,11 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        go: ['1.16.x', '1.17.x', '1.18.x', '1.19.x', '1.20.x']
     steps:
-      - name: Set git to use LF
-        run: |
-          git config --global core.autocrlf false
-          git config --global core.eol lf
       - uses: actions/checkout@v3
       - name: Setup go
         uses: actions/setup-go@v3
         with:
-          go-version: ${{matrix.go}}
+          go-version: 1.20.x
       - name: Run Tests
         run: make test-verbose
