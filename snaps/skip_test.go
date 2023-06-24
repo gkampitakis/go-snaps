@@ -145,10 +145,9 @@ func TestSkip(t *testing.T) {
 				// This is for populating skippedTests.values and following the normal flow
 				SkipNow(mockT)
 
-				test.True(t, testSkipped("TestMock/Skip", runOnly))
-				test.Equal(
+				test.True(t, testSkipped("TestMock/Skip - 1000", runOnly))
+				test.True(
 					t,
-					true,
 					testSkipped("TestMock/Skip/child_should_also_be_skipped", runOnly),
 				)
 				test.False(t, testSkipped("TestAnotherTest", runOnly))
@@ -174,10 +173,10 @@ func TestSkip(t *testing.T) {
 			// This is for populating skippedTests.values and following the normal flow
 			SkipNow(mockT)
 
-			test.True(t, testSkipped("Test", runOnly))
-			test.True(t, testSkipped("Test/chid", runOnly))
-			test.False(t, testSkipped("TestMock", runOnly))
-			test.False(t, testSkipped("TestMock/child", runOnly))
+			test.True(t, testSkipped("Test - 1", runOnly))
+			test.True(t, testSkipped("Test/child - 1", runOnly))
+			test.False(t, testSkipped("TestMock - 1", runOnly))
+			test.False(t, testSkipped("TestMock/child - 1", runOnly))
 		})
 
 		t.Run("should use regex match for runOnly", func(t *testing.T) {

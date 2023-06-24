@@ -63,6 +63,8 @@ func (t typeMatcher[ExpectedType]) JSON(s []byte) ([]byte, []MatcherError) {
 				Matcher: t.name,
 				Path:    path,
 			})
+
+			continue
 		}
 
 		j, err := sjson.SetBytesOptions(
