@@ -83,21 +83,17 @@ type syncRegistry struct {
 // Returns the id of the test in the snapshot
 // Form [<test-name> - <occurrence>]
 func (s *syncRegistry) getTestID(tName, snapPath string) string {
-	occurrence := 1
 	s.Lock()
 
 	if _, exists := s.values[snapPath]; !exists {
 		s.values[snapPath] = make(map[string]int)
 	}
 
-	if c, exists := s.values[snapPath][tName]; exists {
-		occurrence = c + 1
-	}
-
-	s.values[snapPath][tName] = occurrence
+	s.values[snapPath][tName]++
+	c := s.values[snapPath][tName]
 	s.Unlock()
 
-	return fmt.Sprintf("[%s - %d]", tName, occurrence)
+	return fmt.Sprintf("[%s - %d]", tName, c)
 }
 
 func newRegistry() *syncRegistry {

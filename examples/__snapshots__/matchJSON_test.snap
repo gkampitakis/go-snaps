@@ -88,3 +88,15 @@
  }
 }
 ---
+
+[TestMatchers/type_matcher - 1]
+{
+ "data": "<Type:float64>"
+}
+---
+
+[TestMatchers/type_matcher - 2]
+{
+ "metadata": "<Type:map[string]interface {}>"
+}
+---
