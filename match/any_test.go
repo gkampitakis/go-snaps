@@ -12,9 +12,9 @@ func TestAnyMatcher(t *testing.T) {
 		a := Any(p...)
 
 		test.True(t, a.errOnMissingPath)
-		test.Equal(t, a.placeholder, "<Any value>")
-		test.Equal(t, a.paths, p)
-		test.Equal(t, a.name, "Any")
+		test.Equal(t, "<Any value>", a.placeholder)
+		test.Equal(t, p, a.paths)
+		test.Equal(t, "Any", a.name)
 	})
 
 	t.Run("should allow overriding values", func(t *testing.T) {
@@ -22,9 +22,9 @@ func TestAnyMatcher(t *testing.T) {
 		a := Any(p...).ErrOnMissingPath(false).Placeholder("hello")
 
 		test.False(t, a.errOnMissingPath)
-		test.Equal(t, a.placeholder, "hello")
-		test.Equal(t, a.paths, p)
-		test.Equal(t, a.name, "Any")
+		test.Equal(t, "hello", a.placeholder)
+		test.Equal(t, p, a.paths)
+		test.Equal(t, "Any", a.name)
 	})
 
 	t.Run("JSON", func(t *testing.T) {
@@ -74,17 +74,19 @@ func TestAnyMatcher(t *testing.T) {
 			test.Equal(t, expected, string(res))
 		})
 
-		t.Run("should replace value and return new json", func(t *testing.T) {
-			a := Any(
-				"user.email",
-				"date",
-				"missing.key",
-			).ErrOnMissingPath(
-				false,
-			).Placeholder(10)
-			res, errs := a.JSON(j)
+		t.Run(
+			"should replace value and return new json with different placeholder",
+			func(t *testing.T) {
+				a := Any(
+					"user.email",
+					"date",
+					"missing.key",
+				).ErrOnMissingPath(
+					false,
+				).Placeholder(10)
+				res, errs := a.JSON(j)
 
-			expected := `{
+				expected := `{
 			"user": {
 				"name": "mock-user",
 				"email": 10
@@ -92,8 +94,9 @@ func TestAnyMatcher(t *testing.T) {
 			"date": 10
 		}`
 
-			test.Equal(t, 0, len(errs))
-			test.Equal(t, expected, string(res))
-		})
+				test.Equal(t, 0, len(errs))
+				test.Equal(t, expected, string(res))
+			},
+		)
 	})
 }

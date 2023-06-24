@@ -15,6 +15,15 @@ type typeMatcher[ExpectedType any] struct {
 	expectedType     interface{}
 }
 
+/*
+Type matcher evaluates types that are passed in a snapshot
+
+It replaces any targeted path with placeholder in the form of `<Type:ExpectedType>`
+
+	match.Type[string]("user.info")
+	// or with multiple paths
+	match.Type[float64]("user.age", "data.items")
+*/
 func Type[ExpectedType any](paths ...string) *typeMatcher[ExpectedType] {
 	return &typeMatcher[ExpectedType]{
 		paths:            paths,
@@ -48,15 +57,23 @@ func (t typeMatcher[ExpectedType]) JSON(s []byte) ([]byte, []MatcherError) {
 			continue
 		}
 
-		value := fmt.Sprintf("<Type:%T>", *new(ExpectedType))
 		if _, ok := r.Value().(ExpectedType); !ok {
-			value = fmt.Sprintf("<Type:%T>", r.Value())
+			errs = append(errs, MatcherError{
+				Reason:  fmt.Errorf("expected type %T, received %T", *new(ExpectedType), r.Value()),
+				Matcher: t.name,
+				Path:    path,
+			})
 		}
 
-		j, err := sjson.SetBytesOptions(json, path, value, &sjson.Options{
-			Optimistic:     true,
-			ReplaceInPlace: true,
-		})
+		j, err := sjson.SetBytesOptions(
+			json,
+			path,
+			fmt.Sprintf("<Type:%T>", r.Value()),
+			&sjson.Options{
+				Optimistic:     true,
+				ReplaceInPlace: true,
+			},
+		)
 		if err != nil {
 			errs = append(errs, MatcherError{
 				Reason:  err,

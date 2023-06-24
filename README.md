@@ -31,6 +31,7 @@
   - [Matchers](#matchers)
     - [match.Any](#matchany)
     - [match.Custom](#matchcustom)
+    - [match.Type\[ExpectedType\]](#matchtype)
 - [Configuration](#configuration)
 - [Update Snapshots](#update-snapshots)
   - [Clean obsolete Snapshots](#clean-obsolete-snapshots)
@@ -127,6 +128,7 @@ Currently `go-snaps` has two build in matchers
 
 - `match.Any`
 - `match.Custom`
+- `match.Type[ExpectedType]`
 
 #### match.Any
 
@@ -183,7 +185,24 @@ match.Custom("path",myFunc).
   ErrOnMissingPath(bool) // determines whether the matcher will err in case of a missing path, default true
 ```
 
-You can see more [examples](./examples/matchJSON_test.go#L93).
+#### match.Type
+
+Type matcher evaluates types that are passed in a snapshot and it replaces any targeted path with a placeholder in the form of `<Type:ExpectedType>`.
+
+```go
+match.Type[string]("user.info")
+// or with multiple paths
+match.Type[float64]("user.age", "data.items")
+```
+
+Type matcher provides a method for setting an option
+
+```go
+match.Type[string]("user.info").
+  ErrOnMissingPath(bool) // determines whether the matcher will err in case of a missing path, default true
+```
+
+You can see more [examples](./examples/matchJSON_test.go#L96).
 
 ## Configuration
 
