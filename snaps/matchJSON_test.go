@@ -57,13 +57,13 @@ func TestMatchJSON(t *testing.T) {
 					MockError: func(args ...interface{}) {
 						test.NotCalled(t)
 					},
-					MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0]) },
+					MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0].(string)) },
 				}
 
 				MatchJSON(mockT, tc.input)
 
 				snap, err := getPrevSnapshot("[mock-name - 1]", snapPath)
-				test.Nil(t, err)
+				test.NoError(t, err)
 				test.Equal(t, expected, snap)
 				test.Equal(t, 1, testEvents.items[added])
 			})
@@ -126,7 +126,7 @@ func TestMatchJSON(t *testing.T) {
 				MockError: func(args ...interface{}) {
 					test.NotCalled(t)
 				},
-				MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0]) },
+				MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0].(string)) },
 			}
 
 			c1 := func(val interface{}) (interface{}, error) {
@@ -188,7 +188,7 @@ func TestMatchJSON(t *testing.T) {
 				return "mock-name"
 			},
 			MockError: func(args ...interface{}) {
-				test.Equal(t, errSnapNotFound, args[0])
+				test.Equal(t, errSnapNotFound, args[0].(error))
 			},
 			MockLog: func(args ...interface{}) {
 				test.NotCalled(t)
@@ -204,8 +204,8 @@ func TestMatchJSON(t *testing.T) {
 		snapPath := setupSnapshot(t, jsonFilename, false, true)
 
 		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) { test.Equal(t, addedMsg, received) },
-			func(received interface{}) { test.Equal(t, updatedMsg, received) },
+			func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
+			func(received interface{}) { test.Equal(t, updatedMsg, received.(string)) },
 		}
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
@@ -236,7 +236,7 @@ func TestMatchJSON(t *testing.T) {
 		test.Equal(
 			t,
 			"\n[mock-name - 1]\n{\n \"value\": \"bye world\"\n}\n---\n",
-			snapshotFile(t, snapPath),
+			test.GetFileContent(t, snapPath),
 		)
 		test.Equal(t, 1, testEvents.items[updated])
 	})

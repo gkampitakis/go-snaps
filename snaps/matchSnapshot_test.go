@@ -71,12 +71,16 @@ func TestMatchSnapshot(t *testing.T) {
 			MockError: func(args ...interface{}) {
 				test.NotCalled(t)
 			},
-			MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0]) },
+			MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0].(string)) },
 		}
 
 		MatchSnapshot(mockT, 10, "hello world")
 
-		test.Equal(t, "\n[mock-name - 1]\nint(10)\nhello world\n---\n", snapshotFile(t, snapPath))
+		test.Equal(
+			t,
+			"\n[mock-name - 1]\nint(10)\nhello world\n---\n",
+			test.GetFileContent(t, snapPath),
+		)
 		test.Equal(t, 1, testEvents.items[added])
 	})
 
@@ -89,7 +93,7 @@ func TestMatchSnapshot(t *testing.T) {
 				return "mock-name"
 			},
 			MockError: func(args ...interface{}) {
-				test.Equal(t, errSnapNotFound, args[0])
+				test.Equal(t, errSnapNotFound, args[0].(error))
 			},
 			MockLog: func(args ...interface{}) {
 				test.NotCalled(t)
@@ -105,7 +109,7 @@ func TestMatchSnapshot(t *testing.T) {
 		setupSnapshot(t, fileName, false)
 
 		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) { test.Equal(t, addedMsg, received) },
+			func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
 			func(received interface{}) { test.NotCalled(t) },
 		}
 		mockT := test.MockTestingT{
@@ -119,7 +123,7 @@ func TestMatchSnapshot(t *testing.T) {
 					"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ bye world\x1b[0m\n  \x1b[2m↵\n\x1b[0m"
 
-				test.Equal(t, expected, args[0])
+				test.Equal(t, expected, args[0].(string))
 			},
 			MockLog: func(args ...interface{}) {
 				printerExpectedCalls[0](args[0])
@@ -145,8 +149,8 @@ func TestMatchSnapshot(t *testing.T) {
 		snapPath := setupSnapshot(t, fileName, false, true)
 
 		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) { test.Equal(t, addedMsg, received) },
-			func(received interface{}) { test.Equal(t, updatedMsg, received) },
+			func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
+			func(received interface{}) { test.Equal(t, updatedMsg, received.(string)) },
 		}
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
@@ -174,7 +178,11 @@ func TestMatchSnapshot(t *testing.T) {
 		// Second call with different params
 		MatchSnapshot(mockT, 100, "bye world")
 
-		test.Equal(t, "\n[mock-name - 1]\nint(100)\nbye world\n---\n", snapshotFile(t, snapPath))
+		test.Equal(
+			t,
+			"\n[mock-name - 1]\nint(100)\nbye world\n---\n",
+			test.GetFileContent(t, snapPath),
+		)
 		test.Equal(t, 1, testEvents.items[updated])
 	})
 
@@ -185,7 +193,7 @@ func TestMatchSnapshot(t *testing.T) {
 				test.Equal(
 					t,
 					colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"),
-					args[0],
+					args[0].(string),
 				)
 			},
 		}
@@ -197,7 +205,7 @@ func TestMatchSnapshot(t *testing.T) {
 		setupSnapshot(t, fileName, false)
 
 		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) { test.Equal(t, addedMsg, received) },
+			func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
 			func(received interface{}) { test.NotCalled(t) },
 		}
 		mockT := test.MockTestingT{
@@ -212,7 +220,7 @@ func TestMatchSnapshot(t *testing.T) {
 					"+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ bye world----\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ --\x1b[0m\n  \x1b[2m↵\n\x1b[0m"
 
-				test.Equal(t, expected, args[0])
+				test.Equal(t, expected, args[0].(string))
 			},
 			MockLog: func(args ...interface{}) {
 				printerExpectedCalls[0](args[0])
