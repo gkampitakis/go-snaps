@@ -72,9 +72,11 @@ func TestDiff(t *testing.T) {
 		t.Run("single line", func(t *testing.T) {
 			expected, received := "Hello World\n", "Hello World\n"
 
-			if diff := prettyDiff(expected, received); diff != "" {
-				t.Errorf("found diff between same string %s", diff)
-			}
+			diff, deleted, inserted := singlelineDiff(expected, received)
+			test.Equal(t, "", diff)
+			test.Equal(t, -1, deleted)
+			test.Equal(t, -1, inserted)
+			test.Equal(t, "", prettyDiff(expected, received, "", -1))
 		})
 
 		t.Run("multiline", func(t *testing.T) {
@@ -83,15 +85,23 @@ func TestDiff(t *testing.T) {
 			`
 			received := expected
 
-			if diff := prettyDiff(expected, received); diff != "" {
+			if diff := prettyDiff(expected, received, "", -1); diff != "" {
 				t.Errorf("found diff between same string %s", diff)
 			}
 		})
 	})
 
-	t.Run("should print header consistently", func(t *testing.T) {
-		MatchSnapshot(t, header(10000, 20))
-		MatchSnapshot(t, header(20, 10000))
+	t.Run("should build diff report consistently", func(t *testing.T) {
+		MatchSnapshot(t, buildDiffReport(10000, 20, "mock-diff", "snap/path", 10))
+		MatchSnapshot(t, buildDiffReport(20, 10000, "mock-diff", "snap/path", 20))
+	})
+
+	t.Run("should not print diff report if no diffs", func(t *testing.T) {
+		test.Equal(t, "", buildDiffReport(0, 0, "", "", -1))
+	})
+
+	t.Run("should not print snapshot line if not provided", func(t *testing.T) {
+		MatchSnapshot(t, buildDiffReport(10, 2, "there is a diff here", "", -1))
 	})
 
 	t.Run("with color", func(t *testing.T) {
@@ -99,11 +109,11 @@ func TestDiff(t *testing.T) {
 			a := strings.Repeat("abcd", 20)
 			b := strings.Repeat("abcf", 20)
 
-			MatchSnapshot(t, prettyDiff(a, b))
+			MatchSnapshot(t, prettyDiff(a, b, "snap/path", 10))
 		})
 
 		t.Run("multiline diff", func(t *testing.T) {
-			MatchSnapshot(t, prettyDiff(a, b))
+			MatchSnapshot(t, prettyDiff(a, b, "snap/path", 10))
 		})
 	})
 
@@ -117,11 +127,12 @@ func TestDiff(t *testing.T) {
 			a := strings.Repeat("abcd", 20)
 			b := strings.Repeat("abcf", 20)
 
-			MatchSnapshot(t, prettyDiff(a, b))
+			d := prettyDiff(a, b, "snap/path", 10)
+			MatchSnapshot(t, d)
 		})
 
 		t.Run("multiline diff", func(t *testing.T) {
-			MatchSnapshot(t, prettyDiff(a, b))
+			MatchSnapshot(t, prettyDiff(a, b, "snap/path", 20))
 		})
 	})
 }

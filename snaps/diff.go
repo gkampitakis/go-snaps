@@ -1,6 +1,7 @@
 package snaps
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -72,7 +73,8 @@ func getUnifiedDiff(a, b string) (string, int, int) {
 				received := strings.Join(aLines[i1:i2], "")
 
 				if shouldPrintHighlights(expected, received) {
-					i, d := singlelineDiff(&s, received, expected)
+					diff, i, d := singlelineDiff(received, expected)
+					s.WriteString(diff)
 					inserted += i
 					deleted += d
 
@@ -113,23 +115,6 @@ func getUnifiedDiff(a, b string) (string, int, int) {
 	return s.String(), inserted, deleted
 }
 
-// header of a diff report
-//
-// e.g.
-//   - Snapshot - 10
-//   - Received -  2
-func header(inserted, deleted int) string {
-	var s strings.Builder
-	iPadding, dPadding := intPadding(inserted, deleted)
-
-	s.WriteString("\n")
-	colors.FprintDelete(&s, fmt.Sprintf("Snapshot %s- %d\n", dPadding, deleted))
-	colors.FprintInsert(&s, fmt.Sprintf("Received %s+ %d\n", iPadding, inserted))
-	s.WriteString("\n")
-
-	return s.String()
-}
-
 func printRange(w io.Writer, opcodes []difflib.OpCode) {
 	first, last := opcodes[0], opcodes[len(opcodes)-1]
 	range1 := difflib.FormatRangeUnified(first.I1, last.I2)
@@ -161,57 +146,87 @@ func intPadding(inserted, deleted int) (string, string) {
 	return strings.Repeat(" ", -diff), ""
 }
 
-func singlelineDiff(s *strings.Builder, expected, received string) (int, int) {
+func singlelineDiff(expected, received string) (string, int, int) {
 	diffs := dmp.DiffCleanupSemantic(
 		dmp.DiffMain(expected, received, false),
 	)
 	if len(diffs) == 1 && diffs[0].Type == diffEqual {
-		// -1 means no diffs
-		return -1, 0
+		return "", -1, -1
 	}
 
 	var inserted, deleted int
-	var i strings.Builder
+	a := &bytes.Buffer{}
+	b := &bytes.Buffer{}
 
-	colors.FprintBg(s, colors.RedBg, colors.Reddiff, "- ")
-	colors.FprintBg(&i, colors.GreenBG, colors.Greendiff, "+ ")
+	colors.FprintBg(a, colors.RedBg, colors.Reddiff, "- ")
+	colors.FprintBg(b, colors.GreenBG, colors.Greendiff, "+ ")
 
 	for _, diff := range diffs {
 		switch diff.Type {
 		case diffDelete:
 			deleted++
-			colors.FprintDeleteBold(s, diff.Text)
+			colors.FprintDeleteBold(a, diff.Text)
 		case diffInsert:
 			inserted++
-			colors.FprintInsertBold(&i, diff.Text)
+			colors.FprintInsertBold(b, diff.Text)
 		case diffEqual:
-			colors.FprintBg(s, colors.RedBg, colors.Reddiff, diff.Text)
-			colors.FprintBg(&i, colors.GreenBG, colors.Greendiff, diff.Text)
+			colors.FprintBg(a, colors.RedBg, colors.Reddiff, diff.Text)
+			colors.FprintBg(b, colors.GreenBG, colors.Greendiff, diff.Text)
 		}
 	}
 
-	s.WriteString(i.String())
+	a.Write(b.Bytes())
 
-	return inserted, deleted
+	return a.String(), inserted, deleted
 }
 
-func prettyDiff(expected, received string) string {
+/*
+buildDiffReport creates a report with diffs it contains a header the diff body and a footer
+
+header of a diff report
+
+	e.g.
+	  - Snapshot - 10
+	  - Received + 2
+
+body contains the diffs
+
+footer contains the relative path of snapshot
+
+	e.g. at ../__snapshots__/example_test.snap:25
+*/
+func buildDiffReport(inserted, deleted int, diff, name string, line int) string {
+	if diff == "" {
+		return ""
+	}
+	var s strings.Builder
+	s.Grow(len(diff))
+
+	iPadding, dPadding := intPadding(inserted, deleted)
+
+	s.WriteString("\n")
+	colors.FprintDelete(&s, fmt.Sprintf("Snapshot %s- %d\n", dPadding, deleted))
+	colors.FprintInsert(&s, fmt.Sprintf("Received %s+ %d\n", iPadding, inserted))
+	s.WriteString("\n")
+
+	s.WriteString(diff)
+
+	if name != "" {
+		colors.Fprint(&s, colors.Dim, fmt.Sprintf("\nat %s:%d\n", name, line))
+	}
+
+	return s.String()
+}
+
+func prettyDiff(expected, received, name string, line int) string {
 	if expected == received {
 		return ""
 	}
-
+	differ := getUnifiedDiff
 	if shouldPrintHighlights(expected, received) {
-		var diff strings.Builder
-		if i, d := singlelineDiff(&diff, expected, received); i != -1 {
-			return header(i, d) + diff.String()
-		}
-
-		return ""
+		differ = singlelineDiff
 	}
 
-	if diff, i, d := getUnifiedDiff(expected, received); diff != "" {
-		return header(i, d) + diff
-	}
-
-	return ""
+	diff, i, d := differ(expected, received)
+	return buildDiffReport(i, d, diff, name, line)
 }

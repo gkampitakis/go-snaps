@@ -103,18 +103,24 @@ func newRegistry() *syncRegistry {
 	}
 }
 
-func getPrevSnapshot(testID, snapPath string) (string, error) {
+// getPrevSnapshot scans file searching for a snapshot matching the given testID and returns
+// the snapshot with the line where is located inside the file.
+//
+// If not found returns errSnapNotFound error.
+func getPrevSnapshot(testID, snapPath string) (string, int, error) {
 	f, err := os.ReadFile(snapPath)
 	if err != nil {
-		return "", errSnapNotFound
+		return "", -1, errSnapNotFound
 	}
 
+	lineNumber := 1
 	tid := []byte(testID)
 
 	s := bufio.NewScanner(bytes.NewReader(f))
 	for s.Scan() {
 		l := s.Bytes()
 		if !bytes.Equal(l, tid) {
+			lineNumber++
 			continue
 		}
 		var snapshot strings.Builder
@@ -123,18 +129,18 @@ func getPrevSnapshot(testID, snapPath string) (string, error) {
 			line := s.Bytes()
 
 			if bytes.Equal(line, endSequenceByteSlice) {
-				return snapshot.String(), nil
+				return snapshot.String(), lineNumber, nil
 			}
 			snapshot.Write(line)
 			snapshot.WriteByte('\n')
 		}
 	}
 
-	return "", errSnapNotFound
+	return "", -1, errSnapNotFound
 }
 
-func addNewSnapshot(testID, snapshot, dir, snapPath string) error {
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+func addNewSnapshot(testID, snapshot, snapPath string) error {
+	if err := os.MkdirAll(filepath.Dir(snapPath), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -203,16 +209,18 @@ func removeSnapshot(s *bufio.Scanner) {
 }
 
 /*
-Returns the dir for snapshots
+Returns the path for snapshots
   - if no config provided returns the directory where tests are running
   - if snapsDir is relative path just gets appended to directory where tests are running
   - if snapsDir is absolute path then we are returning this path
 
-Returns the filename
+and for the filename
   - if no config provided we use the test file name with `.snap` extension
   - if filename provided we return the filename with `.snap` extension
+
+Returns the relative path of the caller and the snapshot path.
 */
-func snapDirAndName(c *config) (string, string) {
+func snapshotPath(c *config) (string, string) {
 	//  skips current func, the wrapper match* and the exported Match* func
 	callerPath := baseCaller(3)
 
@@ -226,8 +234,10 @@ func snapDirAndName(c *config) (string, string) {
 		base := filepath.Base(callerPath)
 		filename = strings.TrimSuffix(base, filepath.Ext(base))
 	}
+	snapPath := filepath.Join(dir, filename+snapsExt)
+	snapPathRel, _ := filepath.Rel(callerPath, snapPath)
 
-	return dir, filepath.Join(dir, filename+snapsExt)
+	return snapPath, snapPathRel
 }
 
 func unescapeEndChars(s string) string {

@@ -62,8 +62,10 @@ func TestMatchJSON(t *testing.T) {
 
 				MatchJSON(mockT, tc.input)
 
-				snap, err := getPrevSnapshot("[mock-name - 1]", snapPath)
+				snap, line, err := getPrevSnapshot("[mock-name - 1]", snapPath)
+
 				test.NoError(t, err)
+				test.Equal(t, 2, line)
 				test.Equal(t, expected, snap)
 				test.Equal(t, 1, testEvents.items[added])
 			})
