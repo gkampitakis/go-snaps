@@ -53,17 +53,17 @@ func matchSnapshot(c *config, t testingT, values ...interface{}) {
 		return
 	}
 
-	dir, snapPath := snapDirAndName(c)
+	snapPath, snapPathRel := snapshotPath(c)
 	testID := testsRegistry.getTestID(t.Name(), snapPath)
 	snapshot := takeSnapshot(values)
-	prevSnapshot, err := getPrevSnapshot(testID, snapPath)
+	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if isCI {
 			handleError(t, err)
 			return
 		}
 
-		err := addNewSnapshot(testID, snapshot, dir, snapPath)
+		err := addNewSnapshot(testID, snapshot, snapPath)
 		if err != nil {
 			handleError(t, err)
 			return
@@ -78,7 +78,12 @@ func matchSnapshot(c *config, t testingT, values ...interface{}) {
 		return
 	}
 
-	diff := prettyDiff(unescapeEndChars(prevSnapshot), unescapeEndChars(snapshot))
+	diff := prettyDiff(
+		unescapeEndChars(prevSnapshot),
+		unescapeEndChars(snapshot),
+		snapPathRel,
+		line,
+	)
 	if diff == "" {
 		testEvents.register(passed)
 		return

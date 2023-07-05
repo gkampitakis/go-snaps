@@ -24,7 +24,7 @@ func TestSkip(t *testing.T) {
 				return "mock-test"
 			},
 			MockLog: func(args ...interface{}) {
-				test.Equal(t, skippedMsg, args[0])
+				test.Equal(t, skippedMsg, args[0].(string))
 			},
 		}
 		Skip(mockT, 1, 2, 3, 4, 5)
@@ -47,7 +47,7 @@ func TestSkip(t *testing.T) {
 				return "mock-test"
 			},
 			MockLog: func(args ...interface{}) {
-				test.Equal(t, skippedMsg, args[0])
+				test.Equal(t, skippedMsg, args[0].(string))
 			},
 		}
 		Skipf(mockT, "mock", 1, 2, 3, 4, 5)
@@ -67,7 +67,7 @@ func TestSkip(t *testing.T) {
 				return "mock-test"
 			},
 			MockLog: func(args ...interface{}) {
-				test.Equal(t, skippedMsg, args[0])
+				test.Equal(t, skippedMsg, args[0].(string))
 			},
 		}
 		SkipNow(mockT)
@@ -87,7 +87,7 @@ func TestSkip(t *testing.T) {
 				return "mock-test"
 			},
 			MockLog: func(args ...interface{}) {
-				test.Equal(t, skippedMsg, args[0])
+				test.Equal(t, skippedMsg, args[0].(string))
 			},
 		}
 
@@ -139,7 +139,7 @@ func TestSkip(t *testing.T) {
 						return "TestMock/Skip"
 					},
 					MockLog: func(args ...interface{}) {
-						test.Equal(t, skippedMsg, args[0])
+						test.Equal(t, skippedMsg, args[0].(string))
 					},
 				}
 				// This is for populating skippedTests.values and following the normal flow
@@ -167,7 +167,7 @@ func TestSkip(t *testing.T) {
 					return "Test"
 				},
 				MockLog: func(args ...interface{}) {
-					test.Equal(t, skippedMsg, args[0])
+					test.Equal(t, skippedMsg, args[0].(string))
 				},
 			}
 			// This is for populating skippedTests.values and following the normal flow

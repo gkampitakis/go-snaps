@@ -47,7 +47,7 @@ func (m MockTestingT) Log(args ...interface{}) {
 }
 
 // Equal asserts expected and received have deep equality
-func Equal(t *testing.T, expected, received interface{}) {
+func Equal[A any](t *testing.T, expected, received A) {
 	t.Helper()
 	if !reflect.DeepEqual(expected, received) {
 		t.Errorf("\n[expected]: %v\n[received]: %v", expected, received)
@@ -77,6 +77,20 @@ func CreateTempFile(t *testing.T, data string) string {
 	return path
 }
 
+// GetFileContent returns the contents of a file
+//
+// it errors if file doesn't exist
+func GetFileContent(t *testing.T, name string) string {
+	t.Helper()
+
+	content, err := os.ReadFile(name)
+	if err != nil {
+		t.Error(err)
+	}
+
+	return string(content)
+}
+
 func True(t *testing.T, val bool) {
 	t.Helper()
 
@@ -94,9 +108,17 @@ func False(t *testing.T, val bool) {
 }
 
 func Nil(t *testing.T, val interface{}) {
+	t.Helper()
 	v := reflect.ValueOf(val)
 
 	if val != nil && !v.IsNil() {
 		t.Errorf("expected nil but got %v", val)
+	}
+}
+
+func NoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Errorf("expected no error but got %s", err)
 	}
 }

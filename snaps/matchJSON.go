@@ -63,7 +63,7 @@ func MatchJSON(t testingT, input interface{}, matchers ...match.JSONMatcher) {
 func matchJSON(c *config, t testingT, input interface{}, matchers ...match.JSONMatcher) {
 	t.Helper()
 
-	dir, snapPath := snapDirAndName(c)
+	snapPath, snapPathRel := snapshotPath(c)
 	testID := testsRegistry.getTestID(t.Name(), snapPath)
 
 	j, err := validateJSON(input)
@@ -95,14 +95,14 @@ func matchJSON(c *config, t testingT, input interface{}, matchers ...match.JSONM
 	}
 
 	snapshot := takeJSONSnapshot(j)
-	prevSnapshot, err := getPrevSnapshot(testID, snapPath)
+	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if isCI {
 			handleError(t, err)
 			return
 		}
 
-		err := addNewSnapshot(testID, snapshot, dir, snapPath)
+		err := addNewSnapshot(testID, snapshot, snapPath)
 		if err != nil {
 			handleError(t, err)
 			return
@@ -117,7 +117,7 @@ func matchJSON(c *config, t testingT, input interface{}, matchers ...match.JSONM
 		return
 	}
 
-	diff := prettyDiff(prevSnapshot, snapshot)
+	diff := prettyDiff(prevSnapshot, snapshot, snapPathRel, line)
 	if diff == "" {
 		testEvents.register(passed)
 		return

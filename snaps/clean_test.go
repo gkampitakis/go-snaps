@@ -114,17 +114,6 @@ func setupTempExamineFiles(t *testing.T) (map[string]map[string]int, string, str
 	return tests, dir1, dir2
 }
 
-func getFileContent(t *testing.T, name string) string {
-	t.Helper()
-
-	content, err := os.ReadFile(name)
-	if err != nil {
-		t.Error(err)
-	}
-
-	return string(content)
-}
-
 func TestExamineFiles(t *testing.T) {
 	t.Run("should parse files", func(t *testing.T) {
 		tests, dir1, dir2 := setupTempExamineFiles(t)
@@ -182,7 +171,7 @@ func TestExamineSnaps(t *testing.T) {
 		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
 
 		test.Equal(t, []string{}, obsolete)
-		test.Nil(t, err)
+		test.NoError(t, err)
 	})
 
 	t.Run("should report two obsolete snapshots and not change content", func(t *testing.T) {
@@ -199,11 +188,11 @@ func TestExamineSnaps(t *testing.T) {
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
 		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
-		content1 := getFileContent(t, used[0])
-		content2 := getFileContent(t, used[1])
+		content1 := test.GetFileContent(t, used[0])
+		content2 := test.GetFileContent(t, used[1])
 
 		test.Equal(t, []string{"TestDir1_3/TestSimple - 2", "TestDir2_2/TestSimple - 1"}, obsolete)
-		test.Nil(t, err)
+		test.NoError(t, err)
 
 		// Content of snaps is not changed
 		test.Equal(t, mockSnap1, content1)
@@ -222,8 +211,8 @@ func TestExamineSnaps(t *testing.T) {
 		delete(tests[used[1]], "TestDir2_1/TestSimple")
 
 		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
-		content1 := getFileContent(t, used[0])
-		content2 := getFileContent(t, used[1])
+		content1 := test.GetFileContent(t, used[0])
+		content2 := test.GetFileContent(t, used[1])
 
 		expected1 := `
 [TestDir1_1/TestSimple - 1]
@@ -255,7 +244,7 @@ string hello world 2 2 1
 		},
 			obsolete,
 		)
-		test.Nil(t, err)
+		test.NoError(t, err)
 
 		// Content of snaps is not changed
 		test.Equal(t, expected1, content1)

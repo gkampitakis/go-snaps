@@ -1,23 +1,12 @@
 package snaps
 
 import (
-	"os"
 	"path/filepath"
 	"sync"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/test"
 )
-
-func snapshotFile(t *testing.T, name string) string {
-	t.Helper()
-	f, err := os.ReadFile(name)
-	if err != nil {
-		t.Error(err)
-	}
-
-	return string(f)
-}
 
 func TestTestID(t *testing.T) {
 	t.Run("should increment id on each call [concurrent safe]", func(t *testing.T) {
@@ -42,18 +31,20 @@ func TestTestID(t *testing.T) {
 
 func TestGetPrevSnapshot(t *testing.T) {
 	t.Run("should return errSnapNotFound", func(t *testing.T) {
-		snap, err := getPrevSnapshot("", "")
+		snap, line, err := getPrevSnapshot("", "")
 
 		test.Equal(t, "", snap)
-		test.Equal(t, err, errSnapNotFound)
+		test.Equal(t, -1, line)
+		test.Equal(t, errSnapNotFound, err)
 	})
 
 	t.Run("should return errSnapNotFound if no match found", func(t *testing.T) {
 		fileData := "[testid]\ntest\n---\n"
 		path := test.CreateTempFile(t, fileData)
-		snap, err := getPrevSnapshot("nonexistentid", path)
+		snap, line, err := getPrevSnapshot("nonexistentid", path)
 
 		test.Equal(t, "", snap)
+		test.Equal(t, -1, line)
 		test.Equal(t, errSnapNotFound, err)
 	})
 
@@ -62,6 +53,7 @@ func TestGetPrevSnapshot(t *testing.T) {
 		testID      string
 		fileData    string
 		snap        string
+		line        int
 		err         error
 	}{
 		{
@@ -69,6 +61,7 @@ func TestGetPrevSnapshot(t *testing.T) {
 			testID:      "my-test",
 			fileData:    "",
 			snap:        "",
+			line:        -1,
 			err:         errSnapNotFound,
 		},
 		{
@@ -76,6 +69,7 @@ func TestGetPrevSnapshot(t *testing.T) {
 			testID:      "my-test",
 			fileData:    "mysnapshot",
 			snap:        "",
+			line:        -1,
 			err:         errSnapNotFound,
 		},
 		{
@@ -83,18 +77,21 @@ func TestGetPrevSnapshot(t *testing.T) {
 			testID:      "[my-test - 1]",
 			fileData:    "[my-test - 1]\nmysnapshot\n---\n",
 			snap:        "mysnapshot\n",
+			line:        1,
 		},
 		{
 			description: "should ignore regex in testID and match correct snap",
 			testID:      "[.*]",
 			fileData:    "\n[my-test]\nwrong snap\n---\n\n[.*]\nmysnapshot\n---\n",
 			snap:        "mysnapshot\n",
+			line:        6,
 		},
 		{
 			description: "should ignore end chars (---) inside snapshot",
 			testID:      "[mock-test 1]",
 			fileData:    "\n[mock-test 1]\nmysnapshot\n---moredata\n---\n",
 			snap:        "mysnapshot\n---moredata\n",
+			line:        2,
 		},
 	} {
 		s := scenario
@@ -102,53 +99,52 @@ func TestGetPrevSnapshot(t *testing.T) {
 			t.Parallel()
 
 			path := test.CreateTempFile(t, s.fileData)
-			snap, err := getPrevSnapshot(s.testID, path)
+			snap, line, err := getPrevSnapshot(s.testID, path)
 
 			test.Equal(t, s.err, err)
+			test.Equal(t, s.line, line)
 			test.Equal(t, s.snap, snap)
 		})
 	}
 }
 
 func TestAddNewSnapshot(t *testing.T) {
-	dir := filepath.Join(t.TempDir(), "__snapshots__")
-	name := filepath.Join(dir, "mock-test.snap")
-	err := addNewSnapshot("[mock-id]", "my-snap\n", dir, name)
+	snapPath := filepath.Join(t.TempDir(), "__snapshots__/mock-test.snap")
 
-	test.Nil(t, err)
-	test.Equal(t, "\n[mock-id]\nmy-snap\n---\n", snapshotFile(t, name))
+	test.NoError(t, addNewSnapshot("[mock-id]", "my-snap\n", snapPath))
+	test.Equal(t, "\n[mock-id]\nmy-snap\n---\n", test.GetFileContent(t, snapPath))
 }
 
 func TestSnapPathAndFile(t *testing.T) {
 	t.Run("should return default path and file", func(t *testing.T) {
 		var (
-			dir  string
-			name string
+			snapPath    string
+			snapPathRel string
 		)
 
 		func() {
 			// This is for emulating being called from a func so we can find the correct file
 			// of the caller
 			func() {
-				dir, name = snapDirAndName(&defaultConfig)
+				snapPath, snapPathRel = snapshotPath(&defaultConfig)
 			}()
 		}()
 
-		test.Contains(t, dir, filepath.FromSlash("/snaps/__snapshots__"))
-		test.Contains(t, name, filepath.FromSlash("/snaps/__snapshots__/snapshot_test.snap"))
+		test.Contains(t, snapPath, filepath.FromSlash("/snaps/__snapshots__"))
+		test.Contains(t, snapPathRel, filepath.FromSlash("../__snapshots__/snapshot_test.snap"))
 	})
 
 	t.Run("should return path and file from config", func(t *testing.T) {
 		var (
-			dir  string
-			name string
+			snapPath    string
+			snapPathRel string
 		)
 
 		func() {
 			// This is for emulating being called from a func so we can find the correct file
 			// of the caller
 			func() {
-				dir, name = snapDirAndName(&config{
+				snapPath, snapPathRel = snapshotPath(&config{
 					filename: "my_file",
 					snapsDir: "my_snapshot_dir",
 				})
@@ -156,29 +152,29 @@ func TestSnapPathAndFile(t *testing.T) {
 		}()
 
 		// returns the current file's path /snaps/*
-		test.Contains(t, dir, filepath.FromSlash("/snaps/my_snapshot_dir"))
-		test.Contains(t, name, filepath.FromSlash("/snaps/my_snapshot_dir/my_file.snap"))
+		test.Contains(t, snapPath, filepath.FromSlash("/snaps/my_snapshot_dir"))
+		test.Contains(t, snapPathRel, filepath.FromSlash("../my_snapshot_dir/my_file.snap"))
 	})
 
 	t.Run("should return absolute path", func(t *testing.T) {
 		var (
-			dir  string
-			name string
+			snapPath    string
+			snapPathRel string
 		)
 
 		func() {
 			// This is for emulating being called from a func so we can find the correct file
 			// of the caller
 			func() {
-				dir, name = snapDirAndName(&config{
+				snapPath, snapPathRel = snapshotPath(&config{
 					filename: "my_file",
 					snapsDir: "/path_to/my_snapshot_dir",
 				})
 			}()
 		}()
 
-		test.Contains(t, dir, filepath.FromSlash("/path_to/my_snapshot_dir"))
-		test.Contains(t, name, filepath.FromSlash("/path_to/my_snapshot_dir/my_file.snap"))
+		test.Contains(t, snapPath, filepath.FromSlash("/path_to/my_snapshot_dir"))
+		test.Contains(t, snapPathRel, filepath.FromSlash("/path_to/my_snapshot_dir/my_file.snap"))
 	})
 }
 
@@ -203,31 +199,25 @@ string hello world 1 3 2
 `
 	snapPath := test.CreateTempFile(t, mockSnap)
 	newSnapshot := "int(1250)\nstring new value\n"
-	err := updateSnapshot("[Test_3/TestSimple - 1]", newSnapshot, snapPath)
-	snap, _ := os.ReadFile(snapPath)
 
-	test.Nil(t, err)
-	test.Equal(t, updatedSnap, string(snap))
+	test.NoError(t, updateSnapshot("[Test_3/TestSimple - 1]", newSnapshot, snapPath))
+	test.Equal(t, updatedSnap, test.GetFileContent(t, snapPath))
 }
 
 func TestEscapeEndChars(t *testing.T) {
 	t.Run("should escape end chars inside data", func(t *testing.T) {
-		dir := filepath.Join(t.TempDir(), "__snapshots__")
-		name := filepath.Join(dir, "mock-test.snap")
+		snapPath := filepath.Join(t.TempDir(), "__snapshots__/mock-test.snap")
 		snapshot := takeSnapshot([]interface{}{"my-snap", endSequence})
-		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
-		test.Nil(t, err)
-		test.Equal(t, "\n[mock-id]\nmy-snap\n/-/-/-/\n---\n", snapshotFile(t, name))
+		test.NoError(t, addNewSnapshot("[mock-id]", snapshot, snapPath))
+		test.Equal(t, "\n[mock-id]\nmy-snap\n/-/-/-/\n---\n", test.GetFileContent(t, snapPath))
 	})
 
 	t.Run("should not escape --- if not end chars", func(t *testing.T) {
-		dir := filepath.Join(t.TempDir(), "__snapshots__")
-		name := filepath.Join(dir, "mock-test.snap")
+		snapPath := filepath.Join(t.TempDir(), "__snapshots__/mock-test.snap")
 		snapshot := takeSnapshot([]interface{}{"my-snap---", endSequence})
-		err := addNewSnapshot("[mock-id]", snapshot, dir, name)
 
-		test.Nil(t, err)
-		test.Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", snapshotFile(t, name))
+		test.NoError(t, addNewSnapshot("[mock-id]", snapshot, snapPath))
+		test.Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", test.GetFileContent(t, snapPath))
 	})
 }
