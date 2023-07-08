@@ -136,7 +136,7 @@ func (t typeMatcher[ExpectedType]) JSON(b []byte) ([]byte, []MatcherError) {
 	return json, errs
 }
 
-func typeCheck[ExpectedType any](value interface{}) error {
+func typeCheck[ExpectedType any](value any) error {
 	if _, ok := value.(ExpectedType); !ok {
 		return fmt.Errorf("expected type %T, received %T", *new(ExpectedType), value)
 	}
@@ -144,6 +144,6 @@ func typeCheck[ExpectedType any](value interface{}) error {
 	return nil
 }
 
-func typePlaceholder(value interface{}) string {
+func typePlaceholder(value any) string {
 	return fmt.Sprintf("<Type:%T>", value)
 }

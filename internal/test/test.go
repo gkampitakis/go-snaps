@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kr/pretty"
 )
 
 type MockTestingT struct {
@@ -38,7 +40,10 @@ func (m MockTestingT) Error(args ...any) {
 	m.t.Helper()
 
 	if m.MockError == nil {
-		m.t.Errorf("t.Error was not expected to be called")
+		m.t.Errorf(
+			"t.Error was not expected to be called. Called with args %s",
+			pretty.Sprint(args),
+		)
 		return
 	}
 	m.MockError(args...)
@@ -54,7 +59,7 @@ func (m MockTestingT) Skip(args ...any) {
 	m.t.Helper()
 
 	if m.MockSkip == nil {
-		m.t.Errorf("t.Skip was not expected to be called")
+		m.t.Errorf("t.Skip was not expected to be called. Called with args %s", pretty.Sprint(args))
 		return
 	}
 	m.MockSkip(args...)
@@ -64,7 +69,11 @@ func (m MockTestingT) Skipf(format string, args ...any) {
 	m.t.Helper()
 
 	if m.MockSkipf == nil {
-		m.t.Errorf("t.Skipf was not expected to be called")
+		m.t.Errorf(
+			"t.Skipf was not expected to be called. Called with format: %s and args %s",
+			format,
+			pretty.Sprint(args),
+		)
 		return
 	}
 	m.MockSkipf(format, args...)
@@ -94,7 +103,7 @@ func (m MockTestingT) Log(args ...any) {
 	m.t.Helper()
 
 	if m.MockLog == nil {
-		m.t.Errorf("t.Log was not expected to be called")
+		m.t.Errorf("t.Log was not expected to be called. Called with args %s", pretty.Sprint(args))
 		return
 	}
 	m.MockLog(args...)

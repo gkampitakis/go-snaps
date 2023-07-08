@@ -18,11 +18,12 @@
 
 - [Installation](#installation)
 - [MatchSnapshot](#matchsnapshot)
-- [MatchStandaloneSnapshot](#matchstandalonesnapshot) `New`
+- [MatchStandaloneSnapshot](#matchstandalonesnapshot)
 - [MatchJSON](#matchjson)
-- [MatchStandaloneJSON](#matchstandalonejson) `New`
-- [MatchYAML](#matchyaml) `New`
-- [MatchStandaloneYAML](#matchstandaloneyaml) `New`
+- [MatchStandaloneJSON](#matchstandalonejson)
+- [MatchYAML](#matchyaml)
+- [MatchStandaloneYAML](#matchstandaloneyaml)
+- [MatchInlineSnapshot](#matchinlinesnapshot) `Experimental`
 - [Matchers](#matchers)
   - [match.Any](#matchany)
   - [match.Custom](#matchcustom)
@@ -283,6 +284,35 @@ match.Type[string]("user.info").
 
 You can see more [examples](./examples/matchJSON_test.go#L96).
 
+## MatchInlineSnapshot
+
+`MatchInlineSnapshot` allows you to store expected snapshot values directly within your test source code, rather than in external snapshot files.
+
+**First run** - Create the snapshot by passing `nil` on the last argument:
+
+```go
+func TestInlineSnapshot(t *testing.T) {
+	snaps.MatchInlineSnapshot(t, "Hello World", nil)
+	snaps.MatchInlineSnapshot(t, 123, nil)
+	snaps.MatchInlineSnapshot(t, map[string]int{"foo": 1, "bar": 2}, nil)
+}
+```
+
+Then run your tests, and `go-snaps` will automatically insert the snapshot into your test code.
+
+```go
+func TestInlineSnapshot(t *testing.T) {
+	snaps.MatchInlineSnapshot(t, "Hello World", snaps.Inline("Hello World"))
+	snaps.MatchInlineSnapshot(t, 123, snaps.Inline("int(123)"))
+	snaps.MatchInlineSnapshot(t, map[string]int{"foo": 1, "bar": 2}, snaps.Inline(`map[string]int{"bar":2, "foo":1}`))
+}
+```
+
+Every subsequent test run will compare the actual value against the inline snapshot, and if they differ, the test will fail and display a diff.
+
+> [!NOTE]
+> `MatchInlineSnapshot` is experimental and looking for feedback and thorough testing before being marked as stable.
+
 ## Configuration
 
 `go-snaps` allows passing configuration for overriding
@@ -433,7 +463,7 @@ Snapshots have the form
 
 ```txt
 [TestSimple/should_make_a_map_snapshot - 1]
-map[string]interface{}{
+map[string]any{
     "mock-0": "value",
     "mock-1": int(2),
     "mock-2": func() {...},
