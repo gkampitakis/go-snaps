@@ -241,7 +241,7 @@ Returns the relative path of the caller and the snapshot path.
 */
 func snapshotPath(c *config) (string, string) {
 	//  skips current func, the wrapper match* and the exported Match* func
-	callerPath := baseCaller(3)
+	callerPath, _ := baseCaller(3)
 
 	dir := c.snapsDir
 	if !filepath.IsAbs(dir) {
