@@ -9,14 +9,11 @@ linters:
     - gofumpt
     - revive
     - unconvert
-    - gocognit
 
   disable:
     - errcheck
 
 linters-settings:
-  gocognit:
-    min-complexity: 45
   lll:
     line-length: 130
   gofumpt:

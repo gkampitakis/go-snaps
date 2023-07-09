@@ -76,21 +76,21 @@ func TestGetPrevSnapshot(t *testing.T) {
 			description: "should return match",
 			testID:      "[my-test - 1]",
 			fileData:    "[my-test - 1]\nmysnapshot\n---\n",
-			snap:        "mysnapshot\n",
+			snap:        "mysnapshot",
 			line:        1,
 		},
 		{
 			description: "should ignore regex in testID and match correct snap",
 			testID:      "[.*]",
 			fileData:    "\n[my-test]\nwrong snap\n---\n\n[.*]\nmysnapshot\n---\n",
-			snap:        "mysnapshot\n",
+			snap:        "mysnapshot",
 			line:        6,
 		},
 		{
 			description: "should ignore end chars (---) inside snapshot",
 			testID:      "[mock-test 1]",
 			fileData:    "\n[mock-test 1]\nmysnapshot\n---moredata\n---\n",
-			snap:        "mysnapshot\n---moredata\n",
+			snap:        "mysnapshot\n---moredata",
 			line:        2,
 		},
 	} {
@@ -111,7 +111,7 @@ func TestGetPrevSnapshot(t *testing.T) {
 func TestAddNewSnapshot(t *testing.T) {
 	snapPath := filepath.Join(t.TempDir(), "__snapshots__/mock-test.snap")
 
-	test.NoError(t, addNewSnapshot("[mock-id]", "my-snap\n", snapPath))
+	test.NoError(t, addNewSnapshot("[mock-id]", "my-snap", snapPath))
 	test.Equal(t, "\n[mock-id]\nmy-snap\n---\n", test.GetFileContent(t, snapPath))
 }
 
@@ -198,7 +198,7 @@ string hello world 1 3 2
 
 `
 	snapPath := test.CreateTempFile(t, mockSnap)
-	newSnapshot := "int(1250)\nstring new value\n"
+	newSnapshot := "int(1250)\nstring new value"
 
 	test.NoError(t, updateSnapshot("[Test_3/TestSimple - 1]", newSnapshot, snapPath))
 	test.Equal(t, updatedSnap, test.GetFileContent(t, snapPath))

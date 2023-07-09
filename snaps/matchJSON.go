@@ -157,7 +157,7 @@ func validateJSON(input interface{}) ([]byte, error) {
 }
 
 func takeJSONSnapshot(b []byte) string {
-	return string(pretty.PrettyOptions(b, jsonOptions))
+	return strings.TrimSuffix(string(pretty.PrettyOptions(b, jsonOptions)), "\n")
 }
 
 func applyJSONMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.MatcherError) {

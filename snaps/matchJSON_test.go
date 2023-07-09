@@ -20,8 +20,7 @@ func TestMatchJSON(t *testing.T) {
   4
  ],
  "user": "mock-name"
-}
-`
+}`
 
 		for _, tc := range []struct {
 			name  string
