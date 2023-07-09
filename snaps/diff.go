@@ -34,6 +34,10 @@ func isSingleline(s string) bool {
 	return i == len(s)-1 || i == -1
 }
 
+func hasNewLine(b []byte) bool {
+	return b[len(b)-1] == '\n'
+}
+
 // shouldPrintHighlights checks if the two strings are going to be presented with
 // inline highlights
 func shouldPrintHighlights(a, b string) bool {
@@ -165,14 +169,29 @@ func singlelineDiff(expected, received string) (string, int, int) {
 		switch diff.Type {
 		case diffDelete:
 			deleted++
-			colors.FprintDeleteBold(a, diff.Text)
+			if strings.HasSuffix(diff.Text, "\n") {
+				colors.FprintDeleteBold(a, diff.Text[:len(diff.Text)-1]+newLineSymbol)
+			} else {
+				colors.FprintDeleteBold(a, diff.Text)
+			}
 		case diffInsert:
 			inserted++
-			colors.FprintInsertBold(b, diff.Text)
+			if strings.HasSuffix(diff.Text, "\n") {
+				colors.FprintInsertBold(b, diff.Text[:len(diff.Text)-1]+newLineSymbol)
+			} else {
+				colors.FprintInsertBold(b, diff.Text)
+			}
 		case diffEqual:
 			colors.FprintBg(a, colors.RedBg, colors.Reddiff, diff.Text)
 			colors.FprintBg(b, colors.GreenBG, colors.Greendiff, diff.Text)
 		}
+	}
+
+	if !hasNewLine(a.Bytes()) {
+		a.WriteByte('\n')
+	}
+	if !hasNewLine(b.Bytes()) {
+		b.WriteByte('\n')
 	}
 
 	a.Write(b.Bytes())
@@ -204,15 +223,16 @@ func buildDiffReport(inserted, deleted int, diff, name string, line int) string 
 
 	iPadding, dPadding := intPadding(inserted, deleted)
 
-	s.WriteString("\n")
+	s.WriteByte('\n')
 	colors.FprintDelete(&s, fmt.Sprintf("Snapshot %s- %d\n", dPadding, deleted))
 	colors.FprintInsert(&s, fmt.Sprintf("Received %s+ %d\n", iPadding, inserted))
-	s.WriteString("\n")
+	s.WriteByte('\n')
 
 	s.WriteString(diff)
+	s.WriteByte('\n')
 
 	if name != "" {
-		colors.Fprint(&s, colors.Dim, fmt.Sprintf("\nat %s:%d\n", name, line))
+		colors.Fprint(&s, colors.Dim, fmt.Sprintf("at %s:%d\n", name, line))
 	}
 
 	return s.String()

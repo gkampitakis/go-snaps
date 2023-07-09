@@ -129,7 +129,7 @@ func getPrevSnapshot(testID, snapPath string) (string, int, error) {
 			line := s.Bytes()
 
 			if bytes.Equal(line, endSequenceByteSlice) {
-				return snapshot.String(), lineNumber, nil
+				return strings.TrimSuffix(snapshot.String(), "\n"), lineNumber, nil
 			}
 			snapshot.Write(line)
 			snapshot.WriteByte('\n')
@@ -150,7 +150,7 @@ func addNewSnapshot(testID, snapshot, snapPath string) error {
 	}
 	defer f.Close()
 
-	_, err = fmt.Fprintf(f, "\n%s\n%s---\n", testID, snapshot)
+	_, err = fmt.Fprintf(f, "\n%s\n%s\n---\n", testID, snapshot)
 	return err
 }
 
@@ -185,6 +185,7 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 
 		// add new snapshot
 		updatedSnapFile.WriteString(snapshot)
+		updatedSnapFile.WriteByte('\n')
 		updatedSnapFile.Write(endSequenceByteSlice)
 		updatedSnapFile.WriteByte('\n')
 	}

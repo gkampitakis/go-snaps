@@ -2,6 +2,7 @@ package snaps
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/gkampitakis/go-snaps/internal/colors"
 	"github.com/kr/pretty"
@@ -110,5 +111,5 @@ func takeSnapshot(objects []interface{}) string {
 		snapshot += pretty.Sprint(objects[i]) + "\n"
 	}
 
-	return escapeEndChars(snapshot)
+	return strings.TrimSuffix(escapeEndChars(snapshot), "\n")
 }

@@ -135,4 +135,32 @@ func TestDiff(t *testing.T) {
 			MatchSnapshot(t, prettyDiff(a, b, "snap/path", 20))
 		})
 	})
+
+	t.Run("should print newline diffs", func(t *testing.T) {
+		t.Run("multiline", func(t *testing.T) {
+			a := `snapshot
+			with multiple lines
+			`
+			b := `snapshot
+
+			with multiple lines
+
+			diff
+			`
+
+			MatchSnapshot(t, prettyDiff(a, b, "snap/path", 10))
+			MatchSnapshot(t, prettyDiff(b, a, "snap/path", 10))
+		})
+
+		t.Run("singleline", func(t *testing.T) {
+			a := "single line snap"
+			b := "single line snap \n"
+			c := "single line snap\n"
+
+			MatchSnapshot(t, prettyDiff(a, b, "snap/path", 10))
+			MatchSnapshot(t, prettyDiff(a, b, "snap/path", 10))
+			MatchSnapshot(t, prettyDiff(a, c, "snap/path", 10))
+			MatchSnapshot(t, prettyDiff(c, a, "snap/path", 10))
+		})
+	})
 }
