@@ -36,6 +36,7 @@
 - [Update Snapshots](#update-snapshots)
   - [Clean obsolete Snapshots](#clean-obsolete-snapshots)
   - [Skipping Tests](#skipping-tests)
+- [Running tests on CI](#running-tests-on-ci)
 - [No Color](#no-color)
 - [Snapshots Structure](#snapshots-structure)
 - [Acknowledgments](#acknowledgments)
@@ -257,7 +258,7 @@ and call `snaps.Clean(t)`. This will also print a **Snapshot Summary**. (if runn
 with verbose flag `-v`)
 
 If you want to remove the obsolete snap files and snapshots you can run
-tests with `UPDATE_SNAPS=true` env variable.
+tests with `UPDATE_SNAPS=clean` env variable.
 
 The reason for using `TestMain`, is because `go-snaps` needs to be sure that all tests
 are finished so it can keep track which snapshots were not called.
@@ -287,6 +288,12 @@ You can skip, or only run specific tests by using the `-run` flag. `go-snaps`
 can identify which tests are being skipped and parse only the relevant tests
 for obsolete snapshots.
 
+## Running Tests on CI
+
+When `go-snaps` detects that it runs on CI it will automatically fail when snapshots are missing. This is done to ensure new snapshots are committed alongside the tests and assertions are successful.
+
+> `go-snaps` uses [ciinfo](https://github.com/gkampitakis/ciinfo) for detecting if it runs on CI environment. 
+
 ## No Color
 
 `go-snaps` supports disabling color outputs by running your tests with the env variable
@@ -303,7 +310,7 @@ For more information around [NO_COLOR](https://no-color.org).
 Snapshots have the form
 
 ```text
-[ TestName - Number ]
+[TestName - Number]
 <data>
 ---
 ```
