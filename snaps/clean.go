@@ -1,7 +1,6 @@
 package snaps
 
 import (
-	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -157,7 +156,7 @@ func examineSnaps(
 		var hasDiffs bool
 
 		registeredTests := occurrences(registry[snapPath])
-		s := bufio.NewScanner(f)
+		s := snapshotScanner(f)
 
 		for s.Scan() {
 			b := s.Bytes()
@@ -190,6 +189,10 @@ func examineSnaps(
 					break
 				}
 			}
+		}
+
+		if err := s.Err(); err != nil {
+			return nil, err
 		}
 
 		if !hasDiffs || !shouldUpdate {

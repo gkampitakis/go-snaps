@@ -1,7 +1,10 @@
 package snaps
 
 import (
+	"bufio"
 	"errors"
+	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -101,6 +104,13 @@ func baseCaller(skip int) string {
 			return file
 		}
 	}
+}
+
+// snapshotScanner returns a new *bufio.Scanner with a `MaxScanTokenSize == math.MaxInt` to read from r.
+func snapshotScanner(r io.Reader) *bufio.Scanner {
+	s := bufio.NewScanner(r)
+	s.Buffer([]byte{}, math.MaxInt)
+	return s
 }
 
 // shouldUpdateSingle returns if a single should be updated or not

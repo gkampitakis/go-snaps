@@ -116,7 +116,7 @@ func getPrevSnapshot(testID, snapPath string) (string, int, error) {
 	lineNumber := 1
 	tid := []byte(testID)
 
-	s := bufio.NewScanner(bytes.NewReader(f))
+	s := snapshotScanner(bytes.NewReader(f))
 	for s.Scan() {
 		l := s.Bytes()
 		if !bytes.Equal(l, tid) {
@@ -134,6 +134,10 @@ func getPrevSnapshot(testID, snapPath string) (string, int, error) {
 			snapshot.Write(line)
 			snapshot.WriteByte('\n')
 		}
+	}
+
+	if err := s.Err(); err != nil {
+		return "", -1, err
 	}
 
 	return "", -1, errSnapNotFound
@@ -172,7 +176,7 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 		updatedSnapFile.Grow(int(i.Size()))
 	}
 
-	s := bufio.NewScanner(f)
+	s := snapshotScanner(f)
 	for s.Scan() {
 		b := s.Bytes()
 		updatedSnapFile.Write(b)
@@ -188,6 +192,10 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 		updatedSnapFile.WriteByte('\n')
 		updatedSnapFile.Write(endSequenceByteSlice)
 		updatedSnapFile.WriteByte('\n')
+	}
+
+	if err := s.Err(); err != nil {
+		return err
 	}
 
 	return overwriteFile(f, updatedSnapFile.Bytes())
