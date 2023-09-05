@@ -15,11 +15,48 @@ import (
 
 type InlineSnapshot *string
 
+// Inline representation of snapshot
 func Inline(s string) InlineSnapshot {
 	return &s
 }
 
+/*
+MatchInlineSnapshot verifies the value matches the inline snapshot
+First you call it with nil
+
+	MatchInlineSnapshot(t, "mysnapshot", nil)
+
+and it populates with the snapshot
+
+	MatchInlineSnapshot(t, "mysnapshot", snaps.Inline("mysnapshot"))
+
+the on every subsequent call it verifies the value matches the snapshot
+*/
+func (c *config) MatchInlineSnapshot(t testingT, received interface{}, inlineSnap InlineSnapshot) {
+	t.Helper()
+
+	matchInlineSnapshot(c, t, received, inlineSnap)
+}
+
+/*
+MatchInlineSnapshot verifies the value matches the inline snapshot
+First you call it with nil
+
+	MatchInlineSnapshot(t, "mysnapshot", nil)
+
+and it populates with the snapshot
+
+	MatchInlineSnapshot(t, "mysnapshot", snaps.Inline("mysnapshot"))
+
+the on every subsequent call it verifies the value matches the snapshot
+*/
 func MatchInlineSnapshot(t testingT, received interface{}, inlineSnap InlineSnapshot) {
+	t.Helper()
+
+	matchInlineSnapshot(&defaultConfig, t, received, inlineSnap)
+}
+
+func matchInlineSnapshot(c *config, t testingT, received interface{}, inlineSnap InlineSnapshot) {
 	t.Helper()
 	snapshot := pretty.Sprint(received)
 	filename, line := baseCaller(1)
@@ -42,7 +79,7 @@ func MatchInlineSnapshot(t testingT, received interface{}, inlineSnap InlineSnap
 		return
 	}
 
-	if !shouldUpdateSingle(t.Name()) {
+	if !shouldUpdate(c.update) {
 		handleError(t, diff)
 		return
 	}
