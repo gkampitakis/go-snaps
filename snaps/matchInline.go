@@ -30,8 +30,8 @@ func MatchInlineSnapshot(t testingT, received interface{}, inlineSnap InlineSnap
 			return
 		}
 
-		if err := injectSnapshot(filename, line, snapshot); err != nil {
-			handleError(t, errSnapNotFound)
+		if err := writeInlineSnapshot(filename, line, snapshot); err != nil {
+			handleError(t, err)
 		}
 		return
 	}
@@ -47,8 +47,8 @@ func MatchInlineSnapshot(t testingT, received interface{}, inlineSnap InlineSnap
 		return
 	}
 
-	if err := injectSnapshot(filename, line, snapshot); err != nil {
-		handleError(t, errSnapNotFound)
+	if err := writeInlineSnapshot(filename, line, snapshot); err != nil {
+		handleError(t, err)
 		return
 	}
 
@@ -56,8 +56,7 @@ func MatchInlineSnapshot(t testingT, received interface{}, inlineSnap InlineSnap
 	testEvents.register(updated)
 }
 
-func injectSnapshot(filename string, line int, snapshot string) error {
-	foundCaller := false
+func writeInlineSnapshot(filename string, line int, snapshot string) error {
 	fset := token.NewFileSet()
 	p, err := parser.ParseFile(
 		fset,
@@ -70,41 +69,55 @@ func injectSnapshot(filename string, line int, snapshot string) error {
 	}
 
 	for _, decl := range p.Decls {
-		if funcDecl, ok := decl.(*ast.FuncDecl); ok {
-			if strings.HasPrefix(funcDecl.Name.Name, "Test") {
-				ast.Inspect(decl, func(n ast.Node) bool {
-					callExpr, ok := n.(*ast.CallExpr)
-					if ok {
-						selectorExpr, ok := callExpr.Fun.(*ast.SelectorExpr)
-						if ok && selectorExpr.Sel.Name == "MatchInlineSnapshot" &&
-							fset.Position(n.Pos()).Line == line {
-							callExpr.Args[2] = createInlineArgument(snapshot)
-							foundCaller = true
-							return false
-						}
-					}
-
-					return true
-				})
-			}
-
-			if foundCaller {
-				break
-			}
+		funcDecl, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
 		}
+		if !strings.HasPrefix(funcDecl.Name.Name, "Test") {
+			continue
+		}
+
+		if !updateAST(decl, fset, line, snapshot) {
+			continue
+		}
+
+		file, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		return printer.Fprint(file, fset, p)
 	}
 
-	if !foundCaller {
-		return errors.New("cannot locate caller")
-	}
+	return errors.New("cannot locate caller")
+}
 
-	file, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+func updateAST(node ast.Node, fset *token.FileSet, line int, snapshot string) bool {
+	var updated bool
 
-	return printer.Fprint(file, fset, p)
+	ast.Inspect(node, func(n ast.Node) bool {
+		callExpr, ok := n.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		selectorExpr, ok := callExpr.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return true
+		}
+
+		if selectorExpr.Sel.Name == "MatchInlineSnapshot" &&
+			fset.Position(n.Pos()).Line == line {
+			callExpr.Args[2] = createInlineArgument(snapshot)
+			updated = true
+
+			return false
+		}
+
+		return true
+	})
+
+	return updated
 }
 
 func createInlineArgument(s string) ast.Expr {
