@@ -211,6 +211,7 @@ You can see more [examples](./examples/matchJSON_test.go#L96).
 
 - the directory where snapshots are stored, _relative or absolute path_
 - the filename where snapshots are stored
+- programmatically control whether to update snapshots
 
 ```go
 t.Run("snapshot tests", func(t *testing.T) {
@@ -219,6 +220,7 @@ t.Run("snapshot tests", func(t *testing.T) {
   s := snaps.WithConfig(
     snaps.Dir("my_dir"),
     snaps.Filename("json_file"),
+    snaps.Update(false)
   )
 
   s.MatchJSON(t, `{"hello":"world"}`)
@@ -292,7 +294,7 @@ for obsolete snapshots.
 
 When `go-snaps` detects that it runs on CI it will automatically fail when snapshots are missing. This is done to ensure new snapshots are committed alongside the tests and assertions are successful.
 
-> `go-snaps` uses [ciinfo](https://github.com/gkampitakis/ciinfo) for detecting if it runs on CI environment. 
+> `go-snaps` uses [ciinfo](https://github.com/gkampitakis/ciinfo) for detecting if it runs on CI environment.
 
 ## No Color
 

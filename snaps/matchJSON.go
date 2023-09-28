@@ -123,7 +123,7 @@ func matchJSON(c *config, t testingT, input interface{}, matchers ...match.JSONM
 		return
 	}
 
-	if !shouldUpdateSingle(t.Name()) {
+	if !shouldUpdate(c.update) {
 		handleError(t, diff)
 		return
 	}
