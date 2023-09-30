@@ -27,6 +27,16 @@ var (
 type config struct {
 	filename string
 	snapsDir string
+	update   *bool
+}
+
+// Update determines whether to update snapshots or not
+//
+// It respects if running on CI.
+func Update(u bool) func(*config) {
+	return func(c *config) {
+		c.update = &u
+	}
 }
 
 // Specify folder name where snapshots are stored
@@ -53,7 +63,7 @@ func Dir(dir string) func(*config) {
 
 // Create snaps with configuration
 //
-//	e.g WithConfig(Filename("my_test")).MatchSnapshot(t, "hello world")
+//	e.g snaps.WithConfig(snaps.Filename("my_test")).MatchSnapshot(t, "hello world")
 func WithConfig(args ...func(*config)) *config {
 	s := defaultConfig
 

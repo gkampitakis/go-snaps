@@ -17,9 +17,8 @@ import (
 var (
 	errSnapNotFound = errors.New("snapshot not found")
 	isCI            = ciinfo.IsCI
-	envVar          = os.Getenv("UPDATE_SNAPS")
-	shouldUpdate    = envVar == "true" && !isCI
-	shouldClean     = shouldUpdate || envVar == "clean" && !isCI
+	updateVAR       = os.Getenv("UPDATE_SNAPS")
+	shouldClean     = (updateVAR == "true" || updateVAR == "clean") && !isCI
 	defaultConfig   = config{
 		snapsDir: "__snapshots__",
 	}
@@ -113,9 +112,15 @@ func snapshotScanner(r io.Reader) *bufio.Scanner {
 	return s
 }
 
-// shouldUpdateSingle returns if a single should be updated or not
-//
-// it depends on the general should update or if the given name on `UPDATE_SNAPS` matches the current test.
-func shouldUpdateSingle(tName string) bool {
-	return shouldUpdate || (!isCI && envVar != "" && strings.HasPrefix(tName, envVar))
+// shouldUpdate determines whether snapshots should be updated
+func shouldUpdate(u *bool) bool {
+	if isCI {
+		return false
+	}
+
+	if u != nil {
+		return *u
+	}
+
+	return updateVAR == "true"
 }

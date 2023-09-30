@@ -90,7 +90,7 @@ func matchSnapshot(c *config, t testingT, values ...interface{}) {
 		return
 	}
 
-	if !shouldUpdateSingle(t.Name()) {
+	if !shouldUpdate(c.update) {
 		handleError(t, diff)
 		return
 	}

@@ -38,10 +38,10 @@ func setupSnapshot(t *testing.T, file string, ci bool, update ...bool) string {
 	dir, _ := os.Getwd()
 	snapPath := filepath.Join(dir, "__snapshots__", file)
 	isCI = ci
-	shouldUpdatePrev := shouldUpdate
-	shouldUpdate = false
-	if len(update) > 0 {
-		shouldUpdate = update[0]
+	updateVARPrev := updateVAR
+	updateVAR = ""
+	if len(update) > 0 && update[0] {
+		updateVAR = "true"
 	}
 
 	t.Cleanup(func() {
@@ -49,7 +49,7 @@ func setupSnapshot(t *testing.T, file string, ci bool, update ...bool) string {
 		testsRegistry = newRegistry()
 		testEvents = newTestEvents()
 		isCI = ciinfo.IsCI
-		shouldUpdate = shouldUpdatePrev
+		updateVAR = updateVARPrev
 	})
 
 	_, err := os.Stat(snapPath)
@@ -148,45 +148,89 @@ func TestMatchSnapshot(t *testing.T) {
 		test.Equal(t, 1, testEvents.items[erred])
 	})
 
-	t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
-		snapPath := setupSnapshot(t, fileName, false, true)
+	t.Run("should update snapshot", func(t *testing.T) {
+		t.Run("when 'updateVAR==true'", func(t *testing.T) {
+			snapPath := setupSnapshot(t, fileName, false, true)
 
-		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
-			func(received interface{}) { test.Equal(t, updatedMsg, received.(string)) },
-		}
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockName: func() string {
-				return "mock-name"
-			},
-			MockError: func(args ...interface{}) {
-				test.NotCalled(t)
-			},
-			MockLog: func(args ...interface{}) {
-				printerExpectedCalls[0](args[0])
+			printerExpectedCalls := []func(received interface{}){
+				func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
+				func(received interface{}) { test.Equal(t, updatedMsg, received.(string)) },
+			}
+			mockT := test.MockTestingT{
+				MockHelper: func() {},
+				MockName: func() string {
+					return "mock-name"
+				},
+				MockError: func(args ...interface{}) {
+					test.NotCalled(t)
+				},
+				MockLog: func(args ...interface{}) {
+					printerExpectedCalls[0](args[0])
 
-				// shift
-				printerExpectedCalls = printerExpectedCalls[1:]
-			},
-		}
+					// shift
+					printerExpectedCalls = printerExpectedCalls[1:]
+				},
+			}
 
-		// First call for creating the snapshot
-		MatchSnapshot(mockT, 10, "hello world")
-		test.Equal(t, 1, testEvents.items[added])
+			// First call for creating the snapshot
+			MatchSnapshot(mockT, 10, "hello world")
+			test.Equal(t, 1, testEvents.items[added])
 
-		// Resetting registry to emulate the same MatchSnapshot call
-		testsRegistry = newRegistry()
+			// Resetting registry to emulate the same MatchSnapshot call
+			testsRegistry = newRegistry()
 
-		// Second call with different params
-		MatchSnapshot(mockT, 100, "bye world")
+			// Second call with different params
+			MatchSnapshot(mockT, 100, "bye world")
 
-		test.Equal(
-			t,
-			"\n[mock-name - 1]\nint(100)\nbye world\n---\n",
-			test.GetFileContent(t, snapPath),
-		)
-		test.Equal(t, 1, testEvents.items[updated])
+			test.Equal(
+				t,
+				"\n[mock-name - 1]\nint(100)\nbye world\n---\n",
+				test.GetFileContent(t, snapPath),
+			)
+			test.Equal(t, 1, testEvents.items[updated])
+		})
+
+		t.Run("when config update", func(t *testing.T) {
+			snapPath := setupSnapshot(t, fileName, false, false)
+
+			printerExpectedCalls := []func(received interface{}){
+				func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
+				func(received interface{}) { test.Equal(t, updatedMsg, received.(string)) },
+			}
+			mockT := test.MockTestingT{
+				MockHelper: func() {},
+				MockName: func() string {
+					return "mock-name"
+				},
+				MockError: func(args ...interface{}) {
+					test.NotCalled(t)
+				},
+				MockLog: func(args ...interface{}) {
+					printerExpectedCalls[0](args[0])
+
+					// shift
+					printerExpectedCalls = printerExpectedCalls[1:]
+				},
+			}
+
+			s := WithConfig(Update(true))
+			// First call for creating the snapshot
+			s.MatchSnapshot(mockT, 10, "hello world")
+			test.Equal(t, 1, testEvents.items[added])
+
+			// Resetting registry to emulate the same MatchSnapshot call
+			testsRegistry = newRegistry()
+
+			// Second call with different params
+			s.MatchSnapshot(mockT, 100, "bye world")
+
+			test.Equal(
+				t,
+				"\n[mock-name - 1]\nint(100)\nbye world\n---\n",
+				test.GetFileContent(t, snapPath),
+			)
+			test.Equal(t, 1, testEvents.items[updated])
+		})
 	})
 
 	t.Run("should print warning if no params provided", func(t *testing.T) {
