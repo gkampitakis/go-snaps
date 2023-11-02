@@ -14,16 +14,7 @@
 <img src="./images/logo.svg" alt="Logo" width="400"/>
 </p>
 
-<br>
-
-<p align="center">
-<img src="./images/diff.png" alt="App Preview Diff"/>
-<img src="./images/new_snapshot.png" alt="App Preview New" width="500"/>
-</p>
-
-> matchJSON and matchers are still under development that means their API can change. Use with caution and please share feedback for improvements.
-
-## Highlights
+## Contents
 
 - [Installation](#installation)
 - [MatchSnapshot](#matchsnapshot)
@@ -211,7 +202,7 @@ You can see more [examples](./examples/matchJSON_test.go#L96).
 
 - the directory where snapshots are stored, _relative or absolute path_
 - the filename where snapshots are stored
-- programmatically control whether to update snapshots
+- programmatically control whether to update snapshots. _You can find an example usage at [examples](./examples/examples_test.go:14)_
 
 ```go
 t.Run("snapshot tests", func(t *testing.T) {
