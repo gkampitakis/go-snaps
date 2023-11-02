@@ -3,14 +3,14 @@ name: Go
 on:
   pull_request:
     paths-ignore:
-      - 'images/**'
-      - '**/*.md'
+      - "images/**"
+      - "**/*.md"
     branches:
       - main
   push:
     paths-ignore:
-      - 'images/**'
-      - '**/*.md'
+      - "images/**"
+      - "**/*.md"
     branches:
       - main
 
@@ -26,7 +26,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: 'latest'
+          version: "latest"
           args: -c ./golangci.yml
       - name: Format lint
         run: |
@@ -38,6 +38,10 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
     steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
       - uses: actions/checkout@v3
       - name: Setup go
         uses: actions/setup-go@v3
