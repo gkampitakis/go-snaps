@@ -1,0 +1,45 @@
+
+[TestAlpha - 1]
+mock snapshot
+---
+
+[TestAlpha - 2]
+mock snapshot second value
+---
+
+[TestBeta - 1]
+mock snapshot
+and
+
+another 
+
+value
+
+---
+
+[TestCat - 1]
+string("")
+---
+
+[TestDir1_1/TestSimple - 1]
+
+int(1)
+
+string hello world 1 1 1
+
+---
+
+[TestDir1_2/TestSimple - 1]
+int(10)
+string hello world 1 2 1
+---
+
+[TestDir1_3/TestSimple - 1]
+int(100)
+string hello world 1 3 1
+---
+
+[TestDir1_3/TestSimple - 2]
+int(1000)
+string hello world 1 3 2
+---
