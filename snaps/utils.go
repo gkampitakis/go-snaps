@@ -18,7 +18,7 @@ var (
 	errSnapNotFound = errors.New("snapshot not found")
 	isCI            = ciinfo.IsCI
 	updateVAR       = os.Getenv("UPDATE_SNAPS")
-	shouldClean     = (updateVAR == "true" || updateVAR == "clean") && !isCI
+	shouldClean     = updateVAR == "true" || updateVAR == "clean"
 	defaultConfig   = config{
 		snapsDir: "__snapshots__",
 	}

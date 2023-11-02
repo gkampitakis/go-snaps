@@ -139,6 +139,7 @@ func TestExamineFiles(t *testing.T) {
 
 func TestExamineSnaps(t *testing.T) {
 	t.Run("should report no obsolete snapshots", func(t *testing.T) {
+		shouldUpdate, sort := false, false
 		tests, dir1, dir2 := setupTempExamineFiles(
 			t,
 			loadMockSnap(t, "mock-snap-1"),
@@ -148,15 +149,15 @@ func TestExamineSnaps(t *testing.T) {
 			filepath.FromSlash(dir1 + "/test1.snap"),
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
-		shouldUpdate := false
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, false)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
 
 		test.Equal(t, []string{}, obsolete)
 		test.NoError(t, err)
 	})
 
 	t.Run("should report two obsolete snapshots and not change content", func(t *testing.T) {
+		shouldUpdate, sort := false, false
 		mockSnap1 := loadMockSnap(t, "mock-snap-1")
 		mockSnap2 := loadMockSnap(t, "mock-snap-2")
 		tests, dir1, dir2 := setupTempExamineFiles(t, mockSnap1, mockSnap2)
@@ -164,14 +165,13 @@ func TestExamineSnaps(t *testing.T) {
 			filepath.FromSlash(dir1 + "/test1.snap"),
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
-		shouldUpdate := false
 
 		// Reducing test occurrence to 1 meaning the second test was removed ( testid - 2 )
 		tests[used[0]]["TestDir1_3/TestSimple"] = 1
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, false)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -184,6 +184,7 @@ func TestExamineSnaps(t *testing.T) {
 	})
 
 	t.Run("should update the obsolete snap files", func(t *testing.T) {
+		shouldUpdate, sort := true, false
 		tests, dir1, dir2 := setupTempExamineFiles(
 			t,
 			loadMockSnap(t, "mock-snap-1"),
@@ -193,13 +194,12 @@ func TestExamineSnaps(t *testing.T) {
 			filepath.FromSlash(dir1 + "/test1.snap"),
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
-		shouldUpdate := true
 
 		// removing tests from the map means those tests are no longer used
 		delete(tests[used[0]], "TestDir1_3/TestSimple")
 		delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, false)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -242,6 +242,7 @@ string hello world 2 2 1
 	})
 
 	t.Run("should sort all tests", func(t *testing.T) {
+		shouldUpdate, sort := false, true
 		mockSnap1 := loadMockSnap(t, "mock-snap-sort-1")
 		mockSnap2 := loadMockSnap(t, "mock-snap-sort-2")
 		expectedMockSnap1 := loadMockSnap(t, "mock-snap-sort-1-sorted")
@@ -256,7 +257,7 @@ string hello world 2 2 1
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		obsolete, err := examineSnaps(tests, used, "", false, true)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
 
 		test.NoError(t, err)
 		test.Equal(t, 0, len(obsolete))
@@ -271,6 +272,7 @@ string hello world 2 2 1
 	t.Run(
 		"should not update file if snaps are already sorted and shouldUpdate=false",
 		func(t *testing.T) {
+			shouldUpdate, sort := false, true
 			mockSnap1 := loadMockSnap(t, "mock-snap-sort-1-sorted")
 			mockSnap2 := loadMockSnap(t, "mock-snap-sort-2-sorted")
 			tests, dir1, dir2 := setupTempExamineFiles(
@@ -287,7 +289,7 @@ string hello world 2 2 1
 			delete(tests[used[0]], "TestDir1_3/TestSimple")
 			delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-			obsolete, err := examineSnaps(tests, used, "", false, true)
+			obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
 
 			test.NoError(t, err)
 			test.Equal(t, []string{

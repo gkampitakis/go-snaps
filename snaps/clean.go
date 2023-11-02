@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/colors"
+	"github.com/maruel/natural"
 )
 
 // Matches [ Test... - number ] testIDs
@@ -82,13 +83,13 @@ func Clean(t *testing.M, opts ...CleanOpts) {
 	_ = t
 	runOnly := flag.Lookup("test.run").Value.String()
 
-	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldClean)
+	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldClean && !isCI)
 	obsoleteTests, err := examineSnaps(
 		testsRegistry.values,
 		usedFiles,
 		runOnly,
-		shouldClean,
-		opt.Sort,
+		shouldClean && !isCI,
+		opt.Sort && !isCI,
 	)
 	if err != nil {
 		fmt.Println(err)
@@ -100,7 +101,8 @@ func Clean(t *testing.M, opts ...CleanOpts) {
 		obsoleteTests,
 		len(skippedTests.values),
 		testEvents.items,
-		shouldClean); s != "" {
+		shouldClean && !isCI,
+	); s != "" {
 		fmt.Print(s)
 	}
 }
@@ -182,7 +184,7 @@ func examineSnaps(
 	registry map[string]map[string]int,
 	used []string,
 	runOnly string,
-	shouldUpdate bool,
+	update,
 	sort bool,
 ) ([]string, error) {
 	obsoleteTests := []string{}
@@ -237,11 +239,11 @@ func examineSnaps(
 			return nil, err
 		}
 
-		isSorted := slices.IsSorted(testIDs)
+		shouldSort := sort && !slices.IsSortedFunc(testIDs, naturalSort)
+		shouldUpdate := update && hasDiffs
 
-		// If there are no diffs or we don't want to update the snaps
-		// and if we don't want to sort the snaps or they are already sorted we skip
-		if (!hasDiffs || !shouldUpdate) && (!sort || isSorted) {
+		// if we don't have to "write" anything on the snap we skip
+		if !shouldUpdate && !shouldSort {
 			f.Close()
 
 			clear(tests)
@@ -251,8 +253,9 @@ func examineSnaps(
 			continue
 		}
 
-		if sort && !isSorted {
-			slices.Sort(testIDs)
+		if shouldSort {
+			// sort testIDs
+			slices.SortFunc(testIDs, naturalSort)
 		}
 
 		if err := overwriteFile(f, nil); err != nil {
@@ -398,4 +401,15 @@ func occurrences(tests map[string]int) set {
 	}
 
 	return result
+}
+
+// naturalSort is a function that can be used to sort strings in natural order
+func naturalSort(a, b string) int {
+	if a == b {
+		return 0
+	}
+	if natural.Less(a, b) {
+		return -1
+	}
+	return 1
 }
