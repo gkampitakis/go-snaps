@@ -406,18 +406,24 @@ func TestGetTestID(t *testing.T) {
 		expectedID string
 		valid      bool
 	}{
-		{"[Test123 - Some Test]", "Test123 - Some Test", true},
+		{"[Test/something - 10]", "Test/something - 10", true},
+		{input: "[Test/something - 100231231dsada]", expectedID: "", valid: false},
+		{input: "[Test/something - 100231231 ]", expectedID: "", valid: false},
+		{input: "[Test/something -100231231 ]", expectedID: "", valid: false},
+		{input: "[Test/something- 100231231]", expectedID: "", valid: false},
+		{input: "[Test/something - a ]", expectedID: "", valid: false},
+		{"[Test123 - Some Test]", "", false},
 		{"", "", false},
 		{"Invalid input", "", false},
 		{"[Test - Missing Closing Bracket", "", false},
 		{"[TesGetTestID- No Space]", "", false},
-		{"[Test/something - 10]", "Test/something - 10", true},
-		// // must have [
+		// must have [
 		{"Test something 10]", "", false},
 		// must have Test at the start
 		{"TesGetTestID -   ]", "", false},
 		// must have dash between test name and number
 		{"[Test something 10]", "", false},
+		{"[Test/something - not a number]", "", false},
 	}
 
 	for _, tc := range testCases {

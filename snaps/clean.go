@@ -113,17 +113,33 @@ func getTestID(b []byte) (string, bool) {
 		return "", false
 	}
 
-	if bytes.Equal(b[0:5], []byte("[Test")) && b[len(b)-1] == ']' {
-		for i := len(b) - 2; i >= 4; i-- {
-			if b[i] == ' ' && b[i-1] == '-' && b[i-2] == ' ' {
-				return string(b[1 : len(b)-1]), true
-			}
-		}
-
+	// needs to start with [Test and end with ]
+	if !bytes.Equal(b[0:5], []byte("[Test")) || b[len(b)-1] != ']' {
 		return "", false
 	}
 
-	return "", false
+	// needs to contain ' - '
+	separator := bytes.Index(b, []byte(" - "))
+	if separator == -1 {
+		return "", false
+	}
+
+	// needs to have a number after the separator
+	if !isNumber(b[separator+3 : len(b)-1]) {
+		return "", false
+	}
+
+	return string(b[1 : len(b)-1]), true
+}
+
+func isNumber(b []byte) bool {
+	for i := 0; i < len(b); i++ {
+		if b[i] < '0' || b[i] > '9' {
+			return false
+		}
+	}
+
+	return true
 }
 
 /*
