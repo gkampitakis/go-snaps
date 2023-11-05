@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"testing"
 
@@ -438,4 +439,31 @@ func TestGetTestID(t *testing.T) {
 			test.Equal(t, tc.expectedID, id)
 		})
 	}
+}
+
+func TestNaturalSort(t *testing.T) {
+	t.Run("should sort in descending order", func(t *testing.T) {
+		items := []string{
+			"[TestExample/Test_Case_1#74 - 1]",
+			"[TestExample/Test_Case_1#05 - 1]",
+			"[TestExample/Test_Case_1#09 - 1]",
+			"[TestExample - 1]",
+			"[TestExample/Test_Case_1#71 - 1]",
+			"[TestExample/Test_Case_1#100 - 1]",
+			"[TestExample/Test_Case_1#7 - 1]",
+		}
+		expected := []string{
+			"[TestExample - 1]",
+			"[TestExample/Test_Case_1#05 - 1]",
+			"[TestExample/Test_Case_1#7 - 1]",
+			"[TestExample/Test_Case_1#09 - 1]",
+			"[TestExample/Test_Case_1#71 - 1]",
+			"[TestExample/Test_Case_1#74 - 1]",
+			"[TestExample/Test_Case_1#100 - 1]",
+		}
+
+		slices.SortFunc(items, naturalSort)
+
+		test.Equal(t, expected, items)
+	})
 }
