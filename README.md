@@ -26,13 +26,14 @@
 - [Configuration](#configuration)
 - [Update Snapshots](#update-snapshots)
   - [Clean obsolete Snapshots](#clean-obsolete-snapshots)
+  - [Sort Snapshots](#sort-snapshots)
   - [Skipping Tests](#skipping-tests)
 - [Running tests on CI](#running-tests-on-ci)
 - [No Color](#no-color)
 - [Snapshots Structure](#snapshots-structure)
 - [Acknowledgments](#acknowledgments)
 - [Contributing](./contributing.md)
-- [Notes](#notes)
+- [Appendix](#appendix)
 
 ## Installation
 
@@ -271,6 +272,21 @@ func TestMain(t *testing.M) {
 
 For more information around [TestMain](https://pkg.go.dev/testing#hdr-Main).
 
+### Sort Snapshots
+
+By default `go-snaps` is appending new snaps to the file and in case of parallel tests the order is random. If you want snaps to be sorted in deterministic order you need to use `TestMain` per package 
+
+```go
+func TestMain(t *testing.M) {
+  v := t.Run()
+
+  // After all tests have run `go-snaps` will sort snapshots
+  snaps.Clean(t, snaps.CleanOpts{Sort: true})
+
+  os.Exit(v)
+}
+```
+
 ### Skipping Tests
 
 If you want to skip one test using `t.Skip`, `go-snaps` can't keep track
@@ -322,7 +338,8 @@ map[string]interface {}{
 ---
 ```
 
-> `*.snap` files are not meant to be edited manually, this might cause unexpected results.
+> [!NOTE]
+> If your snapshot data contain characters `---` at the start of a line followed by a new line, `go-snaps` will "escape" them and save them as `/-/-/-/` to differentiate them from termination characters.
 
 ## Acknowledgments
 
@@ -332,15 +349,10 @@ This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) an
 - Cupaloy is a great and simple Golang snapshoting solution.
 - The [logo](https://github.com/MariaLetta/free-gophers-pack) was made by [MariaLetta](https://github.com/MariaLetta).
 
-## Notes
+## Appendix
 
-1. ⚠️ When running a specific test file by specifying a path
-   `go test ./my_test.go`, `go-snaps` can't track the path so it will mistakenly mark snapshots as obsolete.
+> [!WARNING]
+> When running a specific test file by specifying a path `go test ./my_test.go`, `go-snaps` can't track the path so it will mistakenly mark snapshots as obsolete.
 
-2. The order in which tests are written might not be the same order that snapshots are saved in the file.
-
-3. If your snapshot data contain the termination characters `---` at the start of a line
-   and after a new line, `go-snaps` will "escape" them and save them as `/-/-/-/`. This
-   should not cause any diff issues (false-positives).
-
-4. Snapshots should be treated as code. The snapshot artifact should be committed alongside code changes, and reviewed as part of your code review process
+> [!IMPORTANT]
+> Snapshots should be treated as code. The snapshot artifact should be committed alongside code changes, and reviewed as part of your code review process

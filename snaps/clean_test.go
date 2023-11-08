@@ -2,66 +2,31 @@ package snaps
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/test"
 )
 
-const mockSnap1 = `
+// loadMockSnap loads a mock snap from the testdata directory
+func loadMockSnap(t *testing.T, name string) []byte {
+	t.Helper()
+	snap, err := os.ReadFile(fmt.Sprintf("testdata/%s", name))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-[TestDir1_1/TestSimple - 1]
+	return snap
+}
 
-int(1)
-
-string hello world 1 1 1
-
----
-
-[TestDir1_2/TestSimple - 1]
-int(10)
-string hello world 1 2 1
----
-
-[TestDir1_3/TestSimple - 1]
-int(100)
-string hello world 1 3 1
----
-
-[TestDir1_3/TestSimple - 2]
-int(1000)
-string hello world 1 3 2
----
-
-`
-
-const mockSnap2 = `
-
-[TestDir2_1/TestSimple - 1]
-int(1)
-string hello world 2 1 1
----
-
-[TestDir2_1/TestSimple - 2]
-int(10)
-string hello world 2 1 2
----
-
-[TestDir2_1/TestSimple - 3]
-int(100)
-string hello world 2 1 3
----
-
-[TestDir2_2/TestSimple - 1]
-int(1000)
-string hello world 2 2 1
----
-
-`
-
-func setupTempExamineFiles(t *testing.T) (map[string]map[string]int, string, string) {
+func setupTempExamineFiles(
+	t *testing.T,
+	mockSnap1, mockSnap2 []byte,
+) (map[string]map[string]int, string, string) {
 	t.Helper()
 	dir1 := t.TempDir()
 	dir2 := t.TempDir()
@@ -72,11 +37,11 @@ func setupTempExamineFiles(t *testing.T) (map[string]map[string]int, string, str
 	}{
 		{
 			name: filepath.FromSlash(dir1 + "/test1.snap"),
-			data: []byte(mockSnap1),
+			data: mockSnap1,
 		},
 		{
 			name: filepath.FromSlash(dir2 + "/test2.snap"),
-			data: []byte(mockSnap2),
+			data: mockSnap2,
 		},
 		{
 			name: filepath.FromSlash(dir1 + "/obsolete1.snap"),
@@ -104,10 +69,16 @@ func setupTempExamineFiles(t *testing.T) (map[string]map[string]int, string, str
 			"TestDir1_1/TestSimple": 1,
 			"TestDir1_2/TestSimple": 1,
 			"TestDir1_3/TestSimple": 2,
+			"TestCat":               1,
+			"TestAlpha":             2,
+			"TestBeta":              1,
 		},
 		files[1].name: {
 			"TestDir2_1/TestSimple": 3,
 			"TestDir2_2/TestSimple": 1,
+			"TestCat":               1,
+			"TestAlpha":             2,
+			"TestBeta":              1,
 		},
 	}
 
@@ -116,7 +87,11 @@ func setupTempExamineFiles(t *testing.T) (map[string]map[string]int, string, str
 
 func TestExamineFiles(t *testing.T) {
 	t.Run("should parse files", func(t *testing.T) {
-		tests, dir1, dir2 := setupTempExamineFiles(t)
+		tests, dir1, dir2 := setupTempExamineFiles(
+			t,
+			loadMockSnap(t, "mock-snap-1"),
+			loadMockSnap(t, "mock-snap-2"),
+		)
 		obsolete, used := examineFiles(tests, "", false)
 
 		obsoleteExpected := []string{
@@ -140,7 +115,11 @@ func TestExamineFiles(t *testing.T) {
 
 	t.Run("should remove outdate files", func(t *testing.T) {
 		shouldUpdate := true
-		tests, dir1, dir2 := setupTempExamineFiles(t)
+		tests, dir1, dir2 := setupTempExamineFiles(
+			t,
+			loadMockSnap(t, "mock-snap-1"),
+			loadMockSnap(t, "mock-snap-2"),
+		)
 		examineFiles(tests, "", shouldUpdate)
 
 		if _, err := os.Stat(filepath.FromSlash(dir1 + "/obsolete1.snap")); !errors.Is(
@@ -161,33 +140,39 @@ func TestExamineFiles(t *testing.T) {
 
 func TestExamineSnaps(t *testing.T) {
 	t.Run("should report no obsolete snapshots", func(t *testing.T) {
-		tests, dir1, dir2 := setupTempExamineFiles(t)
+		shouldUpdate, sort := false, false
+		tests, dir1, dir2 := setupTempExamineFiles(
+			t,
+			loadMockSnap(t, "mock-snap-1"),
+			loadMockSnap(t, "mock-snap-2"),
+		)
 		used := []string{
 			filepath.FromSlash(dir1 + "/test1.snap"),
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
-		shouldUpdate := false
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
 
 		test.Equal(t, []string{}, obsolete)
 		test.NoError(t, err)
 	})
 
 	t.Run("should report two obsolete snapshots and not change content", func(t *testing.T) {
-		tests, dir1, dir2 := setupTempExamineFiles(t)
+		shouldUpdate, sort := false, false
+		mockSnap1 := loadMockSnap(t, "mock-snap-1")
+		mockSnap2 := loadMockSnap(t, "mock-snap-2")
+		tests, dir1, dir2 := setupTempExamineFiles(t, mockSnap1, mockSnap2)
 		used := []string{
 			filepath.FromSlash(dir1 + "/test1.snap"),
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
-		shouldUpdate := false
 
 		// Reducing test occurrence to 1 meaning the second test was removed ( testid - 2 )
 		tests[used[0]]["TestDir1_3/TestSimple"] = 1
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -195,37 +180,43 @@ func TestExamineSnaps(t *testing.T) {
 		test.NoError(t, err)
 
 		// Content of snaps is not changed
-		test.Equal(t, mockSnap1, content1)
-		test.Equal(t, mockSnap2, content2)
+		test.Equal(t, mockSnap1, []byte(content1))
+		test.Equal(t, mockSnap2, []byte(content2))
 	})
 
 	t.Run("should update the obsolete snap files", func(t *testing.T) {
-		tests, dir1, dir2 := setupTempExamineFiles(t)
+		shouldUpdate, sort := true, false
+		tests, dir1, dir2 := setupTempExamineFiles(
+			t,
+			loadMockSnap(t, "mock-snap-1"),
+			loadMockSnap(t, "mock-snap-2"),
+		)
 		used := []string{
 			filepath.FromSlash(dir1 + "/test1.snap"),
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
-		shouldUpdate := true
 
+		// removing tests from the map means those tests are no longer used
 		delete(tests[used[0]], "TestDir1_3/TestSimple")
 		delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate)
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
+		// !!unsorted
 		expected1 := `
+[TestDir1_2/TestSimple - 1]
+int(10)
+string hello world 1 2 1
+---
+
 [TestDir1_1/TestSimple - 1]
 
 int(1)
 
 string hello world 1 1 1
 
----
-
-[TestDir1_2/TestSimple - 1]
-int(10)
-string hello world 1 2 1
 ---
 `
 		expected2 := `
@@ -239,8 +230,8 @@ string hello world 2 2 1
 			"TestDir1_3/TestSimple - 1",
 			"TestDir1_3/TestSimple - 2",
 			"TestDir2_1/TestSimple - 1",
-			"TestDir2_1/TestSimple - 2",
 			"TestDir2_1/TestSimple - 3",
+			"TestDir2_1/TestSimple - 2",
 		},
 			obsolete,
 		)
@@ -250,6 +241,75 @@ string hello world 2 2 1
 		test.Equal(t, expected1, content1)
 		test.Equal(t, expected2, content2)
 	})
+
+	t.Run("should sort all tests", func(t *testing.T) {
+		shouldUpdate, sort := false, true
+		mockSnap1 := loadMockSnap(t, "mock-snap-sort-1")
+		mockSnap2 := loadMockSnap(t, "mock-snap-sort-2")
+		expectedMockSnap1 := loadMockSnap(t, "mock-snap-sort-1-sorted")
+		expectedMockSnap2 := loadMockSnap(t, "mock-snap-sort-2-sorted")
+		tests, dir1, dir2 := setupTempExamineFiles(
+			t,
+			mockSnap1,
+			mockSnap2,
+		)
+		used := []string{
+			filepath.FromSlash(dir1 + "/test1.snap"),
+			filepath.FromSlash(dir2 + "/test2.snap"),
+		}
+
+		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
+
+		test.NoError(t, err)
+		test.Equal(t, 0, len(obsolete))
+
+		content1 := test.GetFileContent(t, filepath.FromSlash(dir1+"/test1.snap"))
+		content2 := test.GetFileContent(t, filepath.FromSlash(dir2+"/test2.snap"))
+
+		test.Equal(t, string(expectedMockSnap1), content1)
+		test.Equal(t, string(expectedMockSnap2), content2)
+	})
+
+	t.Run(
+		"should not update file if snaps are already sorted and shouldUpdate=false",
+		func(t *testing.T) {
+			shouldUpdate, sort := false, true
+			mockSnap1 := loadMockSnap(t, "mock-snap-sort-1-sorted")
+			mockSnap2 := loadMockSnap(t, "mock-snap-sort-2-sorted")
+			tests, dir1, dir2 := setupTempExamineFiles(
+				t,
+				mockSnap1,
+				mockSnap2,
+			)
+			used := []string{
+				filepath.FromSlash(dir1 + "/test1.snap"),
+				filepath.FromSlash(dir2 + "/test2.snap"),
+			}
+
+			// removing tests from the map means those tests are no longer used
+			delete(tests[used[0]], "TestDir1_3/TestSimple")
+			delete(tests[used[1]], "TestDir2_1/TestSimple")
+
+			obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
+
+			test.NoError(t, err)
+			test.Equal(t, []string{
+				"TestDir1_3/TestSimple - 1",
+				"TestDir1_3/TestSimple - 2",
+				"TestDir2_1/TestSimple - 1",
+				"TestDir2_1/TestSimple - 2",
+				"TestDir2_1/TestSimple - 3",
+			},
+				obsolete,
+			)
+
+			content1 := test.GetFileContent(t, filepath.FromSlash(dir1+"/test1.snap"))
+			content2 := test.GetFileContent(t, filepath.FromSlash(dir2+"/test2.snap"))
+
+			test.Equal(t, string(mockSnap1), content1)
+			test.Equal(t, string(mockSnap2), content2)
+		},
+	)
 }
 
 func TestOccurrences(t *testing.T) {
@@ -341,40 +401,69 @@ func TestSummary(t *testing.T) {
 	}
 }
 
-func TestTestIDRegex(t *testing.T) {
-	for _, tc := range []struct {
-		input   string
-		id      string
-		matched bool
+func TestGetTestID(t *testing.T) {
+	testCases := []struct {
+		input      string
+		expectedID string
+		valid      bool
 	}{
-		{
-			input:   "[Test/something - 10]",
-			id:      "Test/something - 10",
-			matched: true,
-		},
-		{
-			// must have [
-			input:   "Test/something - 10]",
-			matched: false,
-		},
-		{
-			// must have Test at the start
-			input:   "[Tes/something - 10]",
-			matched: false,
-		},
-		{
-			// must have dash between test name and number
-			input:   "[Test something 10]",
-			matched: false,
-		},
-	} {
-		t.Run(tc.input, func(t *testing.T) {
-			if tc.matched {
-				test.Equal(t, tc.id, testIDRegexp.FindStringSubmatch(tc.input)[1])
-				return
-			}
+		{"[Test/something - 10]", "Test/something - 10", true},
+		{input: "[Test/something - 100231231dsada]", expectedID: "", valid: false},
+		{input: "[Test/something - 100231231 ]", expectedID: "", valid: false},
+		{input: "[Test/something -100231231 ]", expectedID: "", valid: false},
+		{input: "[Test/something- 100231231]", expectedID: "", valid: false},
+		{input: "[Test/something - a ]", expectedID: "", valid: false},
+		{"[Test123 - Some Test]", "", false},
+		{"", "", false},
+		{"Invalid input", "", false},
+		{"[Test - Missing Closing Bracket", "", false},
+		{"[TesGetTestID- No Space]", "", false},
+		// must have [
+		{"Test something 10]", "", false},
+		// must have Test at the start
+		{"TesGetTestID -   ]", "", false},
+		// must have dash between test name and number
+		{"[Test something 10]", "", false},
+		{"[Test/something - not a number]", "", false},
+	}
 
-			test.Equal(t, 0, len(testIDRegexp.FindStringSubmatch(tc.input)))
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.input, func(t *testing.T) {
+			t.Parallel()
+
+			id, ok := getTestID([]byte(tc.input))
+
+			test.Equal(t, tc.valid, ok)
+			test.Equal(t, tc.expectedID, id)
 		})
 	}
+}
+
+func TestNaturalSort(t *testing.T) {
+	t.Run("should sort in descending order", func(t *testing.T) {
+		items := []string{
+			"[TestExample/Test_Case_1#74 - 1]",
+			"[TestExample/Test_Case_1#05 - 1]",
+			"[TestExample/Test_Case_1#09 - 1]",
+			"[TestExample - 1]",
+			"[TestExample/Test_Case_1#71 - 1]",
+			"[TestExample/Test_Case_1#100 - 1]",
+			"[TestExample/Test_Case_1#7 - 1]",
+		}
+		expected := []string{
+			"[TestExample - 1]",
+			"[TestExample/Test_Case_1#05 - 1]",
+			"[TestExample/Test_Case_1#7 - 1]",
+			"[TestExample/Test_Case_1#09 - 1]",
+			"[TestExample/Test_Case_1#71 - 1]",
+			"[TestExample/Test_Case_1#74 - 1]",
+			"[TestExample/Test_Case_1#100 - 1]",
+		}
+
+		slices.SortFunc(items, naturalSort)
+
+		test.Equal(t, expected, items)
+	})
 }

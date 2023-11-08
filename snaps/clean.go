@@ -7,18 +7,18 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/colors"
+	"github.com/maruel/natural"
 )
 
 // Matches [ Test... - number ] testIDs
 var (
-	testIDRegexp = regexp.MustCompile(`(?m)^\[(Test.* - \d+)\]$`)
-	testEvents   = newTestEvents()
+	testEvents = newTestEvents()
 )
 
 const (
@@ -46,6 +46,11 @@ func newTestEvents() *events {
 	}
 }
 
+type CleanOpts struct {
+	// If set to true, `go-snaps` will sort the snapshots
+	Sort bool
+}
+
 // Clean runs checks for identifying obsolete snapshots and prints a Test Summary.
 //
 // Must be called in a TestMain
@@ -58,13 +63,34 @@ func newTestEvents() *events {
 //
 //	 os.Exit(v)
 //	}
-func Clean(t *testing.M) {
+//
+// Clean also supports options for sorting the snapshots
+//
+//	func TestMain(t *testing.M) {
+//	 v := t.Run()
+//
+//	 // After all tests have run `go-snaps` will sort snapshots
+//	 snaps.Clean(t, snaps.CleanOpts{Sort: true})
+//
+//	 os.Exit(v)
+//	}
+func Clean(t *testing.M, opts ...CleanOpts) {
+	var opt CleanOpts
+	if len(opts) != 0 {
+		opt = opts[0]
+	}
 	// This is just for making sure Clean is called from TestMain
 	_ = t
 	runOnly := flag.Lookup("test.run").Value.String()
 
-	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldClean)
-	obsoleteTests, err := examineSnaps(testsRegistry.values, usedFiles, runOnly, shouldClean)
+	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldClean && !isCI)
+	obsoleteTests, err := examineSnaps(
+		testsRegistry.values,
+		usedFiles,
+		runOnly,
+		shouldClean && !isCI,
+		opt.Sort && !isCI,
+	)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -75,9 +101,45 @@ func Clean(t *testing.M) {
 		obsoleteTests,
 		len(skippedTests.values),
 		testEvents.items,
-		shouldClean); s != "" {
+		shouldClean && !isCI,
+	); s != "" {
 		fmt.Print(s)
 	}
+}
+
+// getTestID will return the testID if the line is in the form of [Test... - number]
+func getTestID(b []byte) (string, bool) {
+	if len(b) == 0 {
+		return "", false
+	}
+
+	// needs to start with [Test and end with ]
+	if !bytes.Equal(b[0:5], []byte("[Test")) || b[len(b)-1] != ']' {
+		return "", false
+	}
+
+	// needs to contain ' - '
+	separator := bytes.Index(b, []byte(" - "))
+	if separator == -1 {
+		return "", false
+	}
+
+	// needs to have a number after the separator
+	if !isNumber(b[separator+3 : len(b)-1]) {
+		return "", false
+	}
+
+	return string(b[1 : len(b)-1]), true
+}
+
+func isNumber(b []byte) bool {
+	for i := 0; i < len(b); i++ {
+		if b[i] < '0' || b[i] > '9' {
+			return false
+		}
+	}
+
+	return true
 }
 
 /*
@@ -138,21 +200,20 @@ func examineSnaps(
 	registry map[string]map[string]int,
 	used []string,
 	runOnly string,
-	shouldUpdate bool,
+	update,
+	sort bool,
 ) ([]string, error) {
 	obsoleteTests := []string{}
+	tests := map[string]string{}
+	data := bytes.Buffer{}
+	testIDs := []string{}
 
 	for _, snapPath := range used {
 		f, err := os.OpenFile(snapPath, os.O_RDWR, os.ModePerm)
 		if err != nil {
 			return nil, err
 		}
-		defer f.Close()
 
-		var updatedFile bytes.Buffer
-		if i, err := f.Stat(); err == nil {
-			updatedFile.Grow(int(i.Size()))
-		}
 		var hasDiffs bool
 
 		registeredTests := occurrences(registry[snapPath])
@@ -161,33 +222,32 @@ func examineSnaps(
 		for s.Scan() {
 			b := s.Bytes()
 			// Check if line is a test id
-			match := testIDRegexp.FindSubmatch(b)
-			if len(match) <= 1 {
+			testID, match := getTestID(b)
+			if !match {
 				continue
 			}
-			testID := string(match[1])
+			testIDs = append(testIDs, testID)
 
 			if !registeredTests.Has(testID) && !testSkipped(testID, runOnly) {
 				obsoleteTests = append(obsoleteTests, testID)
 				hasDiffs = true
 
 				removeSnapshot(s)
-
 				continue
 			}
 
-			updatedFile.WriteByte('\n')
-			updatedFile.Write(b)
-			updatedFile.WriteByte('\n')
-
 			for s.Scan() {
 				line := s.Bytes()
-				updatedFile.Write(line)
-				updatedFile.WriteByte('\n')
 
 				if bytes.Equal(line, endSequenceByteSlice) {
+					tests[testID] = data.String()
+
+					data.Reset()
 					break
 				}
+
+				data.Write(line)
+				data.WriteByte('\n')
 			}
 		}
 
@@ -195,13 +255,42 @@ func examineSnaps(
 			return nil, err
 		}
 
-		if !hasDiffs || !shouldUpdate {
+		shouldSort := sort && !slices.IsSortedFunc(testIDs, naturalSort)
+		shouldUpdate := update && hasDiffs
+
+		// if we don't have to "write" anything on the snap we skip
+		if !shouldUpdate && !shouldSort {
+			f.Close()
+
+			clear(tests)
+			testIDs = testIDs[:0]
+			data.Reset()
+
 			continue
 		}
 
-		if err = overwriteFile(f, updatedFile.Bytes()); err != nil {
-			fmt.Println(err)
+		if shouldSort {
+			// sort testIDs
+			slices.SortFunc(testIDs, naturalSort)
 		}
+
+		if err := overwriteFile(f, nil); err != nil {
+			return nil, err
+		}
+
+		for _, id := range testIDs {
+			test, ok := tests[id]
+			if !ok {
+				continue
+			}
+
+			fmt.Fprintf(f, "\n[%s]\n%s%s\n", id, test, endSequence)
+		}
+		f.Close()
+
+		clear(tests)
+		testIDs = testIDs[:0]
+		data.Reset()
 	}
 
 	return obsoleteTests, nil
@@ -328,4 +417,15 @@ func occurrences(tests map[string]int) set {
 	}
 
 	return result
+}
+
+// naturalSort is a function that can be used to sort strings in natural order
+func naturalSort(a, b string) int {
+	if a == b {
+		return 0
+	}
+	if natural.Less(a, b) {
+		return -1
+	}
+	return 1
 }
