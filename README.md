@@ -227,10 +227,10 @@ You can update your failing snapshots by setting `UPDATE_SNAPS` env variable to 
 UPDATE_SNAPS=true go test ./...
 ```
 
-If you don't want to update all failing snapshots, or you want to update one of
-them you can you use the `-run` flag to target the test/s you want.
+If you don't want to update all failing snapshots, or you want to update only one of
+them you can you use the `-run` flag to target the test(s) you want.
 
-For more information for `go test` flags you can run
+For more information on `go test` flags you can run
 
 ```go
 go help testflag
@@ -245,15 +245,15 @@ go help testflag
 
 `go-snaps` can identify obsolete snapshots.
 
-In order to enable this functionality you need to use the `TestMain(t*testing.M)`
-and call `snaps.Clean(t)`. This will also print a **Snapshot Summary**. (if running tests
+In order to enable this functionality you need to use `TestMain(t*testing.M)` to
+call `snaps.Clean(t)` after your tests have run. This will also print a **Snapshot Summary**. (if running tests
 with verbose flag `-v`)
 
 If you want to remove the obsolete snap files and snapshots you can run
 tests with `UPDATE_SNAPS=clean` env variable.
 
-The reason for using `TestMain`, is because `go-snaps` needs to be sure that all tests
-are finished so it can keep track which snapshots were not called.
+The reason for using `TestMain` is because `go-snaps` needs to be sure that all tests
+are finished so it can keep track of which snapshots were not called.
 
 **Example:**
 
@@ -272,7 +272,7 @@ For more information around [TestMain](https://pkg.go.dev/testing#hdr-Main).
 
 ### Sort Snapshots
 
-By default `go-snaps` is appending new snaps to the file and in case of parallel tests the order is random. If you want snaps to be sorted in deterministic order you need to use `TestMain` per package 
+By default `go-snaps` appends new snaps to the snapshot file and in case of parallel tests the order is random. If you want snaps to be sorted in deterministic order you need to use `TestMain` per package:
 
 ```go
 func TestMain(t *testing.M) {
@@ -297,7 +297,7 @@ for obsolete snapshots.
 
 ## Running Tests on CI
 
-When `go-snaps` detects that it runs on CI it will automatically fail when snapshots are missing. This is done to ensure new snapshots are committed alongside the tests and assertions are successful.
+When `go-snaps` detects that it is running in CI it will automatically fail when snapshots are missing. This is done to ensure new snapshots are committed alongside the tests and assertions are successful.
 
 > `go-snaps` uses [ciinfo](https://github.com/gkampitakis/ciinfo) for detecting if it runs on CI environment.
 
@@ -322,8 +322,7 @@ Snapshots have the form
 ---
 ```
 
-`TestID` is the test name plus an increasing number ( allowing to do multiple calls
-of `MatchSnapshot` inside a test ).
+`TestID` is the test name plus an increasing number to allow multiple calls of `MatchSnapshot` in a single test.
 
 ```txt
 [TestSimple/should_make_a_map_snapshot - 1]
