@@ -55,9 +55,7 @@ import (
 )
 
 func TestExample(t *testing.T) {
-
-  snaps.MatchSnapshot(t ,"Hello World")
-
+  snaps.MatchSnapshot(t, "Hello World")
 }
 ```
 
@@ -96,7 +94,7 @@ successfully on `json.Marshal`.
 ```go
 func TestJSON(t *testing.T) {
   type User struct {
-    Age int
+    Age   int
     Email string
   }
 
