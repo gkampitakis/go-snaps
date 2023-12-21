@@ -55,22 +55,22 @@ type CleanOpts struct {
 //
 // Must be called in a TestMain
 //
-//	func TestMain(t *testing.M) {
-//	 v := t.Run()
+//	func TestMain(m *testing.M) {
+//	 v := m.Run()
 //
-//	 // After all tests have run `go-snaps` can check for not used snapshots
-//	 snaps.Clean(t)
+//	 // After all tests have run `go-snaps` can check for unused snapshots
+//	 snaps.Clean(m)
 //
 //	 os.Exit(v)
 //	}
 //
 // Clean also supports options for sorting the snapshots
 //
-//	func TestMain(t *testing.M) {
-//	 v := t.Run()
+//	func TestMain(m *testing.M) {
+//	 v := m.Run()
 //
 //	 // After all tests have run `go-snaps` will sort snapshots
-//	 snaps.Clean(t, snaps.CleanOpts{Sort: true})
+//	 snaps.Clean(m, snaps.CleanOpts{Sort: true})
 //
 //	 os.Exit(v)
 //	}
