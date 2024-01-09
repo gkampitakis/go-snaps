@@ -10,10 +10,10 @@ import (
 	"github.com/gkampitakis/go-snaps/snaps"
 )
 
-func TestMain(t *testing.M) {
-	v := t.Run()
+func TestMain(m *testing.M) {
+	v := m.Run()
 
-	snaps.Clean(t)
+	snaps.Clean(m)
 
 	os.Exit(v)
 }

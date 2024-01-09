@@ -245,7 +245,7 @@ go help testflag
 
 `go-snaps` can identify obsolete snapshots.
 
-In order to enable this functionality you need to use `TestMain(t*testing.M)` to
+In order to enable this functionality you need to use `TestMain(m *testing.M)` to
 call `snaps.Clean(t)` after your tests have run. This will also print a **Snapshot Summary**. (if running tests
 with verbose flag `-v`)
 
@@ -258,11 +258,11 @@ are finished so it can keep track of which snapshots were not called.
 **Example:**
 
 ```go
-func TestMain(t *testing.M) {
-  v := t.Run()
+func TestMain(m *testing.M) {
+  v := m.Run()
 
-  // After all tests have run `go-snaps` can check for not used snapshots
-  snaps.Clean(t)
+  // After all tests have run `go-snaps` can check for unused snapshots
+  snaps.Clean(m)
 
   os.Exit(v)
 }
@@ -275,11 +275,11 @@ For more information around [TestMain](https://pkg.go.dev/testing#hdr-Main).
 By default `go-snaps` appends new snaps to the snapshot file and in case of parallel tests the order is random. If you want snaps to be sorted in deterministic order you need to use `TestMain` per package:
 
 ```go
-func TestMain(t *testing.M) {
-  v := t.Run()
+func TestMain(m *testing.M) {
+  v := m.Run()
 
   // After all tests have run `go-snaps` will sort snapshots
-  snaps.Clean(t, snaps.CleanOpts{Sort: true})
+  snaps.Clean(m, snaps.CleanOpts{Sort: true})
 
   os.Exit(v)
 }
