@@ -9,7 +9,7 @@ import (
 
 type anyMatcher struct {
 	paths            []string
-	placeholder      interface{}
+	placeholder      any
 	errOnMissingPath bool
 	name             string
 }
@@ -33,7 +33,7 @@ func Any(paths ...string) *anyMatcher {
 }
 
 // Placeholder allows to define the placeholder value for Any matcher
-func (a *anyMatcher) Placeholder(p interface{}) *anyMatcher {
+func (a *anyMatcher) Placeholder(p any) *anyMatcher {
 	a.placeholder = p
 	return a
 }

@@ -111,11 +111,11 @@ JSON will be saved in snapshot in pretty format for more readability and determi
 `MatchJSON`'s third argument can accept a list of matchers. Matchers are functions that can act
 as property matchers and test values.
 
-You can pass a path of the property you want to match and test.
+You can pass the path of the property you want to match and test.
 
-The path syntax is a series of keys separated by a dot. The dot and colon can be escaped with `\`.
+_More information about the supported path syntax from [gjson](https://github.com/tidwall/gjson/blob/v1.17.0/SYNTAX.md)._
 
-Currently `go-snaps` has two build in matchers
+Currently `go-snaps` has three build in matchers
 
 - `match.Any`
 - `match.Custom`
@@ -145,7 +145,7 @@ match.Any("user.name").
 Custom matcher allows you to bring your own validation and placeholder value
 
 ```go
-match.Custom("user.age", func(val interface{}) (interface{}, error) {
+match.Custom("user.age", func(val any) (any, error) {
 		age, ok := val.(float64)
 		if !ok {
 				return nil, fmt.Errorf("expected number but got %T", val)
@@ -162,8 +162,8 @@ bool // for JSON booleans
 float64 // for JSON numbers
 string // for JSON string literals
 nil // for JSON null
-map[string]interface{} // for JSON objects
-[]interface{} // for JSON arrays
+map[string]any // for JSON objects
+[]any // for JSON arrays
 ```
 
 If Custom matcher returns an error the snapshot test will fail with that error.
@@ -201,7 +201,7 @@ You can see more [examples](./examples/matchJSON_test.go#L96).
 
 - the directory where snapshots are stored, _relative or absolute path_
 - the filename where snapshots are stored
-- programmatically control whether to update snapshots. _You can find an example usage at [examples](./examples/examples_test.go:14)_
+- programmatically control whether to update snapshots. _You can find an example usage at [examples](/examples/examples_test.go#13)_
 
 ```go
 t.Run("snapshot tests", func(t *testing.T) {
@@ -326,7 +326,7 @@ Snapshots have the form
 
 ```txt
 [TestSimple/should_make_a_map_snapshot - 1]
-map[string]interface {}{
+map[string]interface{}{
     "mock-0": "value",
     "mock-1": int(2),
     "mock-2": func() {...},

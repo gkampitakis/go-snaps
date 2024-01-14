@@ -13,17 +13,17 @@ func TestSkip(t *testing.T) {
 		t.Cleanup(func() {
 			skippedTests = newSyncSlice()
 		})
-		skipArgs := []interface{}{1, 2, 3, 4, 5}
+		skipArgs := []any{1, 2, 3, 4, 5}
 
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
-			MockSkip: func(args ...interface{}) {
+			MockSkip: func(args ...any) {
 				test.Equal(t, skipArgs, args)
 			},
 			MockName: func() string {
 				return "mock-test"
 			},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				test.Equal(t, skippedMsg, args[0].(string))
 			},
 		}
@@ -39,14 +39,14 @@ func TestSkip(t *testing.T) {
 
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
-			MockSkipf: func(format string, args ...interface{}) {
+			MockSkipf: func(format string, args ...any) {
 				test.Equal(t, "mock", format)
-				test.Equal(t, []interface{}{1, 2, 3, 4, 5}, args)
+				test.Equal(t, []any{1, 2, 3, 4, 5}, args)
 			},
 			MockName: func() string {
 				return "mock-test"
 			},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				test.Equal(t, skippedMsg, args[0].(string))
 			},
 		}
@@ -66,7 +66,7 @@ func TestSkip(t *testing.T) {
 			MockName: func() string {
 				return "mock-test"
 			},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				test.Equal(t, skippedMsg, args[0].(string))
 			},
 		}
@@ -86,7 +86,7 @@ func TestSkip(t *testing.T) {
 			MockName: func() string {
 				return "mock-test"
 			},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				test.Equal(t, skippedMsg, args[0].(string))
 			},
 		}
@@ -138,7 +138,7 @@ func TestSkip(t *testing.T) {
 					MockName: func() string {
 						return "TestMock/Skip"
 					},
-					MockLog: func(args ...interface{}) {
+					MockLog: func(args ...any) {
 						test.Equal(t, skippedMsg, args[0].(string))
 					},
 				}
@@ -166,7 +166,7 @@ func TestSkip(t *testing.T) {
 				MockName: func() string {
 					return "Test"
 				},
-				MockLog: func(args ...interface{}) {
+				MockLog: func(args ...any) {
 					test.Equal(t, skippedMsg, args[0].(string))
 				},
 			}

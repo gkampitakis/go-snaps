@@ -19,7 +19,7 @@ var (
 // Wrapper of testing.Skip
 //
 // Keeps track which snapshots are getting skipped and not marked as obsolete.
-func Skip(t testingT, args ...interface{}) {
+func Skip(t testingT, args ...any) {
 	t.Helper()
 
 	trackSkip(t)
@@ -29,7 +29,7 @@ func Skip(t testingT, args ...interface{}) {
 // Wrapper of testing.Skipf
 //
 // Keeps track which snapshots are getting skipped and not marked as obsolete.
-func Skipf(t testingT, format string, args ...interface{}) {
+func Skipf(t testingT, format string, args ...any) {
 	t.Helper()
 
 	trackSkip(t)

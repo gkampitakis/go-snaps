@@ -9,7 +9,7 @@ import (
 
 func TestCustomMatcher(t *testing.T) {
 	t.Run("should create a custom matcher", func(t *testing.T) {
-		c := Custom("path", func(val interface{}) (interface{}, error) {
+		c := Custom("path", func(val any) (any, error) {
 			return nil, nil
 		})
 
@@ -19,7 +19,7 @@ func TestCustomMatcher(t *testing.T) {
 	})
 
 	t.Run("should allow overrding values", func(t *testing.T) {
-		c := Custom("path", func(val interface{}) (interface{}, error) {
+		c := Custom("path", func(val any) (any, error) {
 			return nil, nil
 		}).ErrOnMissingPath(false)
 
@@ -38,7 +38,7 @@ func TestCustomMatcher(t *testing.T) {
 		}`)
 
 		t.Run("should return error in case of missing path", func(t *testing.T) {
-			c := Custom("missing.key", func(val interface{}) (interface{}, error) {
+			c := Custom("missing.key", func(val any) (any, error) {
 				return nil, nil
 			})
 
@@ -55,7 +55,7 @@ func TestCustomMatcher(t *testing.T) {
 		})
 
 		t.Run("should ignore error in case of missing path", func(t *testing.T) {
-			c := Custom("missing.key", func(val interface{}) (interface{}, error) {
+			c := Custom("missing.key", func(val any) (any, error) {
 				return nil, nil
 			}).ErrOnMissingPath(false)
 
@@ -65,7 +65,7 @@ func TestCustomMatcher(t *testing.T) {
 		})
 
 		t.Run("should return error from custom callback", func(t *testing.T) {
-			c := Custom("user.email", func(val interface{}) (interface{}, error) {
+			c := Custom("user.email", func(val any) (any, error) {
 				return nil, errors.New("custom error")
 			})
 
@@ -82,7 +82,7 @@ func TestCustomMatcher(t *testing.T) {
 		})
 
 		t.Run("should apply value from custom callback to json", func(t *testing.T) {
-			c := Custom("user.email", func(val interface{}) (interface{}, error) {
+			c := Custom("user.email", func(val any) (any, error) {
 				return "replaced email", nil
 			})
 

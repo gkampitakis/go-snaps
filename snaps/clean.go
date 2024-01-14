@@ -74,13 +74,13 @@ type CleanOpts struct {
 //
 //	 os.Exit(v)
 //	}
-func Clean(t *testing.M, opts ...CleanOpts) {
+func Clean(m *testing.M, opts ...CleanOpts) {
 	var opt CleanOpts
 	if len(opts) != 0 {
 		opt = opts[0]
 	}
 	// This is just for making sure Clean is called from TestMain
-	_ = t
+	_ = m
 	runOnly := flag.Lookup("test.run").Value.String()
 
 	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldClean && !isCI)

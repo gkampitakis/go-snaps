@@ -8,18 +8,18 @@ import (
 )
 
 type customMatcher struct {
-	callback         func(val interface{}) (interface{}, error)
+	callback         func(val any) (any, error)
 	errOnMissingPath bool
 	name             string
 	path             string
 }
 
-type CustomCallback func(val interface{}) (interface{}, error)
+type CustomCallback func(val any) (any, error)
 
 /*
 Custom matcher allows you to bring your own validation and placeholder value.
 
-	match.Custom("user.age", func(val interface{}) (interface{}, error) {
+	match.Custom("user.age", func(val any) (any, error) {
 		age, ok := val.(float64)
 		if !ok {
 				return nil, fmt.Errorf("expected number but got %T", val)
@@ -33,8 +33,8 @@ Custom matcher allows you to bring your own validation and placeholder value.
 	 float64 // for JSON numbers
 	 string // for JSON string literals
 	 nil // for JSON null
-	 map[string]interface{} // for JSON objects
-	 []interface{} // for JSON arrays
+	 map[string]any // for JSON objects
+	 []any // for JSON arrays
 */
 func Custom(path string, callback CustomCallback) *customMatcher {
 	return &customMatcher{

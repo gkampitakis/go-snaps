@@ -74,7 +74,7 @@ func WithConfig(args ...func(*config)) *config {
 	return &s
 }
 
-func handleError(t testingT, err interface{}) {
+func handleError(t testingT, err any) {
 	t.Helper()
 	t.Error(err)
 	testEvents.register(erred)
