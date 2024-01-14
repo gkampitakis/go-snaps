@@ -11,14 +11,15 @@ import (
 type MockTestingT struct {
 	MockHelper  func()
 	MockName    func() string
-	MockSkip    func(args ...interface{})
-	MockSkipf   func(format string, args ...interface{})
+	MockSkip    func(...any)
+	MockSkipf   func(string, ...any)
 	MockSkipNow func()
-	MockError   func(args ...interface{})
-	MockLog     func(args ...interface{})
+	MockError   func(...any)
+	MockLog     func(...any)
+	MockCleanup func(func())
 }
 
-func (m MockTestingT) Error(args ...interface{}) {
+func (m MockTestingT) Error(args ...any) {
 	m.MockError(args...)
 }
 
@@ -26,11 +27,11 @@ func (m MockTestingT) Helper() {
 	m.MockHelper()
 }
 
-func (m MockTestingT) Skip(args ...interface{}) {
+func (m MockTestingT) Skip(args ...any) {
 	m.MockSkip(args...)
 }
 
-func (m MockTestingT) Skipf(format string, args ...interface{}) {
+func (m MockTestingT) Skipf(format string, args ...any) {
 	m.MockSkipf(format, args...)
 }
 
@@ -42,8 +43,12 @@ func (m MockTestingT) Name() string {
 	return m.MockName()
 }
 
-func (m MockTestingT) Log(args ...interface{}) {
+func (m MockTestingT) Log(args ...any) {
 	m.MockLog(args...)
+}
+
+func (m MockTestingT) Cleanup(f func()) {
+	m.MockCleanup(f)
 }
 
 // Equal asserts expected and received have deep equality
@@ -107,7 +112,7 @@ func False(t *testing.T, val bool) {
 	}
 }
 
-func Nil(t *testing.T, val interface{}) {
+func Nil(t *testing.T, val any) {
 	t.Helper()
 	v := reflect.ValueOf(val)
 

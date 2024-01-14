@@ -68,10 +68,10 @@ func TestMatchSnapshot(t *testing.T) {
 			MockName: func() string {
 				return "mock-name"
 			},
-			MockError: func(args ...interface{}) {
+			MockError: func(args ...any) {
 				test.NotCalled(t)
 			},
-			MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0].(string)) },
+			MockLog: func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) },
 		}
 
 		MatchSnapshot(mockT, 10, "hello world")
@@ -92,10 +92,10 @@ func TestMatchSnapshot(t *testing.T) {
 			MockName: func() string {
 				return "mock-name"
 			},
-			MockError: func(args ...interface{}) {
+			MockError: func(args ...any) {
 				test.Equal(t, errSnapNotFound, args[0].(error))
 			},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				test.NotCalled(t)
 			},
 		}
@@ -108,16 +108,16 @@ func TestMatchSnapshot(t *testing.T) {
 	t.Run("should return error when diff is found", func(t *testing.T) {
 		setupSnapshot(t, fileName, false)
 
-		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
-			func(received interface{}) { test.NotCalled(t) },
+		printerExpectedCalls := []func(received any){
+			func(received any) { test.Equal(t, addedMsg, received.(string)) },
+			func(received any) { test.NotCalled(t) },
 		}
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
 			MockName: func() string {
 				return "mock-name"
 			},
-			MockError: func(args ...interface{}) {
+			MockError: func(args ...any) {
 				expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 2\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ Received + 2\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
 					"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
@@ -128,7 +128,7 @@ func TestMatchSnapshot(t *testing.T) {
 
 				test.Equal(t, expected, args[0].(string))
 			},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				printerExpectedCalls[0](args[0])
 
 				// shift
@@ -152,19 +152,19 @@ func TestMatchSnapshot(t *testing.T) {
 		t.Run("when 'updateVAR==true'", func(t *testing.T) {
 			snapPath := setupSnapshot(t, fileName, false, true)
 
-			printerExpectedCalls := []func(received interface{}){
-				func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
-				func(received interface{}) { test.Equal(t, updatedMsg, received.(string)) },
+			printerExpectedCalls := []func(received any){
+				func(received any) { test.Equal(t, addedMsg, received.(string)) },
+				func(received any) { test.Equal(t, updatedMsg, received.(string)) },
 			}
 			mockT := test.MockTestingT{
 				MockHelper: func() {},
 				MockName: func() string {
 					return "mock-name"
 				},
-				MockError: func(args ...interface{}) {
+				MockError: func(args ...any) {
 					test.NotCalled(t)
 				},
-				MockLog: func(args ...interface{}) {
+				MockLog: func(args ...any) {
 					printerExpectedCalls[0](args[0])
 
 					// shift
@@ -193,19 +193,19 @@ func TestMatchSnapshot(t *testing.T) {
 		t.Run("when config update", func(t *testing.T) {
 			snapPath := setupSnapshot(t, fileName, false, false)
 
-			printerExpectedCalls := []func(received interface{}){
-				func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
-				func(received interface{}) { test.Equal(t, updatedMsg, received.(string)) },
+			printerExpectedCalls := []func(received any){
+				func(received any) { test.Equal(t, addedMsg, received.(string)) },
+				func(received any) { test.Equal(t, updatedMsg, received.(string)) },
 			}
 			mockT := test.MockTestingT{
 				MockHelper: func() {},
 				MockName: func() string {
 					return "mock-name"
 				},
-				MockError: func(args ...interface{}) {
+				MockError: func(args ...any) {
 					test.NotCalled(t)
 				},
-				MockLog: func(args ...interface{}) {
+				MockLog: func(args ...any) {
 					printerExpectedCalls[0](args[0])
 
 					// shift
@@ -236,7 +236,7 @@ func TestMatchSnapshot(t *testing.T) {
 	t.Run("should print warning if no params provided", func(t *testing.T) {
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				test.Equal(
 					t,
 					colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"),
@@ -251,16 +251,16 @@ func TestMatchSnapshot(t *testing.T) {
 	t.Run("diff should not print the escaped characters", func(t *testing.T) {
 		setupSnapshot(t, fileName, false)
 
-		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
-			func(received interface{}) { test.NotCalled(t) },
+		printerExpectedCalls := []func(received any){
+			func(received any) { test.Equal(t, addedMsg, received.(string)) },
+			func(received any) { test.NotCalled(t) },
 		}
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
 			MockName: func() string {
 				return "mock-name"
 			},
-			MockError: func(args ...interface{}) {
+			MockError: func(args ...any) {
 				expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 3\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 					"+ Received + 3\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
 					"- hello world----\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m- ---\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
@@ -272,7 +272,7 @@ func TestMatchSnapshot(t *testing.T) {
 
 				test.Equal(t, expected, args[0].(string))
 			},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				printerExpectedCalls[0](args[0])
 
 				// shift

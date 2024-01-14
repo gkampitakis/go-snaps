@@ -207,7 +207,7 @@ string hello world 1 3 2
 func TestEscapeEndChars(t *testing.T) {
 	t.Run("should escape end chars inside data", func(t *testing.T) {
 		snapPath := filepath.Join(t.TempDir(), "__snapshots__/mock-test.snap")
-		snapshot := takeSnapshot([]interface{}{"my-snap", endSequence})
+		snapshot := takeSnapshot([]any{"my-snap", endSequence})
 
 		test.NoError(t, addNewSnapshot("[mock-id]", snapshot, snapPath))
 		test.Equal(t, "\n[mock-id]\nmy-snap\n/-/-/-/\n---\n", test.GetFileContent(t, snapPath))
@@ -215,7 +215,7 @@ func TestEscapeEndChars(t *testing.T) {
 
 	t.Run("should not escape --- if not end chars", func(t *testing.T) {
 		snapPath := filepath.Join(t.TempDir(), "__snapshots__/mock-test.snap")
-		snapshot := takeSnapshot([]interface{}{"my-snap---", endSequence})
+		snapshot := takeSnapshot([]any{"my-snap---", endSequence})
 
 		test.NoError(t, addNewSnapshot("[mock-id]", snapshot, snapPath))
 		test.Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", test.GetFileContent(t, snapPath))

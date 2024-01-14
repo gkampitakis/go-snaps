@@ -21,7 +21,7 @@ or call MatchSnapshot multiples times inside a test
 
 The difference is the latter will create multiple entries.
 */
-func (c *config) MatchSnapshot(t testingT, values ...interface{}) {
+func (c *config) MatchSnapshot(t testingT, values ...any) {
 	t.Helper()
 
 	matchSnapshot(c, t, values...)
@@ -40,13 +40,13 @@ or call MatchSnapshot multiples times inside a test
 
 The difference is the latter will create multiple entries.
 */
-func MatchSnapshot(t testingT, values ...interface{}) {
+func MatchSnapshot(t testingT, values ...any) {
 	t.Helper()
 
 	matchSnapshot(&defaultConfig, t, values...)
 }
 
-func matchSnapshot(c *config, t testingT, values ...interface{}) {
+func matchSnapshot(c *config, t testingT, values ...any) {
 	t.Helper()
 
 	if len(values) == 0 {
@@ -104,7 +104,7 @@ func matchSnapshot(c *config, t testingT, values ...interface{}) {
 	testEvents.register(updated)
 }
 
-func takeSnapshot(objects []interface{}) string {
+func takeSnapshot(objects []any) string {
 	var snapshot string
 
 	for i := 0; i < len(objects); i++ {

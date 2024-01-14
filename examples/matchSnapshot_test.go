@@ -28,7 +28,7 @@ func TestMatchSnapshot(t *testing.T) {
 	})
 
 	t.Run("should make a map snapshot", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"mock-0": "value",
 			"mock-1": 2,
 			"mock-2": func() {},
@@ -94,7 +94,7 @@ func TestMatchSnapshot(t *testing.T) {
 func TestSimpleTable(t *testing.T) {
 	type testCases struct {
 		description string
-		input       interface{}
+		input       any
 	}
 
 	for _, scenario := range []testCases{
@@ -108,7 +108,7 @@ func TestSimpleTable(t *testing.T) {
 		},
 		{
 			description: "map",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"test": func() {},
 			},
 		},

@@ -24,7 +24,7 @@ func TestMatchJSON(t *testing.T) {
 
 		for _, tc := range []struct {
 			name  string
-			input interface{}
+			input any
 		}{
 			{
 				name:  "string",
@@ -53,10 +53,10 @@ func TestMatchJSON(t *testing.T) {
 					MockName: func() string {
 						return "mock-name"
 					},
-					MockError: func(args ...interface{}) {
+					MockError: func(args ...any) {
 						test.NotCalled(t)
 					},
-					MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0].(string)) },
+					MockLog: func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) },
 				}
 
 				MatchJSON(mockT, tc.input)
@@ -74,7 +74,7 @@ func TestMatchJSON(t *testing.T) {
 	t.Run("should validate json", func(t *testing.T) {
 		for _, tc := range []struct {
 			name  string
-			input interface{}
+			input any
 			err   string
 		}{
 			{
@@ -101,10 +101,10 @@ func TestMatchJSON(t *testing.T) {
 					MockName: func() string {
 						return "mock-name"
 					},
-					MockError: func(args ...interface{}) {
+					MockError: func(args ...any) {
 						test.Equal(t, tc.err, (args[0].(error)).Error())
 					},
-					MockLog: func(args ...interface{}) {
+					MockLog: func(args ...any) {
 						// this is called when snapshot is written successfully
 						test.NotCalled(t)
 					},
@@ -124,20 +124,20 @@ func TestMatchJSON(t *testing.T) {
 				MockName: func() string {
 					return "mock-name"
 				},
-				MockError: func(args ...interface{}) {
+				MockError: func(args ...any) {
 					test.NotCalled(t)
 				},
-				MockLog: func(args ...interface{}) { test.Equal(t, addedMsg, args[0].(string)) },
+				MockLog: func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) },
 			}
 
-			c1 := func(val interface{}) (interface{}, error) {
-				return map[string]interface{}{"key2": nil}, nil
+			c1 := func(val any) (any, error) {
+				return map[string]any{"key2": nil}, nil
 			}
-			c2 := func(val interface{}) (interface{}, error) {
-				return map[string]interface{}{"key3": nil}, nil
+			c2 := func(val any) (any, error) {
+				return map[string]any{"key3": nil}, nil
 			}
-			c3 := func(val interface{}) (interface{}, error) {
-				return map[string]interface{}{"key4": nil}, nil
+			c3 := func(val any) (any, error) {
+				return map[string]any{"key4": nil}, nil
 			}
 
 			MatchJSON(
@@ -157,7 +157,7 @@ func TestMatchJSON(t *testing.T) {
 				MockName: func() string {
 					return "mock-name"
 				},
-				MockError: func(args ...interface{}) {
+				MockError: func(args ...any) {
 					test.Equal(t,
 						"\x1b[31;1m\n✕ match.Custom(\"age\") - mock error"+
 							"\x1b[0m\x1b[31;1m\n✕ match.Any(\"missing.key.1\") - path does not exist"+
@@ -165,10 +165,10 @@ func TestMatchJSON(t *testing.T) {
 						args[0],
 					)
 				},
-				MockLog: func(args ...interface{}) { test.NotCalled(t) },
+				MockLog: func(args ...any) { test.NotCalled(t) },
 			}
 
-			c := func(val interface{}) (interface{}, error) {
+			c := func(val any) (any, error) {
 				return nil, errors.New("mock error")
 			}
 			MatchJSON(
@@ -188,10 +188,10 @@ func TestMatchJSON(t *testing.T) {
 			MockName: func() string {
 				return "mock-name"
 			},
-			MockError: func(args ...interface{}) {
+			MockError: func(args ...any) {
 				test.Equal(t, errSnapNotFound, args[0].(error))
 			},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				test.NotCalled(t)
 			},
 		}
@@ -204,19 +204,19 @@ func TestMatchJSON(t *testing.T) {
 	t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
 		snapPath := setupSnapshot(t, jsonFilename, false, true)
 
-		printerExpectedCalls := []func(received interface{}){
-			func(received interface{}) { test.Equal(t, addedMsg, received.(string)) },
-			func(received interface{}) { test.Equal(t, updatedMsg, received.(string)) },
+		printerExpectedCalls := []func(received any){
+			func(received any) { test.Equal(t, addedMsg, received.(string)) },
+			func(received any) { test.Equal(t, updatedMsg, received.(string)) },
 		}
 		mockT := test.MockTestingT{
 			MockHelper: func() {},
 			MockName: func() string {
 				return "mock-name"
 			},
-			MockError: func(args ...interface{}) {
+			MockError: func(args ...any) {
 				test.NotCalled(t)
 			},
-			MockLog: func(args ...interface{}) {
+			MockLog: func(args ...any) {
 				printerExpectedCalls[0](args[0])
 
 				// shift

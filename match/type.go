@@ -12,7 +12,7 @@ type typeMatcher[ExpectedType any] struct {
 	paths            []string
 	errOnMissingPath bool
 	name             string
-	expectedType     interface{}
+	expectedType     any
 }
 
 /*

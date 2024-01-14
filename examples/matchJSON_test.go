@@ -60,7 +60,7 @@ func (m *myMatcher) JSON(s []byte) ([]byte, []match.MatcherError) {
 
 func TestMatchJSON(t *testing.T) {
 	t.Run("should make a json object snapshot", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"mock-0": "value",
 			"mock-1": 2,
 			"mock-2": struct{ Msg string }{"Hello World"},
@@ -108,10 +108,10 @@ func TestMatchers(t *testing.T) {
 				Keys:  []int{1, 2, 3, 4, 5},
 			}
 
-			snaps.MatchJSON(t, u, match.Custom("keys", func(val interface{}) (interface{}, error) {
-				keys, ok := val.([]interface{})
+			snaps.MatchJSON(t, u, match.Custom("keys", func(val any) (any, error) {
+				keys, ok := val.([]any)
 				if !ok {
-					return nil, fmt.Errorf("expected []interface{} but got %T", val)
+					return nil, fmt.Errorf("expected []any but got %T", val)
 				}
 
 				if len(keys) > 5 {
@@ -126,7 +126,7 @@ func TestMatchers(t *testing.T) {
 	t.Run("JSON string validation", func(t *testing.T) {
 		value := `{"user":"mock-user","age":2,"email":"mock@email.com"}`
 
-		snaps.MatchJSON(t, value, match.Custom("age", func(val interface{}) (interface{}, error) {
+		snaps.MatchJSON(t, value, match.Custom("age", func(val any) (any, error) {
 			if valInt, ok := val.(float64); !ok || valInt >= 5 {
 				return nil, fmt.Errorf("expecting number less than 5")
 			}
@@ -184,7 +184,7 @@ func TestMatchers(t *testing.T) {
 		snaps.MatchJSON(
 			t,
 			`{"metadata":{"timestamp":"1687108093142"}}`,
-			match.Type[map[string]interface{}]("metadata"),
+			match.Type[map[string]any]("metadata"),
 		)
 	})
 }

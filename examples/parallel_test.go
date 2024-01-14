@@ -10,7 +10,7 @@ import (
 func TestParallel(t *testing.T) {
 	type testCases struct {
 		description string
-		input       interface{}
+		input       any
 	}
 
 	value := 10

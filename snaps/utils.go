@@ -42,12 +42,13 @@ type (
 	set      map[string]struct{}
 	testingT interface {
 		Helper()
-		Skip(args ...interface{})
-		Skipf(format string, args ...interface{})
+		Skip(...any)
+		Skipf(string, ...any)
 		SkipNow()
 		Name() string
-		Error(args ...interface{})
-		Log(args ...interface{})
+		Error(...any)
+		Log(...any)
+		Cleanup(func())
 	}
 )
 
