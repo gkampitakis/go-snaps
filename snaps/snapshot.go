@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -25,9 +26,19 @@ var (
 )
 
 type config struct {
-	filename string
-	snapsDir string
-	update   *bool
+	snapshotName string
+	filename     string
+	snapsDir     string
+	update       *bool
+}
+
+// Name allows to give a name to the snapshot
+//
+//	default: to test name (t.Name())
+func Name(snapshotName string) func(*config) {
+	return func(c *config) {
+		c.snapshotName = snapshotName
+	}
 }
 
 // Update determines whether to update snapshots or not
@@ -257,6 +268,58 @@ func snapshotPath(c *config) (string, string) {
 	snapPathRel, _ := filepath.Rel(callerPath, snapPath)
 
 	return snapPath, snapPathRel
+}
+
+func getTestName(name, defaultName string) string {
+	if name == "" {
+		return defaultName
+	}
+
+	before, _, found := strings.Cut(defaultName, "/")
+	// this shouldn't happen
+	if !found {
+		return defaultName
+	}
+
+	return before + "/" + rewrite(name)
+}
+
+// Code taken from https://github.com/golang/go/blob/master/src/testing/match.go#L284
+// rewrite rewrites a subname to having only printable characters and no white
+// space.
+func rewrite(s string) string {
+	b := []byte{}
+	for _, r := range s {
+		switch {
+		case isSpace(r):
+			b = append(b, '_')
+		case !strconv.IsPrint(r):
+			s := strconv.QuoteRune(r)
+			b = append(b, s[1:len(s)-1]...)
+		default:
+			b = append(b, string(r)...)
+		}
+	}
+	return string(b)
+}
+
+func isSpace(r rune) bool {
+	if r < 0x2000 {
+		switch r {
+		// Note: not the same as Unicode Z class.
+		case '\t', '\n', '\v', '\f', '\r', ' ', 0x85, 0xA0, 0x1680:
+			return true
+		}
+	} else {
+		if r <= 0x200a {
+			return true
+		}
+		switch r {
+		case 0x2028, 0x2029, 0x202f, 0x205f, 0x3000:
+			return true
+		}
+	}
+	return false
 }
 
 func unescapeEndChars(s string) string {

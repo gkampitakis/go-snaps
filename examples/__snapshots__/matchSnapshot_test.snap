@@ -72,3 +72,11 @@ map[string]interface {}{
 [TestMatchSnapshot/withConfig - 1]
 this should use the default config
 ---
+
+[TestMatchSnapshot/special_snapshot_name_[1,_2,_3,_4] - 1]
+my snapshot data
+---
+
+[TestMatchSnapshot/special_snapshot_name_[1,_2,_3,_4] - 2]
+my other snapshot data
+---
