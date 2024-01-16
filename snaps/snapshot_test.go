@@ -221,3 +221,23 @@ func TestEscapeEndChars(t *testing.T) {
 		test.Equal(t, "\n[mock-id]\nmy-snap---\n/-/-/-/\n---\n", test.GetFileContent(t, snapPath))
 	})
 }
+
+func TestGetTestName(t *testing.T) {
+	defaultName := "TestName/testing_name"
+
+	t.Run("should return default name", func(t *testing.T) {
+		test.Equal(t, "TestName/testing_name", getTestName("", defaultName))
+	})
+
+	t.Run("should return custom name", func(t *testing.T) {
+		test.Equal(
+			t,
+			"TestName/custom_name_[_1_2_3_4]",
+			getTestName("custom name [ 1 2 3 4]", defaultName),
+		)
+	})
+
+	t.Run("should return default name in case of missing `/`", func(t *testing.T) {
+		test.Equal(t, "TestNameMalformed", getTestName("custom", "TestNameMalformed"))
+	})
+}

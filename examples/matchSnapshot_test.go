@@ -88,6 +88,18 @@ func TestMatchSnapshot(t *testing.T) {
 		s := snaps.WithConfig(snaps.Dir("special_data"), snaps.Filename("different_name"))
 		s.MatchSnapshot(t, "different data than the rest")
 		snaps.MatchSnapshot(t, "this should use the default config")
+
+		t.Run("with specified name", func(t *testing.T) {
+			s := snaps.WithConfig(snaps.Name("special snapshot name [1, 2, 3, 4]"))
+
+			t.Run("child test", func(t *testing.T) {
+				s.MatchSnapshot(t, "my snapshot data")
+			})
+
+			t.Run("child test", func(t *testing.T) {
+				s.MatchSnapshot(t, "my other snapshot data")
+			})
+		})
 	})
 }
 
