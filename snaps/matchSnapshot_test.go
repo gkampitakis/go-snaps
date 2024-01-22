@@ -62,17 +62,8 @@ func setupSnapshot(t *testing.T, file string, ci bool, update ...bool) string {
 func TestMatchSnapshot(t *testing.T) {
 	t.Run("should create snapshot", func(t *testing.T) {
 		snapPath := setupSnapshot(t, fileName, false)
-
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockName: func() string {
-				return "mock-name"
-			},
-			MockError: func(args ...any) {
-				test.NotCalled(t)
-			},
-			MockLog: func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) },
-		}
+		mockT := test.NewMockTestingT(t)
+		mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
 
 		MatchSnapshot(mockT, 10, "hello world")
 
@@ -87,17 +78,9 @@ func TestMatchSnapshot(t *testing.T) {
 	t.Run("if it's running on ci should skip", func(t *testing.T) {
 		setupSnapshot(t, fileName, true)
 
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockName: func() string {
-				return "mock-name"
-			},
-			MockError: func(args ...any) {
-				test.Equal(t, errSnapNotFound, args[0].(error))
-			},
-			MockLog: func(args ...any) {
-				test.NotCalled(t)
-			},
+		mockT := test.NewMockTestingT(t)
+		mockT.MockError = func(args ...any) {
+			test.Equal(t, errSnapNotFound, args[0].(error))
 		}
 
 		MatchSnapshot(mockT, 10, "hello world")
@@ -110,30 +93,25 @@ func TestMatchSnapshot(t *testing.T) {
 
 		printerExpectedCalls := []func(received any){
 			func(received any) { test.Equal(t, addedMsg, received.(string)) },
-			func(received any) { test.NotCalled(t) },
+			func(received any) { t.Error("should not be called 2nd time") },
 		}
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockName: func() string {
-				return "mock-name"
-			},
-			MockError: func(args ...any) {
-				expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 2\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ Received + 2\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
-					"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ bye world\x1b[0m\n\n\x1b[2mat " + filepath.FromSlash(
-					"../__snapshots__/matchSnapshot_test.snap:2",
-				) +
-					"\n\x1b[0m"
+		mockT := test.NewMockTestingT(t)
+		mockT.MockError = func(args ...any) {
+			expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 2\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+				"+ Received + 2\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
+				"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+				"+ bye world\x1b[0m\n\n\x1b[2mat " + filepath.FromSlash(
+				"../__snapshots__/matchSnapshot_test.snap:2",
+			) +
+				"\n\x1b[0m"
 
-				test.Equal(t, expected, args[0].(string))
-			},
-			MockLog: func(args ...any) {
-				printerExpectedCalls[0](args[0])
+			test.Equal(t, expected, args[0].(string))
+		}
+		mockT.MockLog = func(args ...any) {
+			printerExpectedCalls[0](args[0])
 
-				// shift
-				printerExpectedCalls = printerExpectedCalls[1:]
-			},
+			// shift
+			printerExpectedCalls = printerExpectedCalls[1:]
 		}
 
 		// First call for creating the snapshot
@@ -155,21 +133,14 @@ func TestMatchSnapshot(t *testing.T) {
 			printerExpectedCalls := []func(received any){
 				func(received any) { test.Equal(t, addedMsg, received.(string)) },
 				func(received any) { test.Equal(t, updatedMsg, received.(string)) },
+				func(received any) { t.Error("should not be called 3rd time") },
 			}
-			mockT := test.MockTestingT{
-				MockHelper: func() {},
-				MockName: func() string {
-					return "mock-name"
-				},
-				MockError: func(args ...any) {
-					test.NotCalled(t)
-				},
-				MockLog: func(args ...any) {
-					printerExpectedCalls[0](args[0])
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) {
+				printerExpectedCalls[0](args[0])
 
-					// shift
-					printerExpectedCalls = printerExpectedCalls[1:]
-				},
+				// shift
+				printerExpectedCalls = printerExpectedCalls[1:]
 			}
 
 			// First call for creating the snapshot
@@ -196,21 +167,14 @@ func TestMatchSnapshot(t *testing.T) {
 			printerExpectedCalls := []func(received any){
 				func(received any) { test.Equal(t, addedMsg, received.(string)) },
 				func(received any) { test.Equal(t, updatedMsg, received.(string)) },
+				func(received any) { t.Error("should not be called 3rd time") },
 			}
-			mockT := test.MockTestingT{
-				MockHelper: func() {},
-				MockName: func() string {
-					return "mock-name"
-				},
-				MockError: func(args ...any) {
-					test.NotCalled(t)
-				},
-				MockLog: func(args ...any) {
-					printerExpectedCalls[0](args[0])
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) {
+				printerExpectedCalls[0](args[0])
 
-					// shift
-					printerExpectedCalls = printerExpectedCalls[1:]
-				},
+				// shift
+				printerExpectedCalls = printerExpectedCalls[1:]
 			}
 
 			s := WithConfig(Update(true))
@@ -234,15 +198,13 @@ func TestMatchSnapshot(t *testing.T) {
 	})
 
 	t.Run("should print warning if no params provided", func(t *testing.T) {
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockLog: func(args ...any) {
-				test.Equal(
-					t,
-					colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"),
-					args[0].(string),
-				)
-			},
+		mockT := test.NewMockTestingT(t)
+		mockT.MockLog = func(args ...any) {
+			test.Equal(
+				t,
+				colors.Sprint(colors.Yellow, "[warning] MatchSnapshot call without params\n"),
+				args[0].(string),
+			)
 		}
 
 		MatchSnapshot(mockT)
@@ -253,31 +215,26 @@ func TestMatchSnapshot(t *testing.T) {
 
 		printerExpectedCalls := []func(received any){
 			func(received any) { test.Equal(t, addedMsg, received.(string)) },
-			func(received any) { test.NotCalled(t) },
+			func(received any) { t.Error("should not be called 2nd time") },
 		}
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockName: func() string {
-				return "mock-name"
-			},
-			MockError: func(args ...any) {
-				expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 3\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ Received + 3\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
-					"- hello world----\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m- ---\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ bye world----\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
-					"+ --\x1b[0m\n\n\x1b[2mat " + filepath.FromSlash(
-					"../__snapshots__/matchSnapshot_test.snap:2",
-				) +
-					"\n\x1b[0m"
+		mockT := test.NewMockTestingT(t)
+		mockT.MockError = func(args ...any) {
+			expected := "\n\x1b[38;5;52m\x1b[48;5;225m- Snapshot - 3\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+				"+ Received + 3\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
+				"- hello world----\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m- ---\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+				"+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ bye world----\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
+				"+ --\x1b[0m\n\n\x1b[2mat " + filepath.FromSlash(
+				"../__snapshots__/matchSnapshot_test.snap:2",
+			) +
+				"\n\x1b[0m"
 
-				test.Equal(t, expected, args[0].(string))
-			},
-			MockLog: func(args ...any) {
-				printerExpectedCalls[0](args[0])
+			test.Equal(t, expected, args[0].(string))
+		}
+		mockT.MockLog = func(args ...any) {
+			printerExpectedCalls[0](args[0])
 
-				// shift
-				printerExpectedCalls = printerExpectedCalls[1:]
-			},
+			// shift
+			printerExpectedCalls = printerExpectedCalls[1:]
 		}
 
 		// First call for creating the snapshot ( adding ending chars inside the diff )

@@ -64,7 +64,7 @@ func matchJSON(c *config, t testingT, input any, matchers ...match.JSONMatcher) 
 	t.Helper()
 
 	snapPath, snapPathRel := snapshotPath(c)
-	testID := testsRegistry.getTestID(t.Name(), snapPath)
+	testID := testsRegistry.getTestID(snapPath, t.Name())
 
 	j, err := validateJSON(input)
 	if err != nil {
