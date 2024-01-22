@@ -151,7 +151,7 @@ func TestExamineSnaps(t *testing.T) {
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
+		obsolete, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort)
 
 		test.Equal(t, []string{}, obsolete)
 		test.NoError(t, err)
@@ -172,7 +172,7 @@ func TestExamineSnaps(t *testing.T) {
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
+		obsolete, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -200,7 +200,7 @@ func TestExamineSnaps(t *testing.T) {
 		delete(tests[used[0]], "TestDir1_3/TestSimple")
 		delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
+		obsolete, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -258,7 +258,7 @@ string hello world 2 2 1
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
+		obsolete, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort)
 
 		test.NoError(t, err)
 		test.Equal(t, 0, len(obsolete))
@@ -290,7 +290,7 @@ string hello world 2 2 1
 			delete(tests[used[0]], "TestDir1_3/TestSimple")
 			delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-			obsolete, err := examineSnaps(tests, used, "", shouldUpdate, sort)
+			obsolete, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort)
 
 			test.NoError(t, err)
 			test.Equal(t, []string{
@@ -313,22 +313,45 @@ string hello world 2 2 1
 }
 
 func TestOccurrences(t *testing.T) {
-	tests := map[string]int{
-		"add":      3,
-		"subtract": 1,
-		"divide":   2,
-	}
+	t.Run("when count 1", func(t *testing.T) {
+		tests := map[string]int{
+			"add":      3,
+			"subtract": 1,
+			"divide":   2,
+		}
 
-	expected := set{
-		"add - 1":      {},
-		"add - 2":      {},
-		"add - 3":      {},
-		"subtract - 1": {},
-		"divide - 1":   {},
-		"divide - 2":   {},
-	}
+		expected := set{
+			"add - 1":      {},
+			"add - 2":      {},
+			"add - 3":      {},
+			"subtract - 1": {},
+			"divide - 1":   {},
+			"divide - 2":   {},
+		}
 
-	test.Equal(t, expected, occurrences(tests))
+		test.Equal(t, expected, occurrences(tests, 1))
+	})
+
+	t.Run("when count 3", func(t *testing.T) {
+		tests := map[string]int{
+			"add":      12,
+			"subtract": 3,
+			"divide":   9,
+		}
+
+		expected := set{
+			"add - 1":      {},
+			"add - 2":      {},
+			"add - 3":      {},
+			"add - 4":      {},
+			"subtract - 1": {},
+			"divide - 1":   {},
+			"divide - 2":   {},
+			"divide - 3":   {},
+		}
+
+		test.Equal(t, expected, occurrences(tests, 3))
+	})
 }
 
 func TestSummary(t *testing.T) {

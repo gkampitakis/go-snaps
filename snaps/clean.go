@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -82,12 +83,14 @@ func Clean(m *testing.M, opts ...CleanOpts) {
 	// This is just for making sure Clean is called from TestMain
 	_ = m
 	runOnly := flag.Lookup("test.run").Value.String()
+	count, _ := strconv.Atoi(flag.Lookup("test.count").Value.String())
 
-	obsoleteFiles, usedFiles := examineFiles(testsRegistry.values, runOnly, shouldClean && !isCI)
+	obsoleteFiles, usedFiles := examineFiles(testsRegistry.cleanup, runOnly, shouldClean && !isCI)
 	obsoleteTests, err := examineSnaps(
-		testsRegistry.values,
+		testsRegistry.cleanup,
 		usedFiles,
 		runOnly,
+		count,
 		shouldClean && !isCI,
 		opt.Sort && !isCI,
 	)
@@ -200,6 +203,7 @@ func examineSnaps(
 	registry map[string]map[string]int,
 	used []string,
 	runOnly string,
+	count int,
 	update,
 	sort bool,
 ) ([]string, error) {
@@ -216,7 +220,7 @@ func examineSnaps(
 
 		var hasDiffs bool
 
-		registeredTests := occurrences(registry[snapPath])
+		registeredTests := occurrences(registry[snapPath], count)
 		s := snapshotScanner(f)
 
 		for s.Scan() {
@@ -405,9 +409,12 @@ e.g
 
 as it means there are 3 snapshots created inside TestAdd
 */
-func occurrences(tests map[string]int) set {
+func occurrences(tests map[string]int, count int) set {
 	result := make(set, len(tests))
 	for testID, counter := range tests {
+		// divide a test's counter by count (how many times the go test suite ran)
+		// this gives us how many snapshots were created in a single test run.
+		counter = counter / count
 		if counter > 1 {
 			for i := 1; i <= counter; i++ {
 				result[fmt.Sprintf("%s - %d", testID, i)] = struct{}{}

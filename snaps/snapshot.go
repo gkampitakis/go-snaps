@@ -86,7 +86,8 @@ This also helps with keeping track with obsolete snaps
 map[snap path]: map[testname]: <number of snapshots>
 */
 type syncRegistry struct {
-	values map[string]map[string]int
+	running map[string]map[string]int
+	cleanup map[string]map[string]int
 	sync.Mutex
 }
 
@@ -95,21 +96,31 @@ type syncRegistry struct {
 func (s *syncRegistry) getTestID(snapPath, testName string) string {
 	s.Lock()
 
-	if _, exists := s.values[snapPath]; !exists {
-		s.values[snapPath] = make(map[string]int)
+	if _, exists := s.running[snapPath]; !exists {
+		s.running[snapPath] = make(map[string]int)
+		s.cleanup[snapPath] = make(map[string]int)
 	}
 
-	s.values[snapPath][testName]++
-	c := s.values[snapPath][testName]
+	s.running[snapPath][testName]++
+	s.cleanup[snapPath][testName]++
+	c := s.running[snapPath][testName]
 	s.Unlock()
 
 	return fmt.Sprintf("[%s - %d]", testName, c)
 }
 
+// reset sets only the number of running registry for the given test to 0.
+func (s *syncRegistry) reset(snapPath, testName string) {
+	s.Lock()
+	s.running[snapPath][testName] = 0
+	s.Unlock()
+}
+
 func newRegistry() *syncRegistry {
 	return &syncRegistry{
-		values: make(map[string]map[string]int),
-		Mutex:  sync.Mutex{},
+		running: make(map[string]map[string]int),
+		cleanup: make(map[string]map[string]int),
+		Mutex:   sync.Mutex{},
 	}
 }
 

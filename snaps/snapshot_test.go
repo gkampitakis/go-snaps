@@ -26,6 +26,30 @@ func TestSyncRegistry(t *testing.T) {
 
 		test.Equal(t, "[test - 6]", registry.getTestID("/file", "test"))
 		test.Equal(t, "[test-v2 - 1]", registry.getTestID("/file", "test-v2"))
+		test.Equal(t, registry.cleanup, registry.running)
+	})
+
+	t.Run("should reset running registry", func(t *testing.T) {
+		wg := sync.WaitGroup{}
+		registry := newRegistry()
+
+		for i := 0; i < 100; i++ {
+			wg.Add(1)
+
+			go func() {
+				registry.getTestID("/file", "test")
+				wg.Done()
+			}()
+		}
+
+		wg.Wait()
+
+		registry.reset("/file", "test")
+
+		// running registry start from 0 again
+		test.Equal(t, "[test - 1]", registry.getTestID("/file", "test"))
+		// cleanup registry still has 101
+		test.Equal(t, 101, registry.cleanup["/file"]["test"])
 	})
 }
 
