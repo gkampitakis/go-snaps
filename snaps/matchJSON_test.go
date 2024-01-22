@@ -59,6 +59,9 @@ func TestMatchJSON(t *testing.T) {
 				test.Equal(t, 2, line)
 				test.Equal(t, expected, snap)
 				test.Equal(t, 1, testEvents.items[added])
+				// clean up function called
+				test.Equal(t, 0, testsRegistry.running[snapPath]["mock-name"])
+				test.Equal(t, 1, testsRegistry.cleanup[snapPath]["mock-name"])
 			})
 		}
 	})

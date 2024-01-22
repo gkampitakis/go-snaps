@@ -73,6 +73,9 @@ func TestMatchSnapshot(t *testing.T) {
 			test.GetFileContent(t, snapPath),
 		)
 		test.Equal(t, 1, testEvents.items[added])
+		// clean up function called
+		test.Equal(t, 0, testsRegistry.running[snapPath]["mock-name"])
+		test.Equal(t, 1, testsRegistry.cleanup[snapPath]["mock-name"])
 	})
 
 	t.Run("if it's running on ci should skip", func(t *testing.T) {

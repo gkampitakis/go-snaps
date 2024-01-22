@@ -56,6 +56,10 @@ func matchSnapshot(c *config, t testingT, values ...any) {
 
 	snapPath, snapPathRel := snapshotPath(c)
 	testID := testsRegistry.getTestID(snapPath, t.Name())
+	t.Cleanup(func() {
+		testsRegistry.reset(snapPath, t.Name())
+	})
+
 	snapshot := takeSnapshot(values)
 	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {

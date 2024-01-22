@@ -65,6 +65,9 @@ func matchJSON(c *config, t testingT, input any, matchers ...match.JSONMatcher) 
 
 	snapPath, snapPathRel := snapshotPath(c)
 	testID := testsRegistry.getTestID(snapPath, t.Name())
+	t.Cleanup(func() {
+		testsRegistry.reset(snapPath, t.Name())
+	})
 
 	j, err := validateJSON(input)
 	if err != nil {
