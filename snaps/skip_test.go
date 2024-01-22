@@ -3,6 +3,7 @@ package snaps
 import (
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/test"
@@ -15,21 +16,18 @@ func TestSkip(t *testing.T) {
 		})
 		skipArgs := []any{1, 2, 3, 4, 5}
 
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockSkip: func(args ...any) {
-				test.Equal(t, skipArgs, args)
-			},
-			MockName: func() string {
-				return "mock-test"
-			},
-			MockLog: func(args ...any) {
-				test.Equal(t, skippedMsg, args[0].(string))
-			},
+		mockT := test.NewMockTestingT(t)
+		mockT.MockSkip = func(args ...any) {
+			test.Equal(t, skipArgs, args)
 		}
+		mockT.MockLog = func(args ...any) {
+			test.Equal(t, skippedMsg, args[0].(string))
+		}
+		mockT.MockSkip = func(...any) {}
+
 		Skip(mockT, 1, 2, 3, 4, 5)
 
-		test.Equal(t, []string{"mock-test"}, skippedTests.values)
+		test.Equal(t, []string{"mock-name"}, skippedTests.values)
 	})
 
 	t.Run("should call Skipf", func(t *testing.T) {
@@ -37,22 +35,19 @@ func TestSkip(t *testing.T) {
 			skippedTests = newSyncSlice()
 		})
 
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockSkipf: func(format string, args ...any) {
-				test.Equal(t, "mock", format)
-				test.Equal(t, []any{1, 2, 3, 4, 5}, args)
-			},
-			MockName: func() string {
-				return "mock-test"
-			},
-			MockLog: func(args ...any) {
-				test.Equal(t, skippedMsg, args[0].(string))
-			},
+		mockT := test.NewMockTestingT(t)
+		mockT.MockSkipf = func(format string, args ...any) {
+			test.Equal(t, "mock", format)
+			test.Equal(t, []any{1, 2, 3, 4, 5}, args)
 		}
+		mockT.MockLog = func(args ...any) {
+			test.Equal(t, skippedMsg, args[0].(string))
+		}
+		mockT.MockSkipf = func(string, ...any) {}
+
 		Skipf(mockT, "mock", 1, 2, 3, 4, 5)
 
-		test.Equal(t, []string{"mock-test"}, skippedTests.values)
+		test.Equal(t, []string{"mock-name"}, skippedTests.values)
 	})
 
 	t.Run("should call SkipNow", func(t *testing.T) {
@@ -60,37 +55,30 @@ func TestSkip(t *testing.T) {
 			skippedTests = newSyncSlice()
 		})
 
-		mockT := test.MockTestingT{
-			MockHelper:  func() {},
-			MockSkipNow: func() {},
-			MockName: func() string {
-				return "mock-test"
-			},
-			MockLog: func(args ...any) {
-				test.Equal(t, skippedMsg, args[0].(string))
-			},
+		mockT := test.NewMockTestingT(t)
+		mockT.MockLog = func(args ...any) {
+			test.Equal(t, skippedMsg, args[0].(string))
 		}
+		mockT.MockSkipNow = func() {}
+
 		SkipNow(mockT)
 
-		test.Equal(t, []string{"mock-test"}, skippedTests.values)
+		test.Equal(t, []string{"mock-name"}, skippedTests.values)
 	})
 
 	t.Run("should be concurrent safe", func(t *testing.T) {
 		t.Cleanup(func() {
 			skippedTests = newSyncSlice()
 		})
+		calledCount := atomic.Int64{}
 
-		mockT := test.MockTestingT{
-			MockHelper:  func() {},
-			MockSkipNow: func() {},
-			MockName: func() string {
-				return "mock-test"
-			},
-			MockLog: func(args ...any) {
-				test.Equal(t, skippedMsg, args[0].(string))
-			},
+		mockT := test.NewMockTestingT(t)
+		mockT.MockLog = func(args ...any) {
+			test.Equal(t, skippedMsg, args[0].(string))
 		}
-
+		mockT.MockSkipNow = func() {
+			calledCount.Add(1)
+		}
 		wg := sync.WaitGroup{}
 
 		for i := 0; i < 1000; i++ {
@@ -105,6 +93,7 @@ func TestSkip(t *testing.T) {
 		wg.Wait()
 
 		test.Equal(t, 1000, len(skippedTests.values))
+		test.Equal(t, 1000, calledCount.Load())
 	})
 
 	t.Run("testSkipped", func(t *testing.T) {
@@ -132,16 +121,15 @@ func TestSkip(t *testing.T) {
 				})
 
 				runOnly := ""
-				mockT := test.MockTestingT{
-					MockHelper:  func() {},
-					MockSkipNow: func() {},
-					MockName: func() string {
-						return "TestMock/Skip"
-					},
-					MockLog: func(args ...any) {
-						test.Equal(t, skippedMsg, args[0].(string))
-					},
+				mockT := test.NewMockTestingT(t)
+				mockT.MockName = func() string {
+					return "TestMock/Skip"
 				}
+				mockT.MockLog = func(args ...any) {
+					test.Equal(t, skippedMsg, args[0].(string))
+				}
+				mockT.MockSkipNow = func() {}
+
 				// This is for populating skippedTests.values and following the normal flow
 				SkipNow(mockT)
 
@@ -160,16 +148,15 @@ func TestSkip(t *testing.T) {
 			})
 
 			runOnly := ""
-			mockT := test.MockTestingT{
-				MockHelper:  func() {},
-				MockSkipNow: func() {},
-				MockName: func() string {
-					return "Test"
-				},
-				MockLog: func(args ...any) {
-					test.Equal(t, skippedMsg, args[0].(string))
-				},
+			mockT := test.NewMockTestingT(t)
+			mockT.MockName = func() string {
+				return "Test"
 			}
+			mockT.MockLog = func(args ...any) {
+				test.Equal(t, skippedMsg, args[0].(string))
+			}
+			mockT.MockSkipNow = func() {}
+
 			// This is for populating skippedTests.values and following the normal flow
 			SkipNow(mockT)
 

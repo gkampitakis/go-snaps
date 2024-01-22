@@ -48,16 +48,8 @@ func TestMatchJSON(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				snapPath := setupSnapshot(t, jsonFilename, false)
 
-				mockT := test.MockTestingT{
-					MockHelper: func() {},
-					MockName: func() string {
-						return "mock-name"
-					},
-					MockError: func(args ...any) {
-						test.NotCalled(t)
-					},
-					MockLog: func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) },
-				}
+				mockT := test.NewMockTestingT(t)
+				mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
 
 				MatchJSON(mockT, tc.input)
 
@@ -96,18 +88,9 @@ func TestMatchJSON(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				setupSnapshot(t, jsonFilename, false)
 
-				mockT := test.MockTestingT{
-					MockHelper: func() {},
-					MockName: func() string {
-						return "mock-name"
-					},
-					MockError: func(args ...any) {
-						test.Equal(t, tc.err, (args[0].(error)).Error())
-					},
-					MockLog: func(args ...any) {
-						// this is called when snapshot is written successfully
-						test.NotCalled(t)
-					},
+				mockT := test.NewMockTestingT(t)
+				mockT.MockError = func(args ...any) {
+					test.Equal(t, tc.err, (args[0].(error)).Error())
 				}
 
 				MatchJSON(mockT, tc.input)
@@ -119,16 +102,8 @@ func TestMatchJSON(t *testing.T) {
 		t.Run("should apply matchers in order", func(t *testing.T) {
 			setupSnapshot(t, jsonFilename, false)
 
-			mockT := test.MockTestingT{
-				MockHelper: func() {},
-				MockName: func() string {
-					return "mock-name"
-				},
-				MockError: func(args ...any) {
-					test.NotCalled(t)
-				},
-				MockLog: func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) },
-			}
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
 
 			c1 := func(val any) (any, error) {
 				return map[string]any{"key2": nil}, nil
@@ -152,20 +127,14 @@ func TestMatchJSON(t *testing.T) {
 		t.Run("should aggregate errors from matchers", func(t *testing.T) {
 			setupSnapshot(t, jsonFilename, false)
 
-			mockT := test.MockTestingT{
-				MockHelper: func() {},
-				MockName: func() string {
-					return "mock-name"
-				},
-				MockError: func(args ...any) {
-					test.Equal(t,
-						"\x1b[31;1m\n✕ match.Custom(\"age\") - mock error"+
-							"\x1b[0m\x1b[31;1m\n✕ match.Any(\"missing.key.1\") - path does not exist"+
-							"\x1b[0m\x1b[31;1m\n✕ match.Any(\"missing.key.2\") - path does not exist\x1b[0m",
-						args[0],
-					)
-				},
-				MockLog: func(args ...any) { test.NotCalled(t) },
+			mockT := test.NewMockTestingT(t)
+			mockT.MockError = func(args ...any) {
+				test.Equal(t,
+					"\x1b[31;1m\n✕ match.Custom(\"age\") - mock error"+
+						"\x1b[0m\x1b[31;1m\n✕ match.Any(\"missing.key.1\") - path does not exist"+
+						"\x1b[0m\x1b[31;1m\n✕ match.Any(\"missing.key.2\") - path does not exist\x1b[0m",
+					args[0],
+				)
 			}
 
 			c := func(val any) (any, error) {
@@ -183,17 +152,9 @@ func TestMatchJSON(t *testing.T) {
 	t.Run("if it's running on ci should skip creating snapshot", func(t *testing.T) {
 		setupSnapshot(t, jsonFilename, true)
 
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockName: func() string {
-				return "mock-name"
-			},
-			MockError: func(args ...any) {
-				test.Equal(t, errSnapNotFound, args[0].(error))
-			},
-			MockLog: func(args ...any) {
-				test.NotCalled(t)
-			},
+		mockT := test.NewMockTestingT(t)
+		mockT.MockError = func(args ...any) {
+			test.Equal(t, errSnapNotFound, args[0].(error))
 		}
 
 		MatchJSON(mockT, "{}")
@@ -208,20 +169,12 @@ func TestMatchJSON(t *testing.T) {
 			func(received any) { test.Equal(t, addedMsg, received.(string)) },
 			func(received any) { test.Equal(t, updatedMsg, received.(string)) },
 		}
-		mockT := test.MockTestingT{
-			MockHelper: func() {},
-			MockName: func() string {
-				return "mock-name"
-			},
-			MockError: func(args ...any) {
-				test.NotCalled(t)
-			},
-			MockLog: func(args ...any) {
-				printerExpectedCalls[0](args[0])
+		mockT := test.NewMockTestingT(t)
+		mockT.MockLog = func(args ...any) {
+			printerExpectedCalls[0](args[0])
 
-				// shift
-				printerExpectedCalls = printerExpectedCalls[1:]
-			},
+			// shift
+			printerExpectedCalls = printerExpectedCalls[1:]
 		}
 
 		// First call for creating the snapshot

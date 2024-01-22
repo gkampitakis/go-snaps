@@ -17,37 +17,96 @@ type MockTestingT struct {
 	MockError   func(...any)
 	MockLog     func(...any)
 	MockCleanup func(func())
+	t           *testing.T
+}
+
+// NewMockTestingT returns a MockTestingT with common default values
+func NewMockTestingT(t *testing.T) MockTestingT {
+	return MockTestingT{
+		MockHelper: func() {},
+		MockCleanup: func(f func()) {
+			f()
+		},
+		MockName: func() string {
+			return "mock-name"
+		},
+		t: t,
+	}
 }
 
 func (m MockTestingT) Error(args ...any) {
+	m.t.Helper()
+
+	if m.MockError == nil {
+		m.t.Errorf("t.Error was not expected to be called")
+		return
+	}
 	m.MockError(args...)
 }
 
 func (m MockTestingT) Helper() {
+	m.t.Helper()
+
 	m.MockHelper()
 }
 
 func (m MockTestingT) Skip(args ...any) {
+	m.t.Helper()
+
+	if m.MockSkip == nil {
+		m.t.Errorf("t.Skip was not expected to be called")
+		return
+	}
 	m.MockSkip(args...)
 }
 
 func (m MockTestingT) Skipf(format string, args ...any) {
+	m.t.Helper()
+
+	if m.MockSkipf == nil {
+		m.t.Errorf("t.Skipf was not expected to be called")
+		return
+	}
 	m.MockSkipf(format, args...)
 }
 
 func (m MockTestingT) SkipNow() {
+	m.t.Helper()
+
+	if m.MockSkipNow == nil {
+		m.t.Errorf("t.SkipNow was not expected to be called")
+		return
+	}
 	m.MockSkipNow()
 }
 
 func (m MockTestingT) Name() string {
+	m.t.Helper()
+
+	if m.MockName == nil {
+		m.t.Errorf("t.Name was not expected to be called")
+		return ""
+	}
 	return m.MockName()
 }
 
 func (m MockTestingT) Log(args ...any) {
+	m.t.Helper()
+
+	if m.MockLog == nil {
+		m.t.Errorf("t.Log was not expected to be called")
+		return
+	}
 	m.MockLog(args...)
 }
 
 func (m MockTestingT) Cleanup(f func()) {
+	m.t.Helper()
+
+	if m.MockCleanup == nil {
+		m.t.Errorf("t.Cleanup was not expected to be called")
+		return
+	}
 	m.MockCleanup(f)
 }
 
@@ -65,12 +124,6 @@ func Contains(t *testing.T, s, substr string) {
 	if !strings.Contains(s, substr) {
 		t.Errorf("\n [expected] %s to contain %s", s, substr)
 	}
-}
-
-// NotCalled is going to mark a test as failed if called
-func NotCalled(t *testing.T) {
-	t.Helper()
-	t.Errorf("function was not expected to be called")
 }
 
 func CreateTempFile(t *testing.T, data string) string {
