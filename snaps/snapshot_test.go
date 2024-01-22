@@ -8,7 +8,7 @@ import (
 	"github.com/gkampitakis/go-snaps/internal/test"
 )
 
-func TestTestID(t *testing.T) {
+func TestSyncRegistry(t *testing.T) {
 	t.Run("should increment id on each call [concurrent safe]", func(t *testing.T) {
 		wg := sync.WaitGroup{}
 		registry := newRegistry()
@@ -17,15 +17,15 @@ func TestTestID(t *testing.T) {
 			wg.Add(1)
 
 			go func() {
-				registry.getTestID("test", "/file")
+				registry.getTestID("/file", "test")
 				wg.Done()
 			}()
 		}
 
 		wg.Wait()
 
-		test.Equal(t, "[test - 6]", registry.getTestID("test", "/file"))
-		test.Equal(t, "[test-v2 - 1]", registry.getTestID("test-v2", "/file"))
+		test.Equal(t, "[test - 6]", registry.getTestID("/file", "test"))
+		test.Equal(t, "[test-v2 - 1]", registry.getTestID("/file", "test-v2"))
 	})
 }
 
