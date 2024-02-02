@@ -106,7 +106,7 @@ func Clean(m *testing.M, opts ...CleanOpts) {
 		testEvents.items,
 		shouldClean && !isCI,
 	); s != "" {
-		fmt.Printf("%s\n", s)
+		fmt.Println(s)
 	}
 }
 
