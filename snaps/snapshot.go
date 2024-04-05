@@ -15,7 +15,7 @@ import (
 
 var (
 	testsRegistry        = newRegistry()
-	_m                   = sync.Mutex{}
+	_m                   = sync.RWMutex{}
 	endSequenceByteSlice = []byte(endSequence)
 )
 
@@ -129,6 +129,9 @@ func newRegistry() *syncRegistry {
 //
 // If not found returns errSnapNotFound error.
 func getPrevSnapshot(testID, snapPath string) (string, int, error) {
+	_m.RLock()
+	defer _m.RUnlock()
+
 	f, err := os.ReadFile(snapPath)
 	if err != nil {
 		return "", -1, errSnapNotFound
