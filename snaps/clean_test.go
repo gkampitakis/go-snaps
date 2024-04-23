@@ -448,6 +448,7 @@ func TestGetTestID(t *testing.T) {
 		// must have dash between test name and number
 		{"[Test something 10]", "", false},
 		{"[Test/something - not a number]", "", false},
+		{"s", "", false},
 	}
 
 	for _, tc := range testCases {
@@ -456,7 +457,11 @@ func TestGetTestID(t *testing.T) {
 		t.Run(tc.input, func(t *testing.T) {
 			t.Parallel()
 
-			id, ok := getTestID([]byte(tc.input))
+			// make sure that the capacity of b is len(tc.input), this way
+			// indexing beyond the capacity will cause test to panic
+			b := make([]byte, 0, len(tc.input))
+			b = append(b, []byte(tc.input)...)
+			id, ok := getTestID(b)
 
 			test.Equal(t, tc.valid, ok)
 			test.Equal(t, tc.expectedID, id)

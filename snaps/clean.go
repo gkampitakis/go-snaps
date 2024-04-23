@@ -117,7 +117,7 @@ func getTestID(b []byte) (string, bool) {
 	}
 
 	// needs to start with [Test and end with ]
-	if !bytes.Equal(b[0:5], []byte("[Test")) || b[len(b)-1] != ']' {
+	if !bytes.HasPrefix(b, []byte("[Test")) || b[len(b)-1] != ']' {
 		return "", false
 	}
 
