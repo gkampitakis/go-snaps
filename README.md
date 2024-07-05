@@ -353,3 +353,6 @@ This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) an
 
 > [!IMPORTANT]
 > Snapshots should be treated as code. The snapshot artifact should be committed alongside code changes, and reviewed as part of your code review process
+
+> [!NOTE]
+> go-snaps doesn't handle CRLF line endings. If you are using Windows, you may need to convert the line endings to LF.
