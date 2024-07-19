@@ -104,7 +104,7 @@ func TestMatchSnapshot(t *testing.T) {
 				"+ Received + 2\x1b[0m\n\n\x1b[38;5;52m\x1b[48;5;225m- int(10)\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m" +
 				"- hello world\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 				"+ bye world\x1b[0m\n\n\x1b[2mat " + filepath.FromSlash(
-				"../__snapshots__/matchSnapshot_test.snap:2",
+				"__snapshots__/matchSnapshot_test.snap:2",
 			) +
 				"\n\x1b[0m"
 
@@ -227,7 +227,7 @@ func TestMatchSnapshot(t *testing.T) {
 				"- hello world----\x1b[0m\n\x1b[38;5;52m\x1b[48;5;225m- ---\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 				"+ int(100)\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m+ bye world----\x1b[0m\n\x1b[38;5;22m\x1b[48;5;159m" +
 				"+ --\x1b[0m\n\n\x1b[2mat " + filepath.FromSlash(
-				"../__snapshots__/matchSnapshot_test.snap:2",
+				"__snapshots__/matchSnapshot_test.snap:2",
 			) +
 				"\n\x1b[0m"
 

@@ -155,7 +155,7 @@ func TestSnapPathAndFile(t *testing.T) {
 		}()
 
 		test.Contains(t, snapPath, filepath.FromSlash("/snaps/__snapshots__"))
-		test.Contains(t, snapPathRel, filepath.FromSlash("../__snapshots__/snapshot_test.snap"))
+		test.Contains(t, snapPathRel, filepath.FromSlash("__snapshots__/snapshot_test.snap"))
 	})
 
 	t.Run("should return path and file from config", func(t *testing.T) {
@@ -177,7 +177,7 @@ func TestSnapPathAndFile(t *testing.T) {
 
 		// returns the current file's path /snaps/*
 		test.Contains(t, snapPath, filepath.FromSlash("/snaps/my_snapshot_dir"))
-		test.Contains(t, snapPathRel, filepath.FromSlash("../my_snapshot_dir/my_file.snap"))
+		test.Contains(t, snapPathRel, filepath.FromSlash("my_snapshot_dir/my_file.snap"))
 	})
 
 	t.Run("should return absolute path", func(t *testing.T) {
@@ -198,7 +198,7 @@ func TestSnapPathAndFile(t *testing.T) {
 		}()
 
 		test.Contains(t, snapPath, filepath.FromSlash("/path_to/my_snapshot_dir"))
-		test.Contains(t, snapPathRel, filepath.FromSlash("/path_to/my_snapshot_dir/my_file.snap"))
+		test.Contains(t, snapPathRel, filepath.FromSlash("path_to/my_snapshot_dir/my_file.snap"))
 	})
 }
 
