@@ -255,20 +255,20 @@ Returns the relative path of the caller and the snapshot path.
 */
 func snapshotPath(c *config) (string, string) {
 	//  skips current func, the wrapper match* and the exported Match* func
-	callerPath := baseCaller(3)
+	callerFilename := baseCaller(3)
 
 	dir := c.snapsDir
 	if !filepath.IsAbs(dir) {
-		dir = filepath.Join(filepath.Dir(callerPath), c.snapsDir)
+		dir = filepath.Join(filepath.Dir(callerFilename), c.snapsDir)
 	}
 
 	filename := c.filename
 	if filename == "" {
-		base := filepath.Base(callerPath)
+		base := filepath.Base(callerFilename)
 		filename = strings.TrimSuffix(base, filepath.Ext(base))
 	}
 	snapPath := filepath.Join(dir, filename+snapsExt)
-	snapPathRel, _ := filepath.Rel(callerPath, snapPath)
+	snapPathRel, _ := filepath.Rel(filepath.Dir(callerFilename), snapPath)
 
 	return snapPath, snapPathRel
 }
