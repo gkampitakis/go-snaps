@@ -84,8 +84,18 @@ func Clean(m *testing.M, opts ...CleanOpts) {
 	_ = m
 	runOnly := flag.Lookup("test.run").Value.String()
 	count, _ := strconv.Atoi(flag.Lookup("test.count").Value.String())
+	registeredStandaloneTests := occurrences(
+		standaloneTestsRegistry.cleanup,
+		count,
+		standaloneOccurrenceFMT,
+	)
 
-	obsoleteFiles, usedFiles := examineFiles(testsRegistry.cleanup, runOnly, shouldClean && !isCI)
+	obsoleteFiles, usedFiles := examineFiles(
+		testsRegistry.cleanup,
+		registeredStandaloneTests,
+		runOnly,
+		shouldClean && !isCI,
+	)
 	obsoleteTests, err := examineSnaps(
 		testsRegistry.cleanup,
 		usedFiles,
@@ -146,6 +156,7 @@ func isNumber(b []byte) bool {
 }
 
 /*
+// TODO: update docs
 Map containing the occurrences is checked against the filesystem.
 
 If a file exists but is not registered in the map we check if the file is
@@ -155,6 +166,7 @@ and we mark it as one.
 */
 func examineFiles(
 	registry map[string]map[string]int,
+	registeredStandaloneTests set,
 	runOnly string,
 	shouldUpdate bool,
 ) (obsolete, used []string) {
@@ -164,18 +176,23 @@ func examineFiles(
 		uniqueDirs[filepath.Dir(snapPaths)] = struct{}{}
 	}
 
+	for snapPaths := range registeredStandaloneTests {
+		uniqueDirs[filepath.Dir(snapPaths)] = struct{}{}
+	}
+
 	for dir := range uniqueDirs {
 		dirContents, _ := os.ReadDir(dir)
 
 		for _, content := range dirContents {
 			// this is a sanity check shouldn't have dirs inside the snapshot dirs
 			// and only delete any `.snap` files
-			if content.IsDir() || filepath.Ext(content.Name()) != snapsExt {
+			if content.IsDir() || !strings.Contains(content.Name(), snapsExt) {
 				continue
 			}
 
 			snapPath := filepath.Join(dir, content.Name())
-			if _, called := registry[snapPath]; called {
+			if _, called := registry[snapPath]; called ||
+				registeredStandaloneTests.Has(snapPath) {
 				used = append(used, snapPath)
 				continue
 			}
@@ -220,7 +237,7 @@ func examineSnaps(
 
 		var hasDiffs bool
 
-		registeredTests := occurrences(registry[snapPath], count)
+		registeredTests := occurrences(registry[snapPath], count, snapshotOccurrenceFMT)
 		s := snapshotScanner(f)
 
 		for s.Scan() {
@@ -389,7 +406,16 @@ func printEvent(w io.Writer, color, symbol, verb string, events int) {
 	colors.Fprint(w, color, fmt.Sprintf("%s%v %s %s\n", symbol, events, subject, verb))
 }
 
+func standaloneOccurrenceFMT(s string, i int) string {
+	return fmt.Sprintf(s, i)
+}
+
+func snapshotOccurrenceFMT(s string, i int) string {
+	return fmt.Sprintf("%s - %d", s, i)
+}
+
 /*
+// TODO: update docs
 Builds a Set with all snapshot ids registered inside a snap file
 Form: testname - number id
 
@@ -409,7 +435,7 @@ e.g
 
 as it means there are 3 snapshots created inside TestAdd
 */
-func occurrences(tests map[string]int, count int) set {
+func occurrences(tests map[string]int, count int, formatter func(string, int) string) set {
 	result := make(set, len(tests))
 	for testID, counter := range tests {
 		// divide a test's counter by count (how many times the go test suite ran)
@@ -417,10 +443,10 @@ func occurrences(tests map[string]int, count int) set {
 		counter = counter / count
 		if counter > 1 {
 			for i := 1; i <= counter; i++ {
-				result[fmt.Sprintf("%s - %d", testID, i)] = struct{}{}
+				result[formatter(testID, i)] = struct{}{}
 			}
 		}
-		result[fmt.Sprintf("%s - %d", testID, counter)] = struct{}{}
+		result[formatter(testID, counter)] = struct{}{}
 	}
 
 	return result

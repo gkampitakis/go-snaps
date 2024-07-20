@@ -63,7 +63,7 @@ func MatchJSON(t testingT, input any, matchers ...match.JSONMatcher) {
 func matchJSON(c *config, t testingT, input any, matchers ...match.JSONMatcher) {
 	t.Helper()
 
-	snapPath, snapPathRel := snapshotPath(c)
+	snapPath, snapPathRel := snapshotPath(c, t.Name(), false)
 	testID := testsRegistry.getTestID(snapPath, t.Name())
 	t.Cleanup(func() {
 		testsRegistry.reset(snapPath, t.Name())

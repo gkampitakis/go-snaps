@@ -53,6 +53,16 @@ func TestSyncRegistry(t *testing.T) {
 	})
 }
 
+func TestSyncStandaloneRegistry(t *testing.T) {
+	t.Run("should increment id on each call [concurrent safe]", func(t *testing.T) {
+		t.Log("to implement")
+	})
+
+	t.Run("should reset running registry", func(t *testing.T) {
+		t.Log("to implement")
+	})
+}
+
 func TestGetPrevSnapshot(t *testing.T) {
 	t.Run("should return errSnapNotFound", func(t *testing.T) {
 		snap, line, err := getPrevSnapshot("", "")
@@ -139,67 +149,120 @@ func TestAddNewSnapshot(t *testing.T) {
 	test.Equal(t, "\n[mock-id]\nmy-snap\n---\n", test.GetFileContent(t, snapPath))
 }
 
-func TestSnapPathAndFile(t *testing.T) {
-	t.Run("should return default path and file", func(t *testing.T) {
-		var (
-			snapPath    string
-			snapPathRel string
-		)
-
+func TestSnapshotPath(t *testing.T) {
+	snapshotPathWrapper := func(c *config, tName string, isStandalone bool) (snapPath, snapPathRel string) {
+		// This is for emulating being called from a func so we can find the correct file
+		// of the caller
 		func() {
-			// This is for emulating being called from a func so we can find the correct file
-			// of the caller
 			func() {
-				snapPath, snapPathRel = snapshotPath(&defaultConfig)
+				snapPath, snapPathRel = snapshotPath(c, tName, isStandalone)
 			}()
 		}()
 
-		test.Contains(t, snapPath, filepath.FromSlash("/snaps/__snapshots__"))
-		test.Contains(t, snapPathRel, filepath.FromSlash("__snapshots__/snapshot_test.snap"))
+		return
+	}
+
+	t.Run("should return default path and file", func(t *testing.T) {
+		snapPath, snapPathRel := snapshotPathWrapper(&defaultConfig, "", false)
+
+		test.HasSuffix(t, snapPath, filepath.FromSlash("/snaps/__snapshots__/snapshot_test.snap"))
+		test.Equal(t, filepath.FromSlash("__snapshots__/snapshot_test.snap"), snapPathRel)
 	})
 
 	t.Run("should return path and file from config", func(t *testing.T) {
-		var (
-			snapPath    string
-			snapPathRel string
-		)
-
-		func() {
-			// This is for emulating being called from a func so we can find the correct file
-			// of the caller
-			func() {
-				snapPath, snapPathRel = snapshotPath(&config{
-					filename: "my_file",
-					snapsDir: "my_snapshot_dir",
-				})
-			}()
-		}()
+		snapPath, snapPathRel := snapshotPathWrapper(&config{
+			filename: "my_file",
+			snapsDir: "my_snapshot_dir",
+		}, "", false)
 
 		// returns the current file's path /snaps/*
-		test.Contains(t, snapPath, filepath.FromSlash("/snaps/my_snapshot_dir"))
-		test.Contains(t, snapPathRel, filepath.FromSlash("my_snapshot_dir/my_file.snap"))
+		test.HasSuffix(t, snapPath, filepath.FromSlash("/snaps/my_snapshot_dir/my_file.snap"))
+		test.Equal(t, filepath.FromSlash("my_snapshot_dir/my_file.snap"), snapPathRel)
 	})
 
 	t.Run("should return absolute path", func(t *testing.T) {
-		var (
-			snapPath    string
-			snapPathRel string
+		snapPath, snapPathRel := snapshotPathWrapper(&config{
+			filename: "my_file",
+			snapsDir: "/path_to/my_snapshot_dir",
+		}, "", false)
+
+		test.HasSuffix(t, snapPath, filepath.FromSlash("/path_to/my_snapshot_dir/my_file.snap"))
+		// the depth depends on filesystem structure
+		test.HasSuffix(
+			t,
+			snapPathRel,
+			filepath.FromSlash("../../path_to/my_snapshot_dir/my_file.snap"),
 		)
-
-		func() {
-			// This is for emulating being called from a func so we can find the correct file
-			// of the caller
-			func() {
-				snapPath, snapPathRel = snapshotPath(&config{
-					filename: "my_file",
-					snapsDir: "/path_to/my_snapshot_dir",
-				})
-			}()
-		}()
-
-		test.Contains(t, snapPath, filepath.FromSlash("/path_to/my_snapshot_dir"))
-		test.Contains(t, snapPathRel, filepath.FromSlash("path_to/my_snapshot_dir/my_file.snap"))
 	})
+
+	t.Run("should add extension to filename", func(t *testing.T) {
+		snapPath, snapPathRel := snapshotPathWrapper(&config{
+			filename:  "my_file",
+			snapsDir:  "my_snapshot_dir",
+			extension: ".txt",
+		}, "", false)
+
+		test.HasSuffix(t, snapPath, filepath.FromSlash("/snaps/my_snapshot_dir/my_file.snap.txt"))
+		test.Equal(t, filepath.FromSlash("my_snapshot_dir/my_file.snap.txt"), snapPathRel)
+	})
+
+	t.Run("should return standalone snapPath", func(t *testing.T) {
+		snapPath, snapPathRel := snapshotPathWrapper(&defaultConfig, "my_test", true)
+
+		test.HasSuffix(
+			t,
+			snapPath,
+			filepath.FromSlash("/snaps/__snapshots__/snapshot_test_my_test_%d.snap"),
+		)
+		test.Equal(
+			t,
+			filepath.FromSlash("__snapshots__/snapshot_test_my_test_%d.snap"),
+			snapPathRel,
+		)
+	})
+
+	t.Run("should return standalone snapPath without '/'", func(t *testing.T) {
+		snapPath, snapPathRel := snapshotPathWrapper(&defaultConfig, "TestFunction/my_test", true)
+
+		test.HasSuffix(
+			t,
+			snapPath,
+			filepath.FromSlash("/snaps/__snapshots__/snapshot_test_TestFunction_my_test_%d.snap"),
+		)
+		test.Equal(
+			t,
+			filepath.FromSlash("__snapshots__/snapshot_test_TestFunction_my_test_%d.snap"),
+			snapPathRel,
+		)
+	})
+
+	t.Run("should return standalone snapPath with overridden filename", func(t *testing.T) {
+		snapPath, snapPathRel := snapshotPathWrapper(&config{
+			filename: "my_file",
+			snapsDir: "my_snapshot_dir",
+		}, "my_test", true)
+
+		test.HasSuffix(t, snapPath, filepath.FromSlash("/snaps/my_snapshot_dir/my_file_%d.snap"))
+		test.Equal(t, filepath.FromSlash("my_snapshot_dir/my_file_%d.snap"), snapPathRel)
+	})
+
+	t.Run(
+		"should return standalone snapPath with overridden filename and extension",
+		func(t *testing.T) {
+			snapPath, snapPathRel := snapshotPathWrapper(&config{
+				filename:  "my_file",
+				snapsDir:  "my_snapshot_dir",
+				extension: ".txt",
+			}, "my_test", true)
+
+			test.HasSuffix(
+				t,
+				snapPath,
+				filepath.FromSlash("/snaps/my_snapshot_dir/my_file_%d.snap.txt"),
+			)
+			test.Equal(t, filepath.FromSlash("my_snapshot_dir/my_file_%d.snap.txt"), snapPathRel)
+		},
+	)
 }
 
 func TestUpdateSnapshot(t *testing.T) {

@@ -54,7 +54,7 @@ func matchSnapshot(c *config, t testingT, values ...any) {
 		return
 	}
 
-	snapPath, snapPathRel := snapshotPath(c)
+	snapPath, snapPathRel := snapshotPath(c, t.Name(), false)
 	testID := testsRegistry.getTestID(snapPath, t.Name())
 	t.Cleanup(func() {
 		testsRegistry.reset(snapPath, t.Name())
@@ -109,11 +109,11 @@ func matchSnapshot(c *config, t testingT, values ...any) {
 }
 
 func takeSnapshot(objects []any) string {
-	var snapshot string
+	snapshots := make([]string, len(objects))
 
-	for i := 0; i < len(objects); i++ {
-		snapshot += pretty.Sprint(objects[i]) + "\n"
+	for i, object := range objects {
+		snapshots[i] = pretty.Sprint(object)
 	}
 
-	return strings.TrimSuffix(escapeEndChars(snapshot), "\n")
+	return escapeEndChars(strings.Join(snapshots, "\n"))
 }

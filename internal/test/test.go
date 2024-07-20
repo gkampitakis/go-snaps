@@ -126,6 +126,14 @@ func Contains(t *testing.T, s, substr string) {
 	}
 }
 
+func HasSuffix(t *testing.T, s, suffix string) {
+	t.Helper()
+
+	if !strings.HasSuffix(s, suffix) {
+		t.Errorf("\n [expected] %s to have suffix %s", s, suffix)
+	}
+}
+
 func CreateTempFile(t *testing.T, data string) string {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "mock.file")

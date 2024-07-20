@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	testsRegistry        = newRegistry()
-	_m                   = sync.RWMutex{}
-	endSequenceByteSlice = []byte(endSequence)
+	testsRegistry           = newRegistry()
+	standaloneTestsRegistry = newStandaloneRegistry()
+	_m                      = sync.RWMutex{}
+	endSequenceByteSlice    = []byte(endSequence)
 )
 
 var (
@@ -25,9 +26,10 @@ var (
 )
 
 type config struct {
-	filename string
-	snapsDir string
-	update   *bool
+	filename  string
+	snapsDir  string
+	extension string
+	update    *bool
 }
 
 // Update determines whether to update snapshots or not
@@ -43,7 +45,7 @@ func Update(u bool) func(*config) {
 //
 //	default: __snapshots__
 //
-// this doesn't change the file extension
+// this doesn't change the file extension see `snap.Ext`
 func Filename(name string) func(*config) {
 	return func(c *config) {
 		c.filename = name
@@ -58,6 +60,18 @@ func Filename(name string) func(*config) {
 func Dir(dir string) func(*config) {
 	return func(c *config) {
 		c.snapsDir = dir
+	}
+}
+
+// Specify file name extension
+//
+// default: .snap
+//
+// Note: even if you specify a different extension the file still contain .snap
+// e.g. if you specify .txt the file will be .snap.txt
+func Ext(ext string) func(*config) {
+	return func(c *config) {
+		c.extension = ext
 	}
 }
 
@@ -122,6 +136,37 @@ func newRegistry() *syncRegistry {
 		cleanup: make(map[string]map[string]int),
 		Mutex:   sync.Mutex{},
 	}
+}
+
+type syncStandaloneRegistry struct {
+	running map[string]int
+	cleanup map[string]int
+	sync.Mutex
+}
+
+func newStandaloneRegistry() *syncStandaloneRegistry {
+	return &syncStandaloneRegistry{
+		running: make(map[string]int),
+		cleanup: make(map[string]int),
+		Mutex:   sync.Mutex{},
+	}
+}
+
+func (s *syncStandaloneRegistry) getTestID(snapPath, snapPathRel string) (string, string) {
+	s.Lock()
+
+	s.running[snapPath]++
+	s.cleanup[snapPath]++
+	c := s.running[snapPath]
+	s.Unlock()
+
+	return fmt.Sprintf(snapPath, c), fmt.Sprintf(snapPathRel, c)
+}
+
+func (s *syncStandaloneRegistry) reset(snapPath string) {
+	s.Lock()
+	s.running[snapPath] = 0
+	s.Unlock()
 }
 
 // getPrevSnapshot scans file searching for a snapshot matching the given testID and returns
@@ -241,6 +286,23 @@ func removeSnapshot(s *bufio.Scanner) {
 	}
 }
 
+func upsertStandaloneSnapshot(snapshot, snapPath string) error {
+	if err := os.MkdirAll(filepath.Dir(snapPath), os.ModePerm); err != nil {
+		return err
+	}
+
+	return os.WriteFile(snapPath, []byte(snapshot), os.ModePerm)
+}
+
+func getPrevStandaloneSnapshot(snapPath string) (string, error) {
+	f, err := os.ReadFile(snapPath)
+	if err != nil {
+		return "", errSnapNotFound
+	}
+
+	return string(f), nil
+}
+
 /*
 Returns the path for snapshots
   - if no config provided returns the directory where tests are running
@@ -248,12 +310,18 @@ Returns the path for snapshots
   - if snapsDir is absolute path then we are returning this path
 
 and for the filename
+
   - if no config provided we use the test file name with `.snap` extension
+
   - if filename provided we return the filename with `.snap` extension
+
+  - if extension provided we return the filename with `.snap` and the provided extension
+
+  - if it's standalone snapshot we also append an integer (_%d) in the filename (even before `.snap`)
 
 Returns the relative path of the caller and the snapshot path.
 */
-func snapshotPath(c *config) (string, string) {
+func snapshotPath(c *config, tName string, isStandalone bool) (string, string) {
 	//  skips current func, the wrapper match* and the exported Match* func
 	callerFilename := baseCaller(3)
 
@@ -262,15 +330,29 @@ func snapshotPath(c *config) (string, string) {
 		dir = filepath.Join(filepath.Dir(callerFilename), c.snapsDir)
 	}
 
+	snapPath := filepath.Join(dir, constructFilename(c, callerFilename, tName, isStandalone))
+	snapPathRel, _ := filepath.Rel(filepath.Dir(callerFilename), snapPath)
+
+	return snapPath, snapPathRel
+}
+
+func constructFilename(c *config, callerFilename, tName string, isStandalone bool) string {
 	filename := c.filename
 	if filename == "" {
 		base := filepath.Base(callerFilename)
 		filename = strings.TrimSuffix(base, filepath.Ext(base))
-	}
-	snapPath := filepath.Join(dir, filename+snapsExt)
-	snapPathRel, _ := filepath.Rel(filepath.Dir(callerFilename), snapPath)
 
-	return snapPath, snapPathRel
+		if isStandalone {
+			filename += fmt.Sprintf("_%s", strings.ReplaceAll(tName, "/", "_"))
+		}
+	}
+
+	if isStandalone {
+		filename += "_%d"
+	}
+	filename += snapsExt + c.extension
+
+	return filename
 }
 
 func unescapeEndChars(s string) string {

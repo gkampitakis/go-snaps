@@ -92,7 +92,7 @@ func TestExamineFiles(t *testing.T) {
 			loadMockSnap(t, "mock-snap-1"),
 			loadMockSnap(t, "mock-snap-2"),
 		)
-		obsolete, used := examineFiles(tests, "", false)
+		obsolete, used := examineFiles(tests, set{}, "", false)
 
 		obsoleteExpected := []string{
 			filepath.FromSlash(dir1 + "/obsolete1.snap"),
@@ -113,14 +113,14 @@ func TestExamineFiles(t *testing.T) {
 		test.Equal(t, usedExpected, used)
 	})
 
-	t.Run("should remove outdate files", func(t *testing.T) {
+	t.Run("should remove outdated files", func(t *testing.T) {
 		shouldUpdate := true
 		tests, dir1, dir2 := setupTempExamineFiles(
 			t,
 			loadMockSnap(t, "mock-snap-1"),
 			loadMockSnap(t, "mock-snap-2"),
 		)
-		examineFiles(tests, "", shouldUpdate)
+		examineFiles(tests, set{}, "", shouldUpdate)
 
 		if _, err := os.Stat(filepath.FromSlash(dir1 + "/obsolete1.snap")); !errors.Is(
 			err,
@@ -329,7 +329,7 @@ func TestOccurrences(t *testing.T) {
 			"divide - 2":   {},
 		}
 
-		test.Equal(t, expected, occurrences(tests, 1))
+		test.Equal(t, expected, occurrences(tests, 1, snapshotOccurrenceFMT))
 	})
 
 	t.Run("when count 3", func(t *testing.T) {
@@ -350,7 +350,7 @@ func TestOccurrences(t *testing.T) {
 			"divide - 3":   {},
 		}
 
-		test.Equal(t, expected, occurrences(tests, 3))
+		test.Equal(t, expected, occurrences(tests, 3, snapshotOccurrenceFMT))
 	})
 }
 
