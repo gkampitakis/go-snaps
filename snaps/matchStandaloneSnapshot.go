@@ -27,7 +27,7 @@ func matchStandaloneSnapshot(c *config, t testingT, value any) {
 		standaloneTestsRegistry.reset(genericPathSnap)
 	})
 
-	snapshot := takeStandaloneSnapshot(value)
+	snapshot := pretty.Sprint(value)
 	prevSnapshot, err := getPrevStandaloneSnapshot(snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if isCI {
@@ -54,7 +54,8 @@ func matchStandaloneSnapshot(c *config, t testingT, value any) {
 		prevSnapshot,
 		snapshot,
 		snapPathRel,
-		0,
+		// TODO: what should this be? or skipped entirely
+		1,
 	)
 	if diff == "" {
 		testEvents.register(passed)
@@ -73,8 +74,4 @@ func matchStandaloneSnapshot(c *config, t testingT, value any) {
 
 	t.Log(updatedMsg)
 	testEvents.register(updated)
-}
-
-func takeStandaloneSnapshot(data any) string {
-	return pretty.Sprint(data)
 }

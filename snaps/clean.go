@@ -17,10 +17,7 @@ import (
 	"github.com/maruel/natural"
 )
 
-// Matches [ Test... - number ] testIDs
-var (
-	testEvents = newTestEvents()
-)
+var testEvents = newTestEvents()
 
 const (
 	erred uint8 = iota
@@ -155,15 +152,10 @@ func isNumber(b []byte) bool {
 	return true
 }
 
-/*
-// TODO: update docs
-Map containing the occurrences is checked against the filesystem.
-
-If a file exists but is not registered in the map we check if the file is
-skipped. (We do that by checking if the mod is imported and there is a call to
-`MatchSnapshot`). If not skipped and not registered means it's an obsolete snap file
-and we mark it as one.
-*/
+// examineFiles traverses all the directories where snap tests where executed and checks
+// if "orphan" snap files exist (files containing `.snap` in their name).
+//
+// If they do they are marked as obsolete and they are either deleted if `shouldUpdate=true` or printed on the console.
 func examineFiles(
 	registry map[string]map[string]int,
 	registeredStandaloneTests set,
@@ -191,9 +183,15 @@ func examineFiles(
 			}
 
 			snapPath := filepath.Join(dir, content.Name())
-			if _, called := registry[snapPath]; called ||
-				registeredStandaloneTests.Has(snapPath) {
+			if _, called := registry[snapPath]; called {
 				used = append(used, snapPath)
+				continue
+			}
+
+			// if it's a standalone snapshot we don't add it to used list
+			// as we don't need it for the next step, to examine individual snaps inside the file
+			// as it contains only one
+			if registeredStandaloneTests.Has(snapPath) {
 				continue
 			}
 
@@ -414,27 +412,7 @@ func snapshotOccurrenceFMT(s string, i int) string {
 	return fmt.Sprintf("%s - %d", s, i)
 }
 
-/*
-// TODO: update docs
-Builds a Set with all snapshot ids registered inside a snap file
-Form: testname - number id
-
-tests have the form
-
-	map[filepath]: map[testname]: <number of snapshots>
-
-e.g
-
-	./path/__snapshots__/add_test.snap map[TestAdd] 3
-
-	will result to
-
-	TestAdd - 1
-	TestAdd - 2
-	TestAdd - 3
-
-as it means there are 3 snapshots created inside TestAdd
-*/
+// Builds a Set with all snapshot ids registered. It uses the provider formatter to build keys.
 func occurrences(tests map[string]int, count int, formatter func(string, int) string) set {
 	result := make(set, len(tests))
 	for testID, counter := range tests {

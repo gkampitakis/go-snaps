@@ -23,6 +23,7 @@
     - [match.Any](#matchany)
     - [match.Custom](#matchcustom)
     - [match.Type\[ExpectedType\]](#matchtype)
+- [MatchStandaloneSnapshot](#matchstandalonesnapshot)
 - [Configuration](#configuration)
 - [Update Snapshots](#update-snapshots)
   - [Clean obsolete Snapshots](#clean-obsolete-snapshots)
@@ -195,12 +196,17 @@ match.Type[string]("user.info").
 
 You can see more [examples](./examples/matchJSON_test.go#L96).
 
+## MatchStandaloneSnapshot
+
+TBD
+
 ## Configuration
 
 `go-snaps` allows passing configuration for overriding
 
 - the directory where snapshots are stored, _relative or absolute path_
 - the filename where snapshots are stored
+- the snapshot file's extension (_regardless the extension the filename will include the `.snaps` inside the filename_)
 - programmatically control whether to update snapshots. _You can find an example usage at [examples](/examples/examples_test.go#13)_
 
 ```go
@@ -210,6 +216,7 @@ t.Run("snapshot tests", func(t *testing.T) {
   s := snaps.WithConfig(
     snaps.Dir("my_dir"),
     snaps.Filename("json_file"),
+    snaps.Ext(".json")
     snaps.Update(false)
   )
 

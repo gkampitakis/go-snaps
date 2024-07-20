@@ -94,11 +94,9 @@ func handleError(t testingT, err any) {
 	testEvents.register(erred)
 }
 
-/*
-We track occurrence as in the same test we can run multiple snapshots
-This also helps with keeping track with obsolete snaps
-map[snap path]: map[testname]: <number of snapshots>
-*/
+// We track occurrence as in the same test we can run multiple snapshots
+// This also helps with keeping track with obsolete snaps
+// map[snap path]: map[testname]: <number of snapshots>
 type syncRegistry struct {
 	running map[string]map[string]int
 	cleanup map[string]map[string]int
@@ -303,24 +301,18 @@ func getPrevStandaloneSnapshot(snapPath string) (string, error) {
 	return string(f), nil
 }
 
-/*
-Returns the path for snapshots
-  - if no config provided returns the directory where tests are running
-  - if snapsDir is relative path just gets appended to directory where tests are running
-  - if snapsDir is absolute path then we are returning this path
-
-and for the filename
-
-  - if no config provided we use the test file name with `.snap` extension
-
-  - if filename provided we return the filename with `.snap` extension
-
-  - if extension provided we return the filename with `.snap` and the provided extension
-
-  - if it's standalone snapshot we also append an integer (_%d) in the filename (even before `.snap`)
-
-Returns the relative path of the caller and the snapshot path.
-*/
+// Returns the path for snapshots:
+//   - if no config provided returns the directory where tests are running
+//   - if snapsDir is relative path just gets appended to directory where tests are running
+//   - if snapsDir is absolute path then we are returning this path
+//
+// and for the filename:
+//   - if no config provided we use the test file name with `.snap` extension
+//   - if filename provided we return the filename with `.snap` extension
+//   - if extension provided we return the filename with `.snap` and the provided extension
+//   - if it's standalone snapshot we also append an integer (_%d) in the filename (even before `.snap`)
+//
+// Returns the relative path of the caller and the snapshot path.
 func snapshotPath(c *config, tName string, isStandalone bool) (string, string) {
 	//  skips current func, the wrapper match* and the exported Match* func
 	callerFilename := baseCaller(3)

@@ -55,11 +55,65 @@ func TestSyncRegistry(t *testing.T) {
 
 func TestSyncStandaloneRegistry(t *testing.T) {
 	t.Run("should increment id on each call [concurrent safe]", func(t *testing.T) {
-		t.Log("to implement")
+		wg := sync.WaitGroup{}
+		registry := newStandaloneRegistry()
+
+		for i := 0; i < 5; i++ {
+			wg.Add(1)
+
+			go func() {
+				registry.getTestID("/file/my_file_%d.snap", "./__snapshots__/my_file_%d.snap")
+				wg.Done()
+			}()
+		}
+
+		wg.Wait()
+
+		snapPath, snapPathRel := registry.getTestID(
+			"/file/my_file_%d.snap",
+			"./__snapshots__/my_file_%d.snap",
+		)
+
+		test.Equal(t, "/file/my_file_6.snap", snapPath)
+		test.Equal(t, "./__snapshots__/my_file_6.snap", snapPathRel)
+
+		snapPath, snapPathRel = registry.getTestID(
+			"/file/my_other_file_%d.snap",
+			"./__snapshots__/my_other_file_%d.snap",
+		)
+
+		test.Equal(t, "/file/my_other_file_1.snap", snapPath)
+		test.Equal(t, "./__snapshots__/my_other_file_1.snap", snapPathRel)
+		test.Equal(t, registry.cleanup, registry.running)
 	})
 
 	t.Run("should reset running registry", func(t *testing.T) {
-		t.Log("to implement")
+		wg := sync.WaitGroup{}
+		registry := newStandaloneRegistry()
+
+		for i := 0; i < 100; i++ {
+			wg.Add(1)
+
+			go func() {
+				registry.getTestID("/file/my_file_%d.snap", "./__snapshots__/my_file_%d.snap")
+				wg.Done()
+			}()
+		}
+
+		wg.Wait()
+
+		registry.reset("/file/my_file_%d.snap")
+
+		snapPath, snapPathRel := registry.getTestID(
+			"/file/my_file_%d.snap",
+			"./__snapshots__/my_file_%d.snap",
+		)
+
+		// running registry start from 0 again
+		test.Equal(t, "/file/my_file_1.snap", snapPath)
+		test.Equal(t, "./__snapshots__/my_file_1.snap", snapPathRel)
+		// cleanup registry still has 101
+		test.Equal(t, 101, registry.cleanup["/file/my_file_%d.snap"])
 	})
 }
 
@@ -191,7 +245,7 @@ func TestSnapshotPath(t *testing.T) {
 		test.HasSuffix(
 			t,
 			snapPathRel,
-			filepath.FromSlash("../../path_to/my_snapshot_dir/my_file.snap"),
+			filepath.FromSlash("path_to/my_snapshot_dir/my_file.snap"),
 		)
 	})
 

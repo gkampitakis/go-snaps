@@ -55,6 +55,30 @@ func setupTempExamineFiles(
 			name: filepath.FromSlash(dir2 + "/should_not_delete.txt"),
 			data: []byte{},
 		},
+		{
+			name: filepath.FromSlash(dir1 + "TestSomething_my_test_1.snap"),
+			data: []byte{},
+		},
+		{
+			name: filepath.FromSlash(dir1 + "TestSomething_my_test_2.snap"),
+			data: []byte{},
+		},
+		{
+			name: filepath.FromSlash(dir1 + "TestSomething_my_test_3.snap"),
+			data: []byte{},
+		},
+		{
+			name: filepath.FromSlash(dir2 + "TestAnotherThing_my_test_1.snap"),
+			data: []byte{},
+		},
+		{
+			name: filepath.FromSlash(dir2 + "TestAnotherThing_my_simple_test_1.snap"),
+			data: []byte{},
+		},
+		{
+			name: filepath.FromSlash(dir2 + "TestAnotherThing_my_simple_test_2.snap"),
+			data: []byte{},
+		},
 	}
 
 	for _, file := range files {
@@ -92,11 +116,18 @@ func TestExamineFiles(t *testing.T) {
 			loadMockSnap(t, "mock-snap-1"),
 			loadMockSnap(t, "mock-snap-2"),
 		)
-		obsolete, used := examineFiles(tests, set{}, "", false)
+		obsolete, used := examineFiles(tests, set{
+			dir1 + "TestSomething_my_test_1.snap":           struct{}{},
+			dir2 + "TestAnotherThing_my_simple_test_1.snap": struct{}{},
+		}, "", false)
 
 		obsoleteExpected := []string{
 			filepath.FromSlash(dir1 + "/obsolete1.snap"),
 			filepath.FromSlash(dir2 + "/obsolete2.snap"),
+			filepath.FromSlash(dir1 + "TestSomething_my_test_2.snap"),
+			filepath.FromSlash(dir1 + "TestSomething_my_test_3.snap"),
+			filepath.FromSlash(dir2 + "TestAnotherThing_my_test_1.snap"),
+			filepath.FromSlash(dir2 + "TestAnotherThing_my_simple_test_2.snap"),
 		}
 		usedExpected := []string{
 			filepath.FromSlash(dir1 + "/test1.snap"),
@@ -120,20 +151,25 @@ func TestExamineFiles(t *testing.T) {
 			loadMockSnap(t, "mock-snap-1"),
 			loadMockSnap(t, "mock-snap-2"),
 		)
-		examineFiles(tests, set{}, "", shouldUpdate)
+		examineFiles(tests, set{
+			dir1 + "TestSomething_my_test_1.snap":           struct{}{},
+			dir2 + "TestAnotherThing_my_simple_test_1.snap": struct{}{},
+		}, "", shouldUpdate)
 
-		if _, err := os.Stat(filepath.FromSlash(dir1 + "/obsolete1.snap")); !errors.Is(
-			err,
-			os.ErrNotExist,
-		) {
-			t.Error("obsolete obsolete1.snap not removed")
-		}
-
-		if _, err := os.Stat(filepath.FromSlash(dir2 + "/obsolete2.snap")); !errors.Is(
-			err,
-			os.ErrNotExist,
-		) {
-			t.Error("obsolete obsolete2.snap not removed")
+		for _, obsoleteFilename := range []string{
+			dir1 + "/obsolete1.snap",
+			dir2 + "/obsolete2.snap",
+			dir1 + "TestSomething_my_test_2.snap",
+			dir1 + "TestSomething_my_test_3.snap",
+			dir2 + "TestAnotherThing_my_test_1.snap",
+			dir2 + "TestAnotherThing_my_simple_test_2.snap",
+		} {
+			if _, err := os.Stat(filepath.FromSlash(obsoleteFilename)); !errors.Is(
+				err,
+				os.ErrNotExist,
+			) {
+				t.Errorf("obsolete file %s not removed", obsoleteFilename)
+			}
 		}
 	})
 }
@@ -315,42 +351,64 @@ string hello world 2 2 1
 func TestOccurrences(t *testing.T) {
 	t.Run("when count 1", func(t *testing.T) {
 		tests := map[string]int{
-			"add":      3,
-			"subtract": 1,
-			"divide":   2,
+			"add_%d":      3,
+			"subtract_%d": 1,
+			"divide_%d":   2,
 		}
 
 		expected := set{
-			"add - 1":      {},
-			"add - 2":      {},
-			"add - 3":      {},
-			"subtract - 1": {},
-			"divide - 1":   {},
-			"divide - 2":   {},
+			"add_%d - 1":      {},
+			"add_%d - 2":      {},
+			"add_%d - 3":      {},
+			"subtract_%d - 1": {},
+			"divide_%d - 1":   {},
+			"divide_%d - 2":   {},
+		}
+
+		expectedStandalone := set{
+			"add_1":      {},
+			"add_2":      {},
+			"add_3":      {},
+			"subtract_1": {},
+			"divide_1":   {},
+			"divide_2":   {},
 		}
 
 		test.Equal(t, expected, occurrences(tests, 1, snapshotOccurrenceFMT))
+		test.Equal(t, expectedStandalone, occurrences(tests, 1, standaloneOccurrenceFMT))
 	})
 
 	t.Run("when count 3", func(t *testing.T) {
 		tests := map[string]int{
-			"add":      12,
-			"subtract": 3,
-			"divide":   9,
+			"add_%d":      12,
+			"subtract_%d": 3,
+			"divide_%d":   9,
 		}
 
 		expected := set{
-			"add - 1":      {},
-			"add - 2":      {},
-			"add - 3":      {},
-			"add - 4":      {},
-			"subtract - 1": {},
-			"divide - 1":   {},
-			"divide - 2":   {},
-			"divide - 3":   {},
+			"add_%d - 1":      {},
+			"add_%d - 2":      {},
+			"add_%d - 3":      {},
+			"add_%d - 4":      {},
+			"subtract_%d - 1": {},
+			"divide_%d - 1":   {},
+			"divide_%d - 2":   {},
+			"divide_%d - 3":   {},
+		}
+
+		expectedStandalone := set{
+			"add_1":      {},
+			"add_2":      {},
+			"add_3":      {},
+			"add_4":      {},
+			"subtract_1": {},
+			"divide_1":   {},
+			"divide_2":   {},
+			"divide_3":   {},
 		}
 
 		test.Equal(t, expected, occurrences(tests, 3, snapshotOccurrenceFMT))
+		test.Equal(t, expectedStandalone, occurrences(tests, 3, standaloneOccurrenceFMT))
 	})
 }
 
