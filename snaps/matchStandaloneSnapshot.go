@@ -62,7 +62,7 @@ func matchStandaloneSnapshot(c *config, t testingT, value any) {
 		return
 	}
 
-	if !shouldUpdate(nil) {
+	if !shouldUpdate(c.update) {
 		handleError(t, diff)
 		return
 	}
