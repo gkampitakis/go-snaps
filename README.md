@@ -198,7 +198,26 @@ You can see more [examples](./examples/matchJSON_test.go#L96).
 
 ## MatchStandaloneSnapshot
 
-TBD
+`MatchStandaloneSnapshot` will create snapshots on separate files as opposed to `MatchSnapshot` which adds multiple snapshots inside the same file.
+
+_Combined with `snaps.Ext` you can have proper syntax highlighting and better readability_
+
+```go
+// test_simple.go
+
+func TestSimple(t *testing.T) {
+  snaps.MatchStandaloneSnapshot(t, "Hello World")
+  // or create an html snapshot file
+  snaps.WithConfig(snaps.Ext(".html")).
+    MatchStandaloneSnapshot(t, "<html><body><h1>Hello World</h1></body></html>")
+}
+```
+
+`go-snaps` saves the snapshots in `__snapshots__` directory and the file
+name is the test file name with extension `.snap`.
+
+So for example if your test is called `test_simple.go` when you run your tests, a snapshot file
+will be created at `./__snapshots__/TestSimple_1.snaps`.
 
 ## Configuration
 

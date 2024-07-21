@@ -335,7 +335,7 @@ func constructFilename(c *config, callerFilename, tName string, isStandalone boo
 		filename = strings.TrimSuffix(base, filepath.Ext(base))
 
 		if isStandalone {
-			filename += fmt.Sprintf("_%s", strings.ReplaceAll(tName, "/", "_"))
+			filename = strings.ReplaceAll(tName, "/", "_")
 		}
 	}
 

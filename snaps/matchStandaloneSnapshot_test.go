@@ -7,7 +7,7 @@ import (
 	"github.com/gkampitakis/go-snaps/internal/test"
 )
 
-const standaloneFilename = "matchStandaloneSnapshot_test_mock-name_1.snap"
+const standaloneFilename = "mock-name_1.snap"
 
 func TestMatchStandaloneSnapshot(t *testing.T) {
 	t.Run("should create snapshot", func(t *testing.T) {
@@ -23,7 +23,7 @@ func TestMatchStandaloneSnapshot(t *testing.T) {
 
 		registryKey := filepath.Join(
 			filepath.Dir(snapPath),
-			"matchStandaloneSnapshot_test_mock-name_%d.snap",
+			"mock-name_%d.snap",
 		)
 		test.Equal(t, 0, standaloneTestsRegistry.running[registryKey])
 		test.Equal(t, 1, standaloneTestsRegistry.cleanup[registryKey])
@@ -86,7 +86,7 @@ func TestMatchStandaloneSnapshot(t *testing.T) {
 				"hello\x1b[0m\x1b[48;5;225m\x1b[38;5;52m world\x1b[0m\n\x1b[48;5;159m\x1b[38;5;22m" +
 				"+ \x1b[0m\x1b[48;5;23m\x1b[38;5;255mbye\x1b[0m\x1b[48;5;159m\x1b[38;5;22m world\x1b[0m\n\n\x1b[2m" +
 				"at " + filepath.FromSlash(
-				"__snapshots__/matchStandaloneSnapshot_test_mock-name_1.snap:1",
+				"__snapshots__/mock-name_1.snap:1",
 			) + "\n\x1b[0m"
 
 			test.Equal(t, expected, args[0].(string))

@@ -266,11 +266,11 @@ func TestSnapshotPath(t *testing.T) {
 		test.HasSuffix(
 			t,
 			snapPath,
-			filepath.FromSlash("/snaps/__snapshots__/snapshot_test_my_test_%d.snap"),
+			filepath.FromSlash("/snaps/__snapshots__/my_test_%d.snap"),
 		)
 		test.Equal(
 			t,
-			filepath.FromSlash("__snapshots__/snapshot_test_my_test_%d.snap"),
+			filepath.FromSlash("__snapshots__/my_test_%d.snap"),
 			snapPathRel,
 		)
 	})
@@ -281,11 +281,11 @@ func TestSnapshotPath(t *testing.T) {
 		test.HasSuffix(
 			t,
 			snapPath,
-			filepath.FromSlash("/snaps/__snapshots__/snapshot_test_TestFunction_my_test_%d.snap"),
+			filepath.FromSlash("/snaps/__snapshots__/TestFunction_my_test_%d.snap"),
 		)
 		test.Equal(
 			t,
-			filepath.FromSlash("__snapshots__/snapshot_test_TestFunction_my_test_%d.snap"),
+			filepath.FromSlash("__snapshots__/TestFunction_my_test_%d.snap"),
 			snapPathRel,
 		)
 	})

@@ -6,12 +6,32 @@ import (
 	"github.com/kr/pretty"
 )
 
+/*
+MatchStandaloneSnapshot verifies the value matches the most recent snap file
+
+	MatchStandaloneSnapshot(t, "Hello World")
+
+MatchStandaloneSnapshot creates one snapshot file per call.
+
+You can call MatchStandaloneSnapshot multiple times inside a test.
+It will create multiple snapshot files at `__snapshots__` folder by default.
+*/
 func (c *config) MatchStandaloneSnapshot(t testingT, value any) {
 	t.Helper()
 
 	matchStandaloneSnapshot(c, t, value)
 }
 
+/*
+MatchStandaloneSnapshot verifies the value matches the most recent snap file
+
+	MatchStandaloneSnapshot(t, "Hello World")
+
+MatchStandaloneSnapshot creates one snapshot file per call.
+
+You can call MatchStandaloneSnapshot multiple times inside a test.
+It will create multiple snapshot files at `__snapshots__` folder by default.
+*/
 func MatchStandaloneSnapshot(t testingT, value any) {
 	t.Helper()
 
@@ -54,7 +74,6 @@ func matchStandaloneSnapshot(c *config, t testingT, value any) {
 		prevSnapshot,
 		snapshot,
 		snapPathRel,
-		// TODO: what should this be? or skipped entirely
 		1,
 	)
 	if diff == "" {
