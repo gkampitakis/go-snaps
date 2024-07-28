@@ -17,10 +17,7 @@ import (
 	"github.com/maruel/natural"
 )
 
-// Matches [ Test... - number ] testIDs
-var (
-	testEvents = newTestEvents()
-)
+var testEvents = newTestEvents()
 
 const (
 	erred uint8 = iota
@@ -84,8 +81,18 @@ func Clean(m *testing.M, opts ...CleanOpts) {
 	_ = m
 	runOnly := flag.Lookup("test.run").Value.String()
 	count, _ := strconv.Atoi(flag.Lookup("test.count").Value.String())
+	registeredStandaloneTests := occurrences(
+		standaloneTestsRegistry.cleanup,
+		count,
+		standaloneOccurrenceFMT,
+	)
 
-	obsoleteFiles, usedFiles := examineFiles(testsRegistry.cleanup, runOnly, shouldClean && !isCI)
+	obsoleteFiles, usedFiles := examineFiles(
+		testsRegistry.cleanup,
+		registeredStandaloneTests,
+		runOnly,
+		shouldClean && !isCI,
+	)
 	obsoleteTests, err := examineSnaps(
 		testsRegistry.cleanup,
 		usedFiles,
@@ -145,16 +152,13 @@ func isNumber(b []byte) bool {
 	return true
 }
 
-/*
-Map containing the occurrences is checked against the filesystem.
-
-If a file exists but is not registered in the map we check if the file is
-skipped. (We do that by checking if the mod is imported and there is a call to
-`MatchSnapshot`). If not skipped and not registered means it's an obsolete snap file
-and we mark it as one.
-*/
+// examineFiles traverses all the directories where snap tests where executed and checks
+// if "orphan" snap files exist (files containing `.snap` in their name).
+//
+// If they do they are marked as obsolete and they are either deleted if `shouldUpdate=true` or printed on the console.
 func examineFiles(
 	registry map[string]map[string]int,
+	registeredStandaloneTests set,
 	runOnly string,
 	shouldUpdate bool,
 ) (obsolete, used []string) {
@@ -164,19 +168,30 @@ func examineFiles(
 		uniqueDirs[filepath.Dir(snapPaths)] = struct{}{}
 	}
 
+	for snapPaths := range registeredStandaloneTests {
+		uniqueDirs[filepath.Dir(snapPaths)] = struct{}{}
+	}
+
 	for dir := range uniqueDirs {
 		dirContents, _ := os.ReadDir(dir)
 
 		for _, content := range dirContents {
 			// this is a sanity check shouldn't have dirs inside the snapshot dirs
 			// and only delete any `.snap` files
-			if content.IsDir() || filepath.Ext(content.Name()) != snapsExt {
+			if content.IsDir() || !strings.Contains(content.Name(), snapsExt) {
 				continue
 			}
 
 			snapPath := filepath.Join(dir, content.Name())
 			if _, called := registry[snapPath]; called {
 				used = append(used, snapPath)
+				continue
+			}
+
+			// if it's a standalone snapshot we don't add it to used list
+			// as we don't need it for the next step, to examine individual snaps inside the file
+			// as it contains only one
+			if registeredStandaloneTests.Has(snapPath) {
 				continue
 			}
 
@@ -220,7 +235,7 @@ func examineSnaps(
 
 		var hasDiffs bool
 
-		registeredTests := occurrences(registry[snapPath], count)
+		registeredTests := occurrences(registry[snapPath], count, snapshotOccurrenceFMT)
 		s := snapshotScanner(f)
 
 		for s.Scan() {
@@ -389,27 +404,16 @@ func printEvent(w io.Writer, color, symbol, verb string, events int) {
 	colors.Fprint(w, color, fmt.Sprintf("%s%v %s %s\n", symbol, events, subject, verb))
 }
 
-/*
-Builds a Set with all snapshot ids registered inside a snap file
-Form: testname - number id
+func standaloneOccurrenceFMT(s string, i int) string {
+	return fmt.Sprintf(s, i)
+}
 
-tests have the form
+func snapshotOccurrenceFMT(s string, i int) string {
+	return fmt.Sprintf("%s - %d", s, i)
+}
 
-	map[filepath]: map[testname]: <number of snapshots>
-
-e.g
-
-	./path/__snapshots__/add_test.snap map[TestAdd] 3
-
-	will result to
-
-	TestAdd - 1
-	TestAdd - 2
-	TestAdd - 3
-
-as it means there are 3 snapshots created inside TestAdd
-*/
-func occurrences(tests map[string]int, count int) set {
+// Builds a Set with all snapshot ids registered. It uses the provider formatter to build keys.
+func occurrences(tests map[string]int, count int, formatter func(string, int) string) set {
 	result := make(set, len(tests))
 	for testID, counter := range tests {
 		// divide a test's counter by count (how many times the go test suite ran)
@@ -417,10 +421,10 @@ func occurrences(tests map[string]int, count int) set {
 		counter = counter / count
 		if counter > 1 {
 			for i := 1; i <= counter; i++ {
-				result[fmt.Sprintf("%s - %d", testID, i)] = struct{}{}
+				result[formatter(testID, i)] = struct{}{}
 			}
 		}
-		result[fmt.Sprintf("%s - %d", testID, counter)] = struct{}{}
+		result[formatter(testID, counter)] = struct{}{}
 	}
 
 	return result

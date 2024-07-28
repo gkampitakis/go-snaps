@@ -47,6 +47,7 @@ func setupSnapshot(t *testing.T, file string, ci bool, update ...bool) string {
 	t.Cleanup(func() {
 		os.Remove(snapPath)
 		testsRegistry = newRegistry()
+		standaloneTestsRegistry = newStandaloneRegistry()
 		testEvents = newTestEvents()
 		isCI = ciinfo.IsCI
 		updateVAR = updateVARPrev
@@ -78,7 +79,7 @@ func TestMatchSnapshot(t *testing.T) {
 		test.Equal(t, 1, testsRegistry.cleanup[snapPath]["mock-name"])
 	})
 
-	t.Run("if it's running on ci should skip", func(t *testing.T) {
+	t.Run("if it's running on ci should skip creating snapshot", func(t *testing.T) {
 		setupSnapshot(t, fileName, true)
 
 		mockT := test.NewMockTestingT(t)
