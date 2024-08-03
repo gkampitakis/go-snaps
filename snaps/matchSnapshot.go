@@ -21,7 +21,7 @@ or call MatchSnapshot multiples times inside a test
 
 The difference is the latter will create multiple entries.
 */
-func (c *config) MatchSnapshot(t testingT, values ...any) {
+func (c *Config) MatchSnapshot(t testingT, values ...any) {
 	t.Helper()
 
 	matchSnapshot(c, t, values...)
@@ -46,7 +46,7 @@ func MatchSnapshot(t testingT, values ...any) {
 	matchSnapshot(&defaultConfig, t, values...)
 }
 
-func matchSnapshot(c *config, t testingT, values ...any) {
+func matchSnapshot(c *Config, t testingT, values ...any) {
 	t.Helper()
 
 	if len(values) == 0 {

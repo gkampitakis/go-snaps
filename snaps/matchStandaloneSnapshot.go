@@ -16,7 +16,7 @@ MatchStandaloneSnapshot creates one snapshot file per call.
 You can call MatchStandaloneSnapshot multiple times inside a test.
 It will create multiple snapshot files at `__snapshots__` folder by default.
 */
-func (c *config) MatchStandaloneSnapshot(t testingT, value any) {
+func (c *Config) MatchStandaloneSnapshot(t testingT, value any) {
 	t.Helper()
 
 	matchStandaloneSnapshot(c, t, value)
@@ -38,7 +38,7 @@ func MatchStandaloneSnapshot(t testingT, value any) {
 	matchStandaloneSnapshot(&defaultConfig, t, value)
 }
 
-func matchStandaloneSnapshot(c *config, t testingT, value any) {
+func matchStandaloneSnapshot(c *Config, t testingT, value any) {
 	t.Helper()
 
 	genericPathSnap, genericSnapPathRel := snapshotPath(c, t.Name(), true)

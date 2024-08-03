@@ -204,7 +204,7 @@ func TestAddNewSnapshot(t *testing.T) {
 }
 
 func TestSnapshotPath(t *testing.T) {
-	snapshotPathWrapper := func(c *config, tName string, isStandalone bool) (snapPath, snapPathRel string) {
+	snapshotPathWrapper := func(c *Config, tName string, isStandalone bool) (snapPath, snapPathRel string) {
 		// This is for emulating being called from a func so we can find the correct file
 		// of the caller
 		func() {
@@ -224,7 +224,7 @@ func TestSnapshotPath(t *testing.T) {
 	})
 
 	t.Run("should return path and file from config", func(t *testing.T) {
-		snapPath, snapPathRel := snapshotPathWrapper(&config{
+		snapPath, snapPathRel := snapshotPathWrapper(&Config{
 			filename: "my_file",
 			snapsDir: "my_snapshot_dir",
 		}, "", false)
@@ -235,7 +235,7 @@ func TestSnapshotPath(t *testing.T) {
 	})
 
 	t.Run("should return absolute path", func(t *testing.T) {
-		snapPath, snapPathRel := snapshotPathWrapper(&config{
+		snapPath, snapPathRel := snapshotPathWrapper(&Config{
 			filename: "my_file",
 			snapsDir: "/path_to/my_snapshot_dir",
 		}, "", false)
@@ -250,7 +250,7 @@ func TestSnapshotPath(t *testing.T) {
 	})
 
 	t.Run("should add extension to filename", func(t *testing.T) {
-		snapPath, snapPathRel := snapshotPathWrapper(&config{
+		snapPath, snapPathRel := snapshotPathWrapper(&Config{
 			filename:  "my_file",
 			snapsDir:  "my_snapshot_dir",
 			extension: ".txt",
@@ -291,7 +291,7 @@ func TestSnapshotPath(t *testing.T) {
 	})
 
 	t.Run("should return standalone snapPath with overridden filename", func(t *testing.T) {
-		snapPath, snapPathRel := snapshotPathWrapper(&config{
+		snapPath, snapPathRel := snapshotPathWrapper(&Config{
 			filename: "my_file",
 			snapsDir: "my_snapshot_dir",
 		}, "my_test", true)
@@ -303,7 +303,7 @@ func TestSnapshotPath(t *testing.T) {
 	t.Run(
 		"should return standalone snapPath with overridden filename and extension",
 		func(t *testing.T) {
-			snapPath, snapPathRel := snapshotPathWrapper(&config{
+			snapPath, snapPathRel := snapshotPathWrapper(&Config{
 				filename:  "my_file",
 				snapsDir:  "my_snapshot_dir",
 				extension: ".txt",
