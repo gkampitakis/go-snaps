@@ -34,7 +34,7 @@ validators or placeholders for data that might change on each invocation e.g. da
 
 	MatchJSON(t, User{created: time.Now(), email: "mock-email"}, match.Any("created"))
 */
-func (c *config) MatchJSON(t testingT, input any, matchers ...match.JSONMatcher) {
+func (c *Config) MatchJSON(t testingT, input any, matchers ...match.JSONMatcher) {
 	t.Helper()
 
 	matchJSON(c, t, input, matchers...)
@@ -60,7 +60,7 @@ func MatchJSON(t testingT, input any, matchers ...match.JSONMatcher) {
 	matchJSON(&defaultConfig, t, input, matchers...)
 }
 
-func matchJSON(c *config, t testingT, input any, matchers ...match.JSONMatcher) {
+func matchJSON(c *Config, t testingT, input any, matchers ...match.JSONMatcher) {
 	t.Helper()
 
 	snapPath, snapPathRel := snapshotPath(c, t.Name(), false)

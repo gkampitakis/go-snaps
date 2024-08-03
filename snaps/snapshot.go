@@ -25,7 +25,7 @@ var (
 	updatedMsg = colors.Sprint(colors.Green, updateSymbol+"Snapshot updated")
 )
 
-type config struct {
+type Config struct {
 	filename  string
 	snapsDir  string
 	extension string
@@ -35,8 +35,8 @@ type config struct {
 // Update determines whether to update snapshots or not
 //
 // It respects if running on CI.
-func Update(u bool) func(*config) {
-	return func(c *config) {
+func Update(u bool) func(*Config) {
+	return func(c *Config) {
 		c.update = &u
 	}
 }
@@ -46,8 +46,8 @@ func Update(u bool) func(*config) {
 //	default: __snapshots__
 //
 // this doesn't change the file extension see `snap.Ext`
-func Filename(name string) func(*config) {
-	return func(c *config) {
+func Filename(name string) func(*Config) {
+	return func(c *Config) {
 		c.filename = name
 	}
 }
@@ -57,8 +57,8 @@ func Filename(name string) func(*config) {
 //	default: __snapshots__
 //
 // Accepts absolute paths
-func Dir(dir string) func(*config) {
-	return func(c *config) {
+func Dir(dir string) func(*Config) {
+	return func(c *Config) {
 		c.snapsDir = dir
 	}
 }
@@ -69,8 +69,8 @@ func Dir(dir string) func(*config) {
 //
 // Note: even if you specify a different extension the file still contain .snap
 // e.g. if you specify .txt the file will be .snap.txt
-func Ext(ext string) func(*config) {
-	return func(c *config) {
+func Ext(ext string) func(*Config) {
+	return func(c *Config) {
 		c.extension = ext
 	}
 }
@@ -78,7 +78,7 @@ func Ext(ext string) func(*config) {
 // Create snaps with configuration
 //
 //	e.g snaps.WithConfig(snaps.Filename("my_test")).MatchSnapshot(t, "hello world")
-func WithConfig(args ...func(*config)) *config {
+func WithConfig(args ...func(*Config)) *Config {
 	s := defaultConfig
 
 	for _, arg := range args {
@@ -313,7 +313,7 @@ func getPrevStandaloneSnapshot(snapPath string) (string, error) {
 //   - if it's standalone snapshot we also append an integer (_%d) in the filename (even before `.snap`)
 //
 // Returns the relative path of the caller and the snapshot path.
-func snapshotPath(c *config, tName string, isStandalone bool) (string, string) {
+func snapshotPath(c *Config, tName string, isStandalone bool) (string, string) {
 	//  skips current func, the wrapper match* and the exported Match* func
 	callerFilename := baseCaller(3)
 
@@ -328,7 +328,7 @@ func snapshotPath(c *config, tName string, isStandalone bool) (string, string) {
 	return snapPath, snapPathRel
 }
 
-func constructFilename(c *config, callerFilename, tName string, isStandalone bool) string {
+func constructFilename(c *Config, callerFilename, tName string, isStandalone bool) string {
 	filename := c.filename
 	if filename == "" {
 		base := filepath.Base(callerFilename)

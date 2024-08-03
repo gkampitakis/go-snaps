@@ -19,7 +19,7 @@ var (
 	isCI            = ciinfo.IsCI
 	updateVAR       = os.Getenv("UPDATE_SNAPS")
 	shouldClean     = updateVAR == "true" || updateVAR == "clean"
-	defaultConfig   = config{
+	defaultConfig   = Config{
 		snapsDir: "__snapshots__",
 	}
 )
