@@ -4,19 +4,62 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/parser"
-	"go/printer"
 	"go/token"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/kr/pretty"
 )
 
-type InlineSnapshot *string
+type inlineSnapshotsLineMapping struct {
+	// this map keeps a file inlineSnapshot call lines
+	mapping map[string][]int
+	sync.RWMutex
+}
+
+// AddLine
+func (i *inlineSnapshotsLineMapping) AddLine(file string, line int) {
+	i.Lock()
+	defer i.Unlock()
+	i.mapping[file] = append(i.mapping[file], line)
+}
+
+func (i *inlineSnapshotsLineMapping) AddFile(file string) {
+	i.Lock()
+	defer i.Unlock()
+	i.mapping[file] = make([]int, 0)
+}
+
+func (i *inlineSnapshotsLineMapping) isFileAdded(file string) bool {
+	i.RLock()
+	defer i.RUnlock()
+	_, registered := i.mapping[file]
+
+	return registered
+}
+
+func (i *inlineSnapshotsLineMapping) GetLine(file string, index int) int {
+	i.RLock()
+	defer i.RUnlock()
+
+	return i.mapping[file][index]
+}
+
+type inlineSnapshot *string
+
+var (
+	inlineSnapshotLineMapping = inlineSnapshotsLineMapping{
+		mapping: make(map[string][]int),
+		RWMutex: sync.RWMutex{},
+	}
+	errLocateCall = errors.New("cannot locate MatchInlineSnapshot call")
+)
 
 // Inline representation of snapshot
-func Inline(s string) InlineSnapshot {
+func Inline(s string) inlineSnapshot {
 	return &s
 }
 
@@ -32,7 +75,7 @@ and it populates with the snapshot
 
 the on every subsequent call it verifies the value matches the snapshot
 */
-func (c *config) MatchInlineSnapshot(t testingT, received interface{}, inlineSnap InlineSnapshot) {
+func (c *Config) MatchInlineSnapshot(t testingT, received interface{}, inlineSnap inlineSnapshot) {
 	t.Helper()
 
 	matchInlineSnapshot(c, t, received, inlineSnap)
@@ -50,16 +93,25 @@ and it populates with the snapshot
 
 the on every subsequent call it verifies the value matches the snapshot
 */
-func MatchInlineSnapshot(t testingT, received interface{}, inlineSnap InlineSnapshot) {
+func MatchInlineSnapshot(t testingT, received interface{}, inlineSnap inlineSnapshot) {
 	t.Helper()
 
 	matchInlineSnapshot(&defaultConfig, t, received, inlineSnap)
 }
 
-func matchInlineSnapshot(c *config, t testingT, received interface{}, inlineSnap InlineSnapshot) {
+func matchInlineSnapshot(c *Config, t testingT, received interface{}, inlineSnap inlineSnapshot) {
 	t.Helper()
 	snapshot := pretty.Sprint(received)
 	filename, line := baseCaller(1)
+
+	// we should only register call positions if we are modifying the file and the file hasn't been registered yet.
+	if (inlineSnap == nil || shouldUpdate(c.update)) &&
+		!inlineSnapshotLineMapping.isFileAdded(filename) {
+		if err := registerInlineCallIdx(filename); err != nil {
+			handleError(t, err)
+			return
+		}
+	}
 
 	if inlineSnap == nil {
 		if isCI {
@@ -67,9 +119,13 @@ func matchInlineSnapshot(c *config, t testingT, received interface{}, inlineSnap
 			return
 		}
 
-		if err := writeInlineSnapshot(filename, line, snapshot); err != nil {
+		if err := upsertInlineSnapshot(filename, line, snapshot); err != nil {
 			handleError(t, err)
+			return
 		}
+
+		t.Log(addedMsg)
+		testEvents.register(added)
 		return
 	}
 
@@ -84,7 +140,7 @@ func matchInlineSnapshot(c *config, t testingT, received interface{}, inlineSnap
 		return
 	}
 
-	if err := writeInlineSnapshot(filename, line, snapshot); err != nil {
+	if err := upsertInlineSnapshot(filename, line, snapshot); err != nil {
 		handleError(t, err)
 		return
 	}
@@ -93,69 +149,57 @@ func matchInlineSnapshot(c *config, t testingT, received interface{}, inlineSnap
 	testEvents.register(updated)
 }
 
-func writeInlineSnapshot(filename string, line int, snapshot string) error {
-	fset := token.NewFileSet()
-	p, err := parser.ParseFile(
-		fset,
-		filename,
-		nil,
-		parser.ParseComments|parser.SkipObjectResolution,
-	)
+func upsertInlineSnapshot(filename string, callerLine int, snapshot string) error {
+	inlineSnapshotIdx := 0
+	snapshotUpdated := false
+
+	fset, astFile, err := parseFileAst(filename)
 	if err != nil {
 		return err
 	}
 
-	for _, decl := range p.Decls {
-		funcDecl, ok := decl.(*ast.FuncDecl)
-		if !ok {
-			continue
-		}
-		if !strings.HasPrefix(funcDecl.Name.Name, "Test") {
-			continue
-		}
-
-		if !updateAST(decl, fset, line, snapshot) {
-			continue
-		}
-
-		file, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY, os.ModePerm)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		return printer.Fprint(file, fset, p)
-	}
-
-	return errors.New("cannot locate caller")
-}
-
-func updateAST(node ast.Node, fset *token.FileSet, line int, snapshot string) bool {
-	var updated bool
-
-	ast.Inspect(node, func(n ast.Node) bool {
-		callExpr, ok := n.(*ast.CallExpr)
-		if !ok {
-			return true
-		}
-		selectorExpr, ok := callExpr.Fun.(*ast.SelectorExpr)
-		if !ok {
-			return true
-		}
-
-		if selectorExpr.Sel.Name == "MatchInlineSnapshot" &&
-			fset.Position(n.Pos()).Line == line {
-			callExpr.Args[2] = createInlineArgument(snapshot)
-			updated = true
-
+	traverseMatchInlineSnapshotAst(astFile, func(ce *ast.CallExpr) bool {
+		if inlineSnapshotLineMapping.GetLine(filename, inlineSnapshotIdx) == callerLine {
+			ce.Args[2] = createInlineArgument(snapshot)
+			snapshotUpdated = true
 			return false
 		}
 
+		inlineSnapshotIdx++
+		// continue searching
+		return true
+	})
+	if !snapshotUpdated {
+		return errLocateCall
+	}
+
+	file, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return format.Node(file, fset, astFile)
+}
+
+// registerInlineCallIdx is expected to be called once per file and before getting modified
+func registerInlineCallIdx(filename string) error {
+	inlineSnapshotLineMapping.AddFile(filename)
+
+	fset, astFile, err := parseFileAst(filename)
+	if err != nil {
+		return err
+	}
+
+	traverseMatchInlineSnapshotAst(astFile, func(ce *ast.CallExpr) bool {
+		inlineSnapshotLineMapping.AddLine(filename, fset.Position(ce.Pos()).Line)
 		return true
 	})
 
-	return updated
+	return nil
 }
+
+/* AST Code */
 
 func createInlineArgument(s string) ast.Expr {
 	v := fmt.Sprintf("`%s`", s)
@@ -173,4 +217,59 @@ func createInlineArgument(s string) ast.Expr {
 			Value: v,
 		}},
 	}
+}
+
+func traverseMatchInlineSnapshotAst(astFile *ast.File, fn func(*ast.CallExpr) bool) {
+	breakEarly := false
+
+	for _, decl := range astFile.Decls {
+		if breakEarly {
+			return
+		}
+		funcDecl, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+		if !strings.HasPrefix(funcDecl.Name.Name, "Test") {
+			continue
+		}
+
+		ast.Inspect(decl, func(n ast.Node) bool {
+			if breakEarly {
+				return false
+			}
+			callExpr, ok := n.(*ast.CallExpr)
+			if !ok {
+				return true
+			}
+			selectorExpr, ok := callExpr.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+
+			if selectorExpr.Sel.Name == "MatchInlineSnapshot" {
+				if !fn(callExpr) {
+					breakEarly = true
+					return false
+				}
+			}
+
+			return true
+		})
+	}
+}
+
+func parseFileAst(filename string) (*token.FileSet, *ast.File, error) {
+	fileSet := token.NewFileSet()
+	astFile, err := parser.ParseFile(
+		fileSet,
+		filename,
+		nil,
+		parser.ParseComments|parser.SkipObjectResolution,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return fileSet, astFile, err
 }
