@@ -2,43 +2,31 @@ package snaps
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
-	"github.com/kr/pretty"
+	"github.com/gkampitakis/go-snaps/internal/colors"
+	"github.com/gkampitakis/go-snaps/match"
 )
 
-/*
-MatchStandaloneSnapshot verifies the input matches the most recent snap file
-
-	MatchStandaloneSnapshot(t, "Hello World")
-
-MatchStandaloneSnapshot creates one snapshot file per call.
-
-You can call MatchStandaloneSnapshot multiple times inside a test.
-It will create multiple snapshot files at `__snapshots__` folder by default.
-*/
-func (c *Config) MatchStandaloneSnapshot(t testingT, input any) {
+func (c *Config) MatchStandaloneJSON(t testingT, input any, matchers ...match.JSONMatcher) {
 	t.Helper()
 
-	matchStandaloneSnapshot(c, t, input)
+	c.extension = ".json"
+
+	matchStandaloneJSON(c, t, input, matchers...)
 }
 
-/*
-MatchStandaloneSnapshot verifies the input matches the most recent snap file
-
-	MatchStandaloneSnapshot(t, "Hello World")
-
-MatchStandaloneSnapshot creates one snapshot file per call.
-
-You can call MatchStandaloneSnapshot multiple times inside a test.
-It will create multiple snapshot files at `__snapshots__` folder by default.
-*/
-func MatchStandaloneSnapshot(t testingT, input any) {
+func MatchStandaloneJSON(t testingT, input any, matchers ...match.JSONMatcher) {
 	t.Helper()
 
-	matchStandaloneSnapshot(&defaultConfig, t, input)
+	c := defaultConfig
+	c.extension = ".json"
+
+	matchStandaloneJSON(&c, t, input, matchers...)
 }
 
-func matchStandaloneSnapshot(c *Config, t testingT, input any) {
+func matchStandaloneJSON(c *Config, t testingT, input any, matchers ...match.JSONMatcher) {
 	t.Helper()
 
 	genericPathSnap, genericSnapPathRel := snapshotPath(c, t.Name(), true)
@@ -47,7 +35,35 @@ func matchStandaloneSnapshot(c *Config, t testingT, input any) {
 		standaloneTestsRegistry.reset(genericPathSnap)
 	})
 
-	snapshot := pretty.Sprint(input)
+	j, err := validateJSON(input)
+	if err != nil {
+		handleError(t, err)
+		return
+	}
+
+	j, matchersErrors := applyJSONMatchers(j, matchers...)
+	if len(matchersErrors) > 0 {
+		s := strings.Builder{}
+
+		for _, err := range matchersErrors {
+			colors.Fprint(
+				&s,
+				colors.Red,
+				fmt.Sprintf(
+					"\n%smatch.%s(\"%s\") - %s",
+					errorSymbol,
+					err.Matcher,
+					err.Path,
+					err.Reason,
+				),
+			)
+		}
+
+		handleError(t, s.String())
+		return
+	}
+
+	snapshot := takeJSONSnapshot(j)
 	prevSnapshot, err := getPrevStandaloneSnapshot(snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if isCI {
