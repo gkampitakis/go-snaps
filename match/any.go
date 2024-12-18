@@ -2,10 +2,16 @@ package match
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
+	"github.com/goccy/go-yaml"
+	"github.com/goccy/go-yaml/parser"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
+
+var errPathNotFound = errors.New("path does not exist")
 
 type anyMatcher struct {
 	paths            []string
@@ -45,6 +51,55 @@ func (a *anyMatcher) ErrOnMissingPath(e bool) *anyMatcher {
 	return a
 }
 
+func (a anyMatcher) YAML(s []byte) ([]byte, []MatcherError) {
+	var errs []MatcherError
+
+	f, err := parser.ParseBytes(s, parser.ParseComments)
+	if err != nil {
+		return s, []MatcherError{{
+			Reason:  err,
+			Matcher: a.name,
+			Path:    "*",
+		}}
+	}
+
+	for _, path := range a.paths {
+		p, err := yaml.PathString(path)
+		if err != nil {
+			errs = append(errs, MatcherError{
+				Reason:  err,
+				Matcher: a.name,
+				Path:    path,
+			})
+
+			continue
+		}
+
+		if a.errOnMissingPath {
+			if _, err = p.FilterFile(f); err != nil && errors.Is(err, yaml.ErrNotFoundNode) {
+				errs = append(errs, MatcherError{
+					Reason:  errPathNotFound,
+					Matcher: a.name,
+					Path:    path,
+				})
+				continue
+			}
+		}
+
+		err = p.ReplaceWithReader(f, strings.NewReader(fmt.Sprint(a.placeholder)))
+		if err != nil {
+			errs = append(errs, MatcherError{
+				Reason:  err,
+				Matcher: a.name,
+				Path:    path,
+			})
+			continue
+		}
+	}
+
+	return []byte(f.String()), errs
+}
+
 // JSON is intended to be called internally on snaps.MatchJSON for applying Any matchers
 func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 	var errs []MatcherError
@@ -55,7 +110,7 @@ func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 		if !r.Exists() {
 			if a.errOnMissingPath {
 				errs = append(errs, MatcherError{
-					Reason:  errors.New("path does not exist"),
+					Reason:  errPathNotFound,
 					Matcher: a.name,
 					Path:    path,
 				})

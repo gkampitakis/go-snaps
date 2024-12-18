@@ -1,0 +1,20 @@
+
+[TestMatchYaml/should_match_string_yaml - 1]
+ser: "mock-service"
+name: John Doe
+age: 30
+email: john.doe@example.com
+address: mock-address
+street: mock-address
+
+---
+
+[TestMatchYaml/should_match_struct_yaml - 1]
+ser: mock-service
+name: John Doe
+age: 30
+email: john.doe@example.com
+address: mock-address
+street: mock-address
+
+---
