@@ -1,17 +1,11 @@
 package match
 
 import (
-	"errors"
-	"fmt"
-	"strings"
-
-	"github.com/goccy/go-yaml"
+	internal_yaml "github.com/gkampitakis/go-snaps/match/internal/yaml"
 	"github.com/goccy/go-yaml/parser"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
-
-var errPathNotFound = errors.New("path does not exist")
 
 type anyMatcher struct {
 	paths            []string
@@ -51,47 +45,47 @@ func (a *anyMatcher) ErrOnMissingPath(e bool) *anyMatcher {
 	return a
 }
 
-func (a anyMatcher) YAML(s []byte) ([]byte, []MatcherError) {
+// YAML is intended to be called internally on snaps.MatchYAML for applying Any matchers
+func (a anyMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 	var errs []MatcherError
 
-	f, err := parser.ParseBytes(s, parser.ParseComments)
+	f, err := parser.ParseBytes(b, parser.ParseComments)
 	if err != nil {
-		return s, []MatcherError{{
+		return b, []MatcherError{{
 			Reason:  err,
 			Matcher: a.name,
 			Path:    "*",
 		}}
 	}
 
-	for _, path := range a.paths {
-		p, err := yaml.PathString(path)
+	for _, p := range a.paths {
+		path, _, exists, err := internal_yaml.Get(f, p)
 		if err != nil {
 			errs = append(errs, MatcherError{
 				Reason:  err,
 				Matcher: a.name,
-				Path:    path,
+				Path:    p,
 			})
 
 			continue
 		}
-
-		if a.errOnMissingPath {
-			if _, err = p.FilterFile(f); err != nil && errors.Is(err, yaml.ErrNotFoundNode) {
+		if !exists {
+			if a.errOnMissingPath {
 				errs = append(errs, MatcherError{
 					Reason:  errPathNotFound,
 					Matcher: a.name,
-					Path:    path,
+					Path:    p,
 				})
-				continue
 			}
+
+			continue
 		}
 
-		err = p.ReplaceWithReader(f, strings.NewReader(fmt.Sprint(a.placeholder)))
-		if err != nil {
+		if err := internal_yaml.Update(f, path, a.placeholder); err != nil {
 			errs = append(errs, MatcherError{
 				Reason:  err,
 				Matcher: a.name,
-				Path:    path,
+				Path:    p,
 			})
 			continue
 		}
@@ -101,10 +95,10 @@ func (a anyMatcher) YAML(s []byte) ([]byte, []MatcherError) {
 }
 
 // JSON is intended to be called internally on snaps.MatchJSON for applying Any matchers
-func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
+func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 	var errs []MatcherError
 
-	json := s
+	json := b
 	for _, path := range a.paths {
 		r := gjson.GetBytes(json, path)
 		if !r.Exists() {
@@ -115,13 +109,11 @@ func (a anyMatcher) JSON(s []byte) ([]byte, []MatcherError) {
 					Path:    path,
 				})
 			}
+
 			continue
 		}
 
-		j, err := sjson.SetBytesOptions(json, path, a.placeholder, &sjson.Options{
-			Optimistic:     true,
-			ReplaceInPlace: true,
-		})
+		j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJsonOptions)
 		if err != nil {
 			errs = append(errs, MatcherError{
 				Reason:  err,

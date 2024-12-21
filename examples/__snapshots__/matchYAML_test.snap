@@ -18,3 +18,25 @@ address: mock-address
 street: mock-address
 
 ---
+
+[TestMatchYaml/should_assert_type - 1]
+ser: "mock-service"
+name: John Doe
+age: <Type:uint64>
+f: <Type:float64>
+b: <Type:bool>
+email: <Type:string>
+street: 123 Main St
+
+---
+
+[TestMatchYaml/custom_matcher - 1]
+ser: "mock-service"
+name: John Doe
+age: 30
+f: 3.5
+b: !!bool true
+email: JOHN.DOE@EXAMPLE.COM
+street: 123 Main St
+
+---

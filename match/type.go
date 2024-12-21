@@ -1,9 +1,10 @@
 package match
 
 import (
-	"errors"
 	"fmt"
 
+	internal_yaml "github.com/gkampitakis/go-snaps/match/internal/yaml"
+	"github.com/goccy/go-yaml/parser"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -40,26 +41,97 @@ func (t *typeMatcher[T]) ErrOnMissingPath(e bool) *typeMatcher[T] {
 	return t
 }
 
-func (t typeMatcher[ExpectedType]) JSON(s []byte) ([]byte, []MatcherError) {
+func (t typeMatcher[ExpectedType]) YAML(b []byte) ([]byte, []MatcherError) {
 	var errs []MatcherError
-	json := s
+
+	f, err := parser.ParseBytes(b, parser.ParseComments)
+	if err != nil {
+		return b, []MatcherError{{
+			Reason:  err,
+			Matcher: t.name,
+			Path:    "*",
+		}}
+	}
+
+	for _, p := range t.paths {
+		path, node, exists, err := internal_yaml.Get(f, p)
+		if err != nil {
+			errs = append(errs, MatcherError{
+				Reason:  err,
+				Matcher: t.name,
+				Path:    p,
+			})
+
+			continue
+		}
+		if !exists {
+			if t.errOnMissingPath {
+				errs = append(errs, MatcherError{
+					Reason:  errPathNotFound,
+					Matcher: t.name,
+					Path:    p,
+				})
+			}
+
+			continue
+		}
+
+		value, err := internal_yaml.GetValue(node)
+		if err != nil {
+			errs = append(errs, MatcherError{
+				Reason:  err,
+				Matcher: t.name,
+				Path:    p,
+			})
+
+			continue
+		}
+
+		if err := typeCheck[ExpectedType](value); err != nil {
+			errs = append(errs, MatcherError{
+				Reason:  err,
+				Matcher: t.name,
+				Path:    p,
+			})
+
+			continue
+		}
+
+		if err := internal_yaml.Update(f, path, typePlaceholder(value)); err != nil {
+			errs = append(errs, MatcherError{
+				Reason:  err,
+				Matcher: t.name,
+				Path:    p,
+			})
+
+			continue
+		}
+	}
+
+	return []byte(f.String()), errs
+}
+
+func (t typeMatcher[ExpectedType]) JSON(b []byte) ([]byte, []MatcherError) {
+	var errs []MatcherError
+	json := b
 
 	for _, path := range t.paths {
 		r := gjson.GetBytes(json, path)
 		if !r.Exists() {
 			if t.errOnMissingPath {
 				errs = append(errs, MatcherError{
-					Reason:  errors.New("path does not exist"),
+					Reason:  errPathNotFound,
 					Matcher: t.name,
 					Path:    path,
 				})
 			}
+
 			continue
 		}
 
-		if _, ok := r.Value().(ExpectedType); !ok {
+		if err := typeCheck[ExpectedType](r.Value()); err != nil {
 			errs = append(errs, MatcherError{
-				Reason:  fmt.Errorf("expected type %T, received %T", *new(ExpectedType), r.Value()),
+				Reason:  err,
 				Matcher: t.name,
 				Path:    path,
 			})
@@ -70,11 +142,8 @@ func (t typeMatcher[ExpectedType]) JSON(s []byte) ([]byte, []MatcherError) {
 		j, err := sjson.SetBytesOptions(
 			json,
 			path,
-			fmt.Sprintf("<Type:%T>", r.Value()),
-			&sjson.Options{
-				Optimistic:     true,
-				ReplaceInPlace: true,
-			},
+			typePlaceholder(r.Value()),
+			setJsonOptions,
 		)
 		if err != nil {
 			errs = append(errs, MatcherError{
@@ -90,4 +159,17 @@ func (t typeMatcher[ExpectedType]) JSON(s []byte) ([]byte, []MatcherError) {
 	}
 
 	return json, errs
+}
+
+func typeCheck[ExpectedType any](value interface{}) error {
+	_, ok := value.(ExpectedType)
+	if !ok {
+		return fmt.Errorf("expected type %T, received %T", *new(ExpectedType), value)
+	}
+
+	return nil
+}
+
+func typePlaceholder(value interface{}) string {
+	return fmt.Sprintf("<Type:%T>", value)
 }

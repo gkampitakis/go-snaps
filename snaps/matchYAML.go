@@ -59,7 +59,7 @@ func matchYAML(c *Config, t testingT, input any, matchers ...match.YAMLMatcher) 
 		return
 	}
 
-	snapshot := string(y)
+	snapshot := takeYAMLSnapshot(y)
 	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if isCI {
@@ -82,7 +82,12 @@ func matchYAML(c *Config, t testingT, input any, matchers ...match.YAMLMatcher) 
 		return
 	}
 
-	diff := prettyDiff(prevSnapshot, snapshot, snapPathRel, line)
+	diff := prettyDiff(
+		unescapeEndChars(prevSnapshot),
+		unescapeEndChars(snapshot),
+		snapPathRel,
+		line,
+	)
 	if diff == "" {
 		testEvents.register(passed)
 		return
@@ -102,31 +107,35 @@ func matchYAML(c *Config, t testingT, input any, matchers ...match.YAMLMatcher) 
 	testEvents.register(updated)
 }
 
-// FIXME: validate
 func validateYAML(input any) ([]byte, error) {
 	switch y := input.(type) {
 	case string:
-		return []byte(y), nil
+		var out interface{}
+		return []byte(y), yaml.Unmarshal([]byte(y), &out)
 	case []byte:
-		return y, nil
+		var out interface{}
+		return y, yaml.Unmarshal(y, &out)
 	default:
 		return yaml.Marshal(input)
 	}
 }
 
-// NOTE: this can be improved and pass the ast file
-// NOTE: technically here we want to arrive when the []byte is valid yaml
 func applyYAMLMatchers(b []byte, matchers ...match.YAMLMatcher) ([]byte, []match.MatcherError) {
 	errors := []match.MatcherError{}
 
 	for _, m := range matchers {
-		json, errs := m.YAML(b)
+		y, errs := m.YAML(b)
 		if len(errs) > 0 {
 			errors = append(errors, errs...)
 			continue
 		}
-		b = json
+
+		b = y
 	}
 
 	return b, errors
+}
+
+func takeYAMLSnapshot(b []byte) string {
+	return escapeEndChars(string(b))
 }

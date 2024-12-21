@@ -1,5 +1,19 @@
 package match
 
+import (
+	"errors"
+
+	"github.com/tidwall/sjson"
+)
+
+var (
+	errPathNotFound = errors.New("path does not exist")
+	setJsonOptions  = &sjson.Options{
+		Optimistic:     true,
+		ReplaceInPlace: true,
+	}
+)
+
 type JSONMatcher interface {
 	JSON([]byte) ([]byte, []MatcherError)
 }
