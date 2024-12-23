@@ -8,7 +8,7 @@ import (
 
 var (
 	errPathNotFound = errors.New("path does not exist")
-	setJsonOptions  = &sjson.Options{
+	setJSONOptions  = &sjson.Options{
 		Optimistic:     true,
 		ReplaceInPlace: true,
 	}

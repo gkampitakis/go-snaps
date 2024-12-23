@@ -88,4 +88,50 @@ func TestTypeMatcher(t *testing.T) {
 			test.Equal(t, "expected type int, received float64", errs[1].Reason.Error())
 		})
 	})
+
+	t.Run("YAML", func(t *testing.T) {
+		y := []byte(`user:
+  name: mock-user
+  email: mock-email
+  age: 29
+date: 16/10/2022
+`)
+
+		t.Run("should return error in case of missing path", func(t *testing.T) {
+			tm := Type[string]("$.user.missing")
+			res, errs := tm.YAML(y)
+
+			test.Equal(t, string(y), string(res))
+			test.Equal(t, 1, len(errs))
+
+			err := errs[0]
+
+			test.Equal(t, "path does not exist", err.Reason.Error())
+			test.Equal(t, "Type", err.Matcher)
+			test.Equal(t, "$.user.missing", err.Path)
+		})
+
+		t.Run("should aggregate errors", func(t *testing.T) {
+			tm := Type[string]("$.user.missing", "$.user.missing_key")
+			res, errs := tm.YAML(y)
+
+			test.Equal(t, y, res)
+			test.Equal(t, 2, len(errs))
+		})
+
+		t.Run("should evaluate passed type and replace yaml", func(t *testing.T) {
+			tm := Type[string]("$.user.name", "$.date")
+			res, errs := tm.YAML(y)
+
+			expected := `user:
+  name: <Type:string>
+  email: mock-email
+  age: 29
+date: <Type:string>
+`
+
+			test.Nil(t, errs)
+			test.Equal(t, expected, string(res))
+		})
+	})
 }

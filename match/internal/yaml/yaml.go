@@ -1,9 +1,8 @@
 package internal
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/goccy/go-yaml"
 	"github.com/goccy/go-yaml/ast"
@@ -42,5 +41,10 @@ func Get(f *ast.File, p string) (*yaml.Path, ast.Node, bool, error) {
 }
 
 func Update(f *ast.File, path *yaml.Path, value interface{}) error {
-	return path.ReplaceWithReader(f, strings.NewReader(fmt.Sprint(value)))
+	b, err := yaml.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	return path.ReplaceWithReader(f, bytes.NewReader(b))
 }

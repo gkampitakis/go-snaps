@@ -14,14 +14,22 @@ type anyMatcher struct {
 	name             string
 }
 
+func (a *anyMatcher) matcherError(err error, path string) MatcherError {
+	return MatcherError{
+		Reason:  err,
+		Matcher: a.name,
+		Path:    path,
+	}
+}
+
 /*
 Any matcher acts as a placeholder for any value
 
 It replaces any targeted path with a placeholder string
 
-	Any("user.name")
-	// or with multiple paths
 	Any("user.name", "user.email")
+	// or for yaml
+	Any("$.user.name", "$.user.email")
 */
 func Any(paths ...string) *anyMatcher {
 	return &anyMatcher{
@@ -38,7 +46,7 @@ func (a *anyMatcher) Placeholder(p any) *anyMatcher {
 	return a
 }
 
-// ErrOnMissingPath determines if matcher will fail in case of trying to access a json path
+// ErrOnMissingPath determines if matcher will fail in case of trying to access a path
 // that doesn't exist
 func (a *anyMatcher) ErrOnMissingPath(e bool) *anyMatcher {
 	a.errOnMissingPath = e
@@ -51,42 +59,27 @@ func (a anyMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 
 	f, err := parser.ParseBytes(b, parser.ParseComments)
 	if err != nil {
-		return b, []MatcherError{{
-			Reason:  err,
-			Matcher: a.name,
-			Path:    "*",
-		}}
+		return b, []MatcherError{a.matcherError(err, "*")}
 	}
 
 	for _, p := range a.paths {
 		path, _, exists, err := internal_yaml.Get(f, p)
 		if err != nil {
-			errs = append(errs, MatcherError{
-				Reason:  err,
-				Matcher: a.name,
-				Path:    p,
-			})
+			errs = append(errs, a.matcherError(err, p))
 
 			continue
 		}
 		if !exists {
 			if a.errOnMissingPath {
-				errs = append(errs, MatcherError{
-					Reason:  errPathNotFound,
-					Matcher: a.name,
-					Path:    p,
-				})
+				errs = append(errs, a.matcherError(errPathNotFound, p))
 			}
 
 			continue
 		}
 
 		if err := internal_yaml.Update(f, path, a.placeholder); err != nil {
-			errs = append(errs, MatcherError{
-				Reason:  err,
-				Matcher: a.name,
-				Path:    p,
-			})
+			errs = append(errs, a.matcherError(err, p))
+
 			continue
 		}
 	}
@@ -103,23 +96,15 @@ func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 		r := gjson.GetBytes(json, path)
 		if !r.Exists() {
 			if a.errOnMissingPath {
-				errs = append(errs, MatcherError{
-					Reason:  errPathNotFound,
-					Matcher: a.name,
-					Path:    path,
-				})
+				errs = append(errs, a.matcherError(errPathNotFound, path))
 			}
 
 			continue
 		}
 
-		j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJsonOptions)
+		j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJSONOptions)
 		if err != nil {
-			errs = append(errs, MatcherError{
-				Reason:  err,
-				Matcher: a.name,
-				Path:    path,
-			})
+			errs = append(errs, a.matcherError(err, path))
 
 			continue
 		}

@@ -21,7 +21,11 @@ email: john.doe@example.com
 address: "123 Main St"
 street: 123 Main St`
 
-		my_snaps.MatchYAML(t, doc_yaml, match.Any("$.address", "$.street").Placeholder("mock-address"))
+		my_snaps.MatchYAML(
+			t,
+			doc_yaml,
+			match.Any("$.address", "$.street").Placeholder("mock-address"),
+		)
 	})
 
 	t.Run("should match struct yaml", func(t *testing.T) {
@@ -47,7 +51,7 @@ street: 123 Main St`
 	t.Run("should fail with invalid yaml input", func(t *testing.T) {
 		snaps.SkipNow(t)
 
-		var doc_yaml = []byte(`
+		doc_yaml := []byte(`
 ser: "mock-service"
 name: John Doe
 age: 30
@@ -61,7 +65,7 @@ street: 123 Main St`)
 	})
 
 	t.Run("should assert type", func(t *testing.T) {
-		var doc_yaml = []byte(`
+		doc_yaml := []byte(`
 ser: "mock-service"
 name: John Doe
 age: 30
@@ -79,7 +83,7 @@ street: 123 Main St`)
 	})
 
 	t.Run("custom matcher", func(t *testing.T) {
-		var doc_yaml = []byte(`
+		doc_yaml := []byte(`
 ser: "mock-service"
 name: John Doe
 age: 30

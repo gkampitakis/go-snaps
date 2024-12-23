@@ -10,6 +10,7 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+// TODO: add comment doc
 func (c *Config) MatchYAML(t testingT, input any, matchers ...match.YAMLMatcher) {
 	t.Helper()
 
@@ -108,15 +109,31 @@ func matchYAML(c *Config, t testingT, input any, matchers ...match.YAMLMatcher) 
 }
 
 func validateYAML(input any) ([]byte, error) {
+	var out interface{}
+
 	switch y := input.(type) {
 	case string:
-		var out interface{}
-		return []byte(y), yaml.Unmarshal([]byte(y), &out)
+		err := yaml.Unmarshal([]byte(y), &out)
+		if err != nil {
+			return nil, fmt.Errorf("invalid yaml: %w", err)
+		}
+
+		return []byte(y), nil
 	case []byte:
 		var out interface{}
-		return y, yaml.Unmarshal(y, &out)
+		err := yaml.Unmarshal(y, &out)
+		if err != nil {
+			return nil, fmt.Errorf("invalid yaml: %w", err)
+		}
+
+		return y, nil
 	default:
-		return yaml.Marshal(input)
+		data, err := yaml.Marshal(input)
+		if err != nil {
+			return nil, fmt.Errorf("invalid yaml: %w", err)
+		}
+
+		return data, nil
 	}
 }
 

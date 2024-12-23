@@ -7,13 +7,19 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-// FIXME: custom signature should be the same as the rest
-
 type customMatcher struct {
 	callback         func(val any) (any, error)
 	errOnMissingPath bool
 	name             string
 	path             string
+}
+
+func (c *customMatcher) matcherError(err error) []MatcherError {
+	return []MatcherError{{
+		Reason:  err,
+		Matcher: c.name,
+		Path:    c.path,
+	}}
 }
 
 type CustomCallback func(val any) (any, error)
@@ -61,28 +67,16 @@ func (c *customMatcher) ErrOnMissingPath(e bool) *customMatcher {
 func (c *customMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 	f, err := parser.ParseBytes(b, parser.ParseComments)
 	if err != nil {
-		return nil, []MatcherError{{
-			Reason:  err,
-			Matcher: c.name,
-			Path:    c.path,
-		}}
+		return nil, c.matcherError(err)
 	}
 
 	path, node, exists, err := internal_yaml.Get(f, c.path)
 	if err != nil {
-		return nil, []MatcherError{{
-			Reason:  err,
-			Matcher: c.name,
-			Path:    c.path,
-		}}
+		return nil, c.matcherError(err)
 	}
 	if !exists {
 		if c.errOnMissingPath {
-			return nil, []MatcherError{{
-				Reason:  errPathNotFound,
-				Matcher: c.name,
-				Path:    c.path,
-			}}
+			return nil, c.matcherError(errPathNotFound)
 		}
 
 		return b, nil
@@ -90,28 +84,16 @@ func (c *customMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 
 	value, err := internal_yaml.GetValue(node)
 	if err != nil {
-		return nil, []MatcherError{{
-			Reason:  err,
-			Matcher: c.name,
-			Path:    c.path,
-		}}
+		return nil, c.matcherError(err)
 	}
 
 	result, err := c.callback(value)
 	if err != nil {
-		return nil, []MatcherError{{
-			Reason:  err,
-			Matcher: c.name,
-			Path:    c.path,
-		}}
+		return nil, c.matcherError(err)
 	}
 
 	if err := internal_yaml.Update(f, path, result); err != nil {
-		return nil, []MatcherError{{
-			Reason:  err,
-			Matcher: c.name,
-			Path:    c.path,
-		}}
+		return nil, c.matcherError(err)
 	}
 
 	return []byte(f.String()), nil
@@ -122,11 +104,7 @@ func (c *customMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 	r := gjson.GetBytes(b, c.path)
 	if !r.Exists() {
 		if c.errOnMissingPath {
-			return nil, []MatcherError{{
-				Reason:  errPathNotFound,
-				Matcher: c.name,
-				Path:    c.path,
-			}}
+			return nil, c.matcherError(errPathNotFound)
 		}
 
 		return b, nil
@@ -134,20 +112,12 @@ func (c *customMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 
 	value, err := c.callback(r.Value())
 	if err != nil {
-		return nil, []MatcherError{{
-			Reason:  err,
-			Matcher: c.name,
-			Path:    c.path,
-		}}
+		return nil, c.matcherError(err)
 	}
 
-	b, err = sjson.SetBytesOptions(b, c.path, value, setJsonOptions)
+	b, err = sjson.SetBytesOptions(b, c.path, value, setJSONOptions)
 	if err != nil {
-		return nil, []MatcherError{{
-			Reason:  err,
-			Matcher: c.name,
-			Path:    c.path,
-		}}
+		return nil, c.matcherError(err)
 	}
 
 	return b, nil
