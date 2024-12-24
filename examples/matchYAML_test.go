@@ -1,99 +1,67 @@
 package examples
 
 import (
-	"os"
-	"strings"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/gkampitakis/go-snaps/match"
 	"github.com/gkampitakis/go-snaps/snaps"
 )
 
-var my_snaps = snaps.WithConfig(snaps.Update(os.Getenv("UPDATE_ONLY") == "true"))
-
 func TestMatchYaml(t *testing.T) {
-	t.Run("should match string yaml", func(t *testing.T) {
-		const doc_yaml = `
-ser: "mock-service"
-name: John Doe
-age: 30
-email: john.doe@example.com
-address: "123 Main St"
-street: 123 Main St`
-
-		my_snaps.MatchYAML(
-			t,
-			doc_yaml,
-			match.Any("$.address", "$.street").Placeholder("mock-address"),
-		)
-	})
-
 	t.Run("should match struct yaml", func(t *testing.T) {
 		type User struct {
-			Service string `yaml:"ser"`
-			Name    string `yaml:"name"`
-			Age     int    `yaml:"age"`
-			Email   string `yaml:"email"`
-			Address string `yaml:"address"`
-			Street  string `yaml:"street"`
+			Name    string    `yaml:"name"`
+			Age     int       `yaml:"age"`
+			Email   string    `yaml:"email"`
+			Address string    `yaml:"address"`
+			Time    time.Time `yaml:"time"`
 		}
 
-		my_snaps.MatchYAML(t, User{
-			Service: "mock-service",
+		snaps.MatchYAML(t, User{
 			Name:    "John Doe",
 			Age:     30,
 			Email:   "john.doe@example.com",
 			Address: "123 Main St",
-			Street:  "123 Main St",
-		}, match.Any("$.address", "$.street").Placeholder("mock-address"))
+			Time:    time.Now(),
+		}, match.Any("$.time").Placeholder("mock-time"), match.Any("$.address").Placeholder("mock-address"))
 	})
 
-	t.Run("should fail with invalid yaml input", func(t *testing.T) {
-		snaps.SkipNow(t)
+	t.Run("custom matching logic", func(t *testing.T) {
+		type User struct {
+			Name  string `json:"name"`
+			Email string `json:"email"`
+			Keys  []int  `json:"keys"`
+		}
 
-		doc_yaml := []byte(`
-ser: "mock-service"
-name: John Doe
-age: 30
-email: john.doe@example.com
-address:
- - 1
- value: test
-street: 123 Main St`)
+		u := User{
+			Name:  "mock-user",
+			Email: "mock-user@email.com",
+			Keys:  []int{1, 2, 3, 4, 5},
+		}
 
-		my_snaps.MatchYAML(t, doc_yaml)
-	})
+		snaps.MatchYAML(t, u, match.Custom("$.keys", func(val any) (any, error) {
+			keys, ok := val.([]any)
+			if !ok {
+				return nil, fmt.Errorf("expected []any but got %T", val)
+			}
 
-	t.Run("should assert type", func(t *testing.T) {
-		doc_yaml := []byte(`
-ser: "mock-service"
-name: John Doe
-age: 30
-f: 3.5
-b: !!bool true
-email: john.doe@example.com
-street: 123 Main St`)
+			if len(keys) > 5 {
+				return nil, fmt.Errorf("expected less than 5 keys")
+			}
 
-		my_snaps.MatchYAML(t, doc_yaml,
-			match.Type[uint64]("$.age"),
-			match.Type[string]("$.email"),
-			match.Type[bool]("$.b"),
-			match.Type[float64]("$.f"),
-		)
-	})
-
-	t.Run("custom matcher", func(t *testing.T) {
-		doc_yaml := []byte(`
-ser: "mock-service"
-name: John Doe
-age: 30
-f: 3.5
-b: !!bool true
-email: john.doe@example.com
-street: 123 Main St`)
-
-		my_snaps.MatchYAML(t, doc_yaml, match.Custom("$.email", func(val any) (any, error) {
-			return strings.ToUpper(val.(string)), nil
+			return val, nil
 		}))
+	})
+
+	t.Run("type matcher", func(t *testing.T) {
+		snaps.MatchYAML(t, "data: 10", match.Type[uint64]("$.data"))
+
+		snaps.MatchYAML(
+			t,
+			"metadata:\n timestamp: 1687108093142",
+			match.Type[map[string]any]("$.metadata"),
+		)
 	})
 }

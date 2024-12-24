@@ -1,42 +1,31 @@
 
-[TestMatchYaml/should_match_string_yaml - 1]
-ser: "mock-service"
-name: John Doe
-age: 30
-email: john.doe@example.com
-address: mock-address
-street: mock-address
-
----
-
 [TestMatchYaml/should_match_struct_yaml - 1]
-ser: mock-service
 name: John Doe
 age: 30
 email: john.doe@example.com
 address: mock-address
-street: mock-address
+time: mock-time
 
 ---
 
-[TestMatchYaml/should_assert_type - 1]
-ser: "mock-service"
-name: John Doe
-age: <Type:uint64>
-f: <Type:float64>
-b: <Type:bool>
-email: <Type:string>
-street: 123 Main St
+[TestMatchYaml/custom_matching_logic - 1]
+name: mock-user
+email: mock-user@email.com
+keys:
+- 1
+- 2
+- 3
+- 4
+- 5
 
 ---
 
-[TestMatchYaml/custom_matcher - 1]
-ser: "mock-service"
-name: John Doe
-age: 30
-f: 3.5
-b: !!bool true
-email: JOHN.DOE@EXAMPLE.COM
-street: 123 Main St
+[TestMatchYaml/type_matcher - 1]
+data: <Type:uint64>
+
+---
+
+[TestMatchYaml/type_matcher - 2]
+metadata: <Type:map[string]interface {}>
 
 ---

@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/gkampitakis/go-snaps.svg)](https://pkg.go.dev/github.com/gkampitakis/go-snaps)
 
 <p align="center">
-<b>Jest-like snapshot testing in Golang</b>
+<b>Jest-like snapshot testing in Go</b>
 </p>
 
 <br>
@@ -18,12 +18,13 @@
 
 - [Installation](#installation)
 - [MatchSnapshot](#matchsnapshot)
+- [MatchStandaloneSnapshot](#matchstandalonesnapshot) `New`
 - [MatchJSON](#matchjson)
-  - [Matchers](#matchers)
-    - [match.Any](#matchany)
-    - [match.Custom](#matchcustom)
-    - [match.Type\[ExpectedType\]](#matchtype)
-- [MatchStandaloneSnapshot](#matchstandalonesnapshot)
+- [MatchYAML](#matchyaml) `New`
+- [Matchers](#matchers)
+  - [match.Any](#matchany)
+  - [match.Custom](#matchcustom)
+  - [match.Type\[ExpectedType\]](#matchtype)
 - [Configuration](#configuration)
 - [Update Snapshots](#update-snapshots)
   - [Clean obsolete Snapshots](#clean-obsolete-snapshots)
@@ -85,6 +86,29 @@ name is the test file name with extension `.snap`.
 So for example if your test is called `test_simple.go` when you run your tests, a snapshot file
 will be created at `./__snapshots__/test_simple.snaps`.
 
+## MatchStandaloneSnapshot
+
+`MatchStandaloneSnapshot` will create snapshots on separate files as opposed to `MatchSnapshot` which adds multiple snapshots inside the same file.
+
+_Combined with `snaps.Ext` you can have proper syntax highlighting and better readability_
+
+```go
+// test_simple.go
+
+func TestSimple(t *testing.T) {
+  snaps.MatchStandaloneSnapshot(t, "Hello World")
+  // or create an html snapshot file
+  snaps.WithConfig(snaps.Ext(".html")).
+    MatchStandaloneSnapshot(t, "<html><body><h1>Hello World</h1></body></html>")
+}
+```
+
+`go-snaps` saves the snapshots in `__snapshots__` directory and the file
+name is the test file name with extension `.snap`.
+
+So for example if your test is called `test_simple.go` when you run your tests, a snapshot file
+will be created at `./__snapshots__/TestSimple_1.snaps`.
+
 ## MatchJSON
 
 `MatchJSON` can be used to capture data that can represent a valid json.
@@ -107,20 +131,48 @@ func TestJSON(t *testing.T) {
 
 JSON will be saved in snapshot in pretty format for more readability and deterministic diffs.
 
+## MatchYAML
+
+`MatchYAML` can be used to capture data that can represent a valid yaml.
+
+You can pass a valid json in form of `string` or `[]byte` or whatever value can be passed
+successfully on `yaml.Marshal`.
+
+```go
+func TestYAML(t *testing.T) {
+  type User struct {
+    Age   int
+    Email string
+  }
+
+  snaps.MatchYAML(t, "user: \"mock-user\"\nage: 10\nemail: mock@email.com")
+  snaps.MatchYAML(t, []byte("user: \"mock-user\"\nage: 10\nemail: mock@email.com"))
+  snaps.MatchYAML(t, User{10, "mock-email"})
+}
+```
+
 ### Matchers
 
-`MatchJSON`'s third argument can accept a list of matchers. Matchers are functions that can act
+`MatchJSON`'s and `MatchYAML`'s third argument can accept a list of matchers. Matchers are functions that can act
 as property matchers and test values.
 
 You can pass the path of the property you want to match and test.
-
-_More information about the supported path syntax from [gjson](https://github.com/tidwall/gjson/blob/v1.17.0/SYNTAX.md)._
 
 Currently `go-snaps` has three build in matchers
 
 - `match.Any`
 - `match.Custom`
 - `match.Type[ExpectedType]`
+
+_Open to feedback for building more matchers or you can build you own [example](./examples/matchJSON_test.go#L16)._
+
+#### Path Syntax
+
+For JSON go-snaps utilises gjson.
+
+_More information about the supported path syntax from [gjson](https://github.com/tidwall/gjson/blob/v1.17.0/SYNTAX.md)._
+
+As for YAML go-snaps utilises [github.com/goccy/go-yaml#5-use-yamlpath](https://github.com/goccy/go-yaml#5-use-yamlpath).
 
 #### match.Any
 
@@ -195,29 +247,6 @@ match.Type[string]("user.info").
 ```
 
 You can see more [examples](./examples/matchJSON_test.go#L96).
-
-## MatchStandaloneSnapshot
-
-`MatchStandaloneSnapshot` will create snapshots on separate files as opposed to `MatchSnapshot` which adds multiple snapshots inside the same file.
-
-_Combined with `snaps.Ext` you can have proper syntax highlighting and better readability_
-
-```go
-// test_simple.go
-
-func TestSimple(t *testing.T) {
-  snaps.MatchStandaloneSnapshot(t, "Hello World")
-  // or create an html snapshot file
-  snaps.WithConfig(snaps.Ext(".html")).
-    MatchStandaloneSnapshot(t, "<html><body><h1>Hello World</h1></body></html>")
-}
-```
-
-`go-snaps` saves the snapshots in `__snapshots__` directory and the file
-name is the test file name with extension `.snap`.
-
-So for example if your test is called `test_simple.go` when you run your tests, a snapshot file
-will be created at `./__snapshots__/TestSimple_1.snaps`.
 
 ## Configuration
 

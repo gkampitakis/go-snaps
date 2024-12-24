@@ -10,13 +10,40 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-// TODO: add comment doc
+/*
+MatchYAML verifies the input matches the most recent snap file.
+Input can be a valid json string or []byte or whatever value can be passed
+successfully on `yaml.Marshal`.
+
+	snaps.MatchYAML(t, "user: \"mock-user\"\nage: 10\nemail: mock@email.com")
+	snaps.MatchYAML(t, []byte("user: \"mock-user\"\nage: 10\nemail: mock@email.com"))
+	snaps.MatchYAML(t, User{10, "mock-email"})
+
+MatchYAML also supports passing matchers as a third argument. Those matchers can act either as
+validators or placeholders for data that might change on each invocation e.g. dates.
+
+	snaps.MatchYAML(t, User{Created: time.Now(), Email: "mock-email"}, match.Any("$.created"))
+*/
 func (c *Config) MatchYAML(t testingT, input any, matchers ...match.YAMLMatcher) {
 	t.Helper()
 
 	matchYAML(c, t, input, matchers...)
 }
 
+/*
+MatchYAML verifies the input matches the most recent snap file.
+Input can be a valid json string or []byte or whatever value can be passed
+successfully on `yaml.Marshal`.
+
+	snaps.MatchYAML(t, "user: \"mock-user\"\nage: 10\nemail: mock@email.com")
+	snaps.MatchYAML(t, []byte("user: \"mock-user\"\nage: 10\nemail: mock@email.com"))
+	snaps.MatchYAML(t, User{10, "mock-email"})
+
+MatchYAML also supports passing matchers as a third argument. Those matchers can act either as
+validators or placeholders for data that might change on each invocation e.g. dates.
+
+	snaps.MatchYAML(t, User{Created: time.Now(), Email: "mock-email"}, match.Any("$.created"))
+*/
 func MatchYAML(t testingT, input any, matchers ...match.YAMLMatcher) {
 	t.Helper()
 
