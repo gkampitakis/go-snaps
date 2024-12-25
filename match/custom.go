@@ -1,7 +1,9 @@
 package match
 
 import (
-	internal_yaml "github.com/gkampitakis/go-snaps/match/internal/yaml"
+	"bytes"
+
+	"github.com/gkampitakis/go-snaps/match/internal/yaml"
 	"github.com/goccy/go-yaml/parser"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -44,8 +46,14 @@ Custom matcher allows you to bring your own validation and placeholder value.
 	 map[string]any // for JSON objects
 	 []any // for JSON arrays
 
-	 The callback func value for YAML can be one of these types:
-	//  TODO:
+	The callback func value for YAML can be one of these types:
+	 bool // for YAML booleans
+	 float64 // for YAML float numbers
+	 uint64 // for YAML integer numbers
+	 string // for YAML string literals
+	 nil // for YAML null
+	 map[string]any // for YAML objects
+	 []any // for YAML arrays
 */
 func Custom(path string, callback CustomCallback) *customMatcher {
 	return &customMatcher{
@@ -70,7 +78,7 @@ func (c *customMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 		return nil, c.matcherError(err)
 	}
 
-	path, node, exists, err := internal_yaml.Get(f, c.path)
+	path, node, exists, err := yaml.Get(f, c.path)
 	if err != nil {
 		return nil, c.matcherError(err)
 	}
@@ -82,7 +90,7 @@ func (c *customMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 		return b, nil
 	}
 
-	value, err := internal_yaml.GetValue(node)
+	value, err := yaml.GetValue(node)
 	if err != nil {
 		return nil, c.matcherError(err)
 	}
@@ -92,11 +100,11 @@ func (c *customMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 		return nil, c.matcherError(err)
 	}
 
-	if err := internal_yaml.Update(f, path, result); err != nil {
+	if err := yaml.Update(f, path, result); err != nil {
 		return nil, c.matcherError(err)
 	}
 
-	return []byte(f.String()), nil
+	return yaml.MarshalFile(f, bytes.HasSuffix(b, []byte("\n"))), nil
 }
 
 // JSON is intended to be called internally on snaps.MatchJSON for applying Custom matcher

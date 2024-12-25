@@ -1,7 +1,9 @@
 package match
 
 import (
-	internal_yaml "github.com/gkampitakis/go-snaps/match/internal/yaml"
+	"bytes"
+
+	"github.com/gkampitakis/go-snaps/match/internal/yaml"
 	"github.com/goccy/go-yaml/parser"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -63,7 +65,7 @@ func (a anyMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 	}
 
 	for _, p := range a.paths {
-		path, _, exists, err := internal_yaml.Get(f, p)
+		path, _, exists, err := yaml.Get(f, p)
 		if err != nil {
 			errs = append(errs, a.matcherError(err, p))
 
@@ -77,14 +79,14 @@ func (a anyMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 			continue
 		}
 
-		if err := internal_yaml.Update(f, path, a.placeholder); err != nil {
+		if err := yaml.Update(f, path, a.placeholder); err != nil {
 			errs = append(errs, a.matcherError(err, p))
 
 			continue
 		}
 	}
 
-	return []byte(f.String()), errs
+	return yaml.MarshalFile(f, bytes.HasSuffix(b, []byte("\n"))), errs
 }
 
 // JSON is intended to be called internally on snaps.MatchJSON for applying Any matchers

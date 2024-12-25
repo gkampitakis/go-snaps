@@ -164,7 +164,7 @@ Currently `go-snaps` has three build in matchers
 - `match.Custom`
 - `match.Type[ExpectedType]`
 
-_Open to feedback for building more matchers or you can build you own [example](./examples/matchJSON_test.go#L16)._
+_Open to feedback for building more matchers or you can build your own [example](./examples/matchJSON_test.go#L16)._
 
 #### Path Syntax
 
@@ -173,6 +173,8 @@ For JSON go-snaps utilises gjson.
 _More information about the supported path syntax from [gjson](https://github.com/tidwall/gjson/blob/v1.17.0/SYNTAX.md)._
 
 As for YAML go-snaps utilises [github.com/goccy/go-yaml#5-use-yamlpath](https://github.com/goccy/go-yaml#5-use-yamlpath).
+
+_More information about the supported syntax [PathString](https://github.com/goccy/go-yaml/blob/9cbf5d4217830fd4ad1504e9ed117c183ade0994/path.go#L17-L26)._
 
 #### match.Any
 

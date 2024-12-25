@@ -1,9 +1,10 @@
 package match
 
 import (
+	"bytes"
 	"fmt"
 
-	internal_yaml "github.com/gkampitakis/go-snaps/match/internal/yaml"
+	"github.com/gkampitakis/go-snaps/match/internal/yaml"
 	"github.com/goccy/go-yaml/parser"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -59,7 +60,7 @@ func (t typeMatcher[ExpectedType]) YAML(b []byte) ([]byte, []MatcherError) {
 	}
 
 	for _, p := range t.paths {
-		path, node, exists, err := internal_yaml.Get(f, p)
+		path, node, exists, err := yaml.Get(f, p)
 		if err != nil {
 			errs = append(errs, t.matcherError(err, p))
 
@@ -73,7 +74,7 @@ func (t typeMatcher[ExpectedType]) YAML(b []byte) ([]byte, []MatcherError) {
 			continue
 		}
 
-		value, err := internal_yaml.GetValue(node)
+		value, err := yaml.GetValue(node)
 		if err != nil {
 			errs = append(errs, t.matcherError(err, p))
 
@@ -86,14 +87,14 @@ func (t typeMatcher[ExpectedType]) YAML(b []byte) ([]byte, []MatcherError) {
 			continue
 		}
 
-		if err := internal_yaml.Update(f, path, typePlaceholder(value)); err != nil {
+		if err := yaml.Update(f, path, typePlaceholder(value)); err != nil {
 			errs = append(errs, t.matcherError(err, p))
 
 			continue
 		}
 	}
 
-	return []byte(f.String()), errs
+	return yaml.MarshalFile(f, bytes.HasSuffix(b, []byte("\n"))), errs
 }
 
 // JSON is intended to be called internally on snaps.MatchJSON for applying Type matchers

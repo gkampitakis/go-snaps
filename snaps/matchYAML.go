@@ -10,6 +10,11 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+var yamlEncodeOptions = []yaml.EncodeOption{
+	yaml.Indent(2),
+	yaml.IndentSequence(true),
+}
+
 /*
 MatchYAML verifies the input matches the most recent snap file.
 Input can be a valid json string or []byte or whatever value can be passed
@@ -147,7 +152,6 @@ func validateYAML(input any) ([]byte, error) {
 
 		return []byte(y), nil
 	case []byte:
-		var out interface{}
 		err := yaml.Unmarshal(y, &out)
 		if err != nil {
 			return nil, fmt.Errorf("invalid yaml: %w", err)
@@ -155,7 +159,7 @@ func validateYAML(input any) ([]byte, error) {
 
 		return y, nil
 	default:
-		data, err := yaml.Marshal(input)
+		data, err := yaml.MarshalWithOptions(input, yamlEncodeOptions...)
 		if err != nil {
 			return nil, fmt.Errorf("invalid yaml: %w", err)
 		}

@@ -12,20 +12,18 @@ time: mock-time
 name: mock-user
 email: mock-user@email.com
 keys:
-- 1
-- 2
-- 3
-- 4
-- 5
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
 
 ---
 
 [TestMatchYaml/type_matcher - 1]
 data: <Type:uint64>
-
 ---
 
 [TestMatchYaml/type_matcher - 2]
 metadata: <Type:map[string]interface {}>
-
 ---

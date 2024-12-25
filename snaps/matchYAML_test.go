@@ -15,10 +15,10 @@ func TestMatchYAML(t *testing.T) {
 	t.Run("should create yaml snapshot", func(t *testing.T) {
 		expected := `user: mock-name
 items:
-- 5
-- 1
-- 3
-- 4
+  - 5
+  - 1
+  - 3
+  - 4
 `
 
 		for _, tc := range []struct {
@@ -27,11 +27,11 @@ items:
 		}{
 			{
 				name:  "string",
-				input: "user: mock-name\nitems:\n- 5\n- 1\n- 3\n- 4\n",
+				input: "user: mock-name\nitems:\n  - 5\n  - 1\n  - 3\n  - 4\n",
 			},
 			{
 				name:  "byte",
-				input: []byte("user: mock-name\nitems:\n- 5\n- 1\n- 3\n- 4\n"),
+				input: []byte("user: mock-name\nitems:\n  - 5\n  - 1\n  - 3\n  - 4\n"),
 			},
 			{
 				name: "marshal object",
