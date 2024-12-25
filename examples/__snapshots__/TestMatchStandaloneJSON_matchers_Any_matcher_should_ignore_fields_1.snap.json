@@ -1,0 +1,9 @@
+{
+ "age": 10,
+ "nested": {
+  "now": [
+   "<Any value>"
+  ]
+ },
+ "user": "mock-user"
+}

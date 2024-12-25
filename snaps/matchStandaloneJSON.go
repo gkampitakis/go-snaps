@@ -12,7 +12,9 @@ import (
 func (c *Config) MatchStandaloneJSON(t testingT, input any, matchers ...match.JSONMatcher) {
 	t.Helper()
 
-	c.extension = ".json"
+	if c.extension == "" {
+		c.extension = ".json"
+	}
 
 	matchStandaloneJSON(c, t, input, matchers...)
 }
@@ -21,7 +23,9 @@ func MatchStandaloneJSON(t testingT, input any, matchers ...match.JSONMatcher) {
 	t.Helper()
 
 	c := defaultConfig
-	c.extension = ".json"
+	if c.extension == "" {
+		c.extension = ".json"
+	}
 
 	matchStandaloneJSON(&c, t, input, matchers...)
 }

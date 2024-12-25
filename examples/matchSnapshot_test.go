@@ -2,6 +2,8 @@ package examples
 
 import (
 	"bytes"
+	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -119,6 +121,102 @@ func TestSimpleTable(t *testing.T) {
 	} {
 		t.Run(scenario.description, func(t *testing.T) {
 			snaps.MatchSnapshot(t, scenario.input)
+		})
+	}
+}
+
+// You can use -update flag to control if you want to update the snapshots
+// go test ./... -v -update
+var updateSnapshot = flag.Bool("update", false, "update snapshots flag")
+
+func TestUpdateWithFlag(t *testing.T) {
+	snaps := snaps.WithConfig(snaps.Update(*updateSnapshot))
+
+	inputs := []string{
+		"lore ipsum dolor sit amet",
+		"consectetur adipiscing elit",
+		"sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+		"Ut enim ad minim veniam, quis nostrud laboris nisi ut aliquip ex ea commodo consequat.",
+	}
+
+	for i, input := range inputs {
+		t.Run(fmt.Sprintf("test - %d", i), func(t *testing.T) {
+			snaps.MatchSnapshot(t, input)
+		})
+	}
+}
+
+func TestParallel(t *testing.T) {
+	type testCases struct {
+		description string
+		input       any
+	}
+
+	value := 10
+
+	tests := []testCases{
+		{
+			description: "should snap an integer",
+			input:       10,
+		},
+		{
+			description: "should snap a float",
+			input:       float64(10.5),
+		},
+		{
+			description: "should snap a struct",
+			input: struct {
+				user  string
+				email string
+				age   int
+			}{
+				"gkampitakis",
+				"mock@mail.com",
+				10,
+			},
+		},
+		{
+			description: "should snap a struct with fields",
+			input: struct {
+				_    struct{}
+				name string
+				id   string
+			}{
+				name: "mock-name",
+				id:   "123456",
+			},
+		},
+		{
+			description: "should snap an integer slice",
+			input:       []int{1, 2, 3, 4},
+		},
+		{
+			description: "should snap a map",
+			input: map[string]int{
+				"value-0": 0,
+				"value-1": 1,
+				"value-2": 2,
+				"value-3": 3,
+			},
+		},
+		{
+			description: "should snap a buffer",
+			input:       bytes.NewBufferString("Buffer string"),
+		},
+		{
+			description: "should snap a pointer",
+			input:       &value,
+		},
+	}
+
+	for _, scenario := range tests {
+		// capture range variable
+		s := scenario
+
+		t.Run(s.description, func(t *testing.T) {
+			t.Parallel()
+
+			snaps.MatchSnapshot(t, s.input)
 		})
 	}
 }

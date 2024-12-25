@@ -72,3 +72,59 @@ map[string]interface {}{
 [TestMatchSnapshot/withConfig - 1]
 this should use the default config
 ---
+
+[TestUpdateWithFlag/test_-_0 - 1]
+lore ipsum dolor sit amet
+---
+
+[TestUpdateWithFlag/test_-_1 - 1]
+consectetur adipiscing elit
+---
+
+[TestUpdateWithFlag/test_-_2 - 1]
+sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+---
+
+[TestUpdateWithFlag/test_-_3 - 1]
+Ut enim ad minim veniam, quis nostrud laboris nisi ut aliquip ex ea commodo consequat.
+---
+
+[TestParallel/should_snap_an_integer - 1]
+int(10)
+---
+
+[TestParallel/should_snap_an_integer_slice - 1]
+[]int{1, 2, 3, 4}
+---
+
+[TestParallel/should_snap_a_struct - 1]
+struct { user string; email string; age int }{user:"gkampitakis", email:"mock@mail.com", age:10}
+---
+
+[TestParallel/should_snap_a_float - 1]
+float64(10.5)
+---
+
+[TestParallel/should_snap_a_buffer - 1]
+&bytes.Buffer{
+    buf:      {0x42, 0x75, 0x66, 0x66, 0x65, 0x72, 0x20, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67},
+    off:      0,
+    lastRead: 0,
+}
+---
+
+[TestParallel/should_snap_a_map - 1]
+map[string]int{"value-0":0, "value-1":1, "value-2":2, "value-3":3}
+---
+
+[TestParallel/should_snap_a_struct_with_fields - 1]
+struct { _ struct {}; name string; id string }{
+    _:    struct {}{},
+    name: "mock-name",
+    id:   "123456",
+}
+---
+
+[TestParallel/should_snap_a_pointer - 1]
+&int(10)
+---

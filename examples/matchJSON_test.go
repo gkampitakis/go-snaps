@@ -121,18 +121,18 @@ func TestMatchers(t *testing.T) {
 				return val, nil
 			}))
 		})
-	})
 
-	t.Run("JSON string validation", func(t *testing.T) {
-		value := `{"user":"mock-user","age":2,"email":"mock@email.com"}`
+		t.Run("JSON string validation", func(t *testing.T) {
+			value := `{"user":"mock-user","age":2,"email":"mock@email.com"}`
 
-		snaps.MatchJSON(t, value, match.Custom("age", func(val any) (any, error) {
-			if valInt, ok := val.(float64); !ok || valInt >= 5 {
-				return nil, fmt.Errorf("expecting number less than 5")
-			}
+			snaps.MatchJSON(t, value, match.Custom("age", func(val any) (any, error) {
+				if valInt, ok := val.(float64); !ok || valInt >= 5 {
+					return nil, fmt.Errorf("expecting number less than 5")
+				}
 
-			return "<less than 5 age>", nil
-		}))
+				return "<less than 5 age>", nil
+			}))
+		})
 	})
 
 	t.Run("Any matcher", func(t *testing.T) {
@@ -142,6 +142,32 @@ func TestMatchers(t *testing.T) {
 				time.Now(),
 			)
 			snaps.MatchJSON(t, value, match.Any("nested.now.0"))
+		})
+
+		t.Run("http response", func(t *testing.T) {
+			// mock server returning a json object
+			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				payload := fmt.Sprintf(
+					`{"data":{"message":"hello world","createdAt":"%s"}}`,
+					time.Now().UTC(),
+				)
+				w.Write([]byte(payload))
+			}))
+
+			res, err := http.Get(s.URL)
+			if err != nil {
+				t.Errorf("unexpected error %s", err)
+				return
+			}
+			defer res.Body.Close()
+
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Errorf("unexpected error %s", err)
+				return
+			}
+
+			snaps.MatchJSON(t, body, match.Any("data.createdAt"))
 		})
 	})
 
@@ -153,38 +179,14 @@ func TestMatchers(t *testing.T) {
 		})
 	})
 
-	t.Run("http response", func(t *testing.T) {
-		// mock server returning a json object
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			payload := fmt.Sprintf(
-				`{"data":{"message":"hello world","createdAt":"%s"}}`,
-				time.Now().UTC(),
+	t.Run("Type matcher", func(t *testing.T) {
+		t.Run("should create snapshot with type placeholder", func(t *testing.T) {
+			snaps.MatchJSON(t, `{"data":10}`, match.Type[float64]("data"))
+			snaps.MatchJSON(
+				t,
+				`{"metadata":{"timestamp":"1687108093142"}}`,
+				match.Type[map[string]any]("metadata"),
 			)
-			w.Write([]byte(payload))
-		}))
-
-		res, err := http.Get(s.URL)
-		if err != nil {
-			t.Errorf("unexpected error %s", err)
-			return
-		}
-		defer res.Body.Close()
-
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			t.Errorf("unexpected error %s", err)
-			return
-		}
-
-		snaps.MatchJSON(t, body, match.Any("data.createdAt"))
-	})
-
-	t.Run("type matcher", func(t *testing.T) {
-		snaps.MatchJSON(t, `{"data":10}`, match.Type[float64]("data"))
-		snaps.MatchJSON(
-			t,
-			`{"metadata":{"timestamp":"1687108093142"}}`,
-			match.Type[map[string]any]("metadata"),
-		)
+		})
 	})
 }
