@@ -1,0 +1,29 @@
+
+[TestMatchYaml/should_match_struct_yaml - 1]
+name: John Doe
+age: 30
+email: john.doe@example.com
+address: mock-address
+time: mock-time
+
+---
+
+[TestMatchYaml/custom_matching_logic - 1]
+name: mock-user
+email: mock-user@email.com
+keys:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+
+---
+
+[TestMatchYaml/type_matcher - 1]
+data: <Type:uint64>
+---
+
+[TestMatchYaml/type_matcher - 2]
+metadata: <Type:map[string]interface {}>
+---

@@ -41,9 +41,9 @@ func Update(u bool) func(*Config) {
 	}
 }
 
-// Specify folder name where snapshots are stored
+// Specify snapshot file name
 //
-//	default: __snapshots__
+//	default: test's filename
 //
 // this doesn't change the file extension see `snap.Ext`
 func Filename(name string) func(*Config) {

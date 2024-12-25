@@ -1,9 +1,11 @@
 package match
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 
+	"github.com/gkampitakis/go-snaps/match/internal/yaml"
+	"github.com/goccy/go-yaml/parser"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -15,14 +17,22 @@ type typeMatcher[ExpectedType any] struct {
 	expectedType     any
 }
 
+func (t *typeMatcher[ExpectedType]) matcherError(err error, path string) MatcherError {
+	return MatcherError{
+		Reason:  err,
+		Matcher: t.name,
+		Path:    path,
+	}
+}
+
 /*
 Type matcher evaluates types that are passed in a snapshot
 
 It replaces any targeted path with placeholder in the form of `<Type:ExpectedType>`
 
-	match.Type[string]("user.info")
-	// or with multiple paths
-	match.Type[float64]("user.age", "data.items")
+	match.Type[string]("user.info", "user.age")
+	// or for yaml
+	match.Type[string]("$.user.info", "$.user.age")
 */
 func Type[ExpectedType any](paths ...string) *typeMatcher[ExpectedType] {
 	return &typeMatcher[ExpectedType]{
@@ -33,36 +43,77 @@ func Type[ExpectedType any](paths ...string) *typeMatcher[ExpectedType] {
 	}
 }
 
-// ErrOnMissingPath determines if matcher will fail in case of trying to access a json path
+// ErrOnMissingPath determines if matcher will fail in case of trying to access a path
 // that doesn't exist
 func (t *typeMatcher[T]) ErrOnMissingPath(e bool) *typeMatcher[T] {
 	t.errOnMissingPath = e
 	return t
 }
 
-func (t typeMatcher[ExpectedType]) JSON(s []byte) ([]byte, []MatcherError) {
+// YAML is intended to be called internally on snaps.MatchJSON for applying Type matchers
+func (t typeMatcher[ExpectedType]) YAML(b []byte) ([]byte, []MatcherError) {
 	var errs []MatcherError
-	json := s
+
+	f, err := parser.ParseBytes(b, parser.ParseComments)
+	if err != nil {
+		return b, []MatcherError{t.matcherError(err, "*")}
+	}
+
+	for _, p := range t.paths {
+		path, node, exists, err := yaml.Get(f, p)
+		if err != nil {
+			errs = append(errs, t.matcherError(err, p))
+
+			continue
+		}
+		if !exists {
+			if t.errOnMissingPath {
+				errs = append(errs, t.matcherError(errPathNotFound, p))
+			}
+
+			continue
+		}
+
+		value, err := yaml.GetValue(node)
+		if err != nil {
+			errs = append(errs, t.matcherError(err, p))
+
+			continue
+		}
+
+		if err := typeCheck[ExpectedType](value); err != nil {
+			errs = append(errs, t.matcherError(err, p))
+
+			continue
+		}
+
+		if err := yaml.Update(f, path, typePlaceholder(value)); err != nil {
+			errs = append(errs, t.matcherError(err, p))
+
+			continue
+		}
+	}
+
+	return yaml.MarshalFile(f, bytes.HasSuffix(b, []byte("\n"))), errs
+}
+
+// JSON is intended to be called internally on snaps.MatchJSON for applying Type matchers
+func (t typeMatcher[ExpectedType]) JSON(b []byte) ([]byte, []MatcherError) {
+	var errs []MatcherError
+	json := b
 
 	for _, path := range t.paths {
 		r := gjson.GetBytes(json, path)
 		if !r.Exists() {
 			if t.errOnMissingPath {
-				errs = append(errs, MatcherError{
-					Reason:  errors.New("path does not exist"),
-					Matcher: t.name,
-					Path:    path,
-				})
+				errs = append(errs, t.matcherError(errPathNotFound, path))
 			}
+
 			continue
 		}
 
-		if _, ok := r.Value().(ExpectedType); !ok {
-			errs = append(errs, MatcherError{
-				Reason:  fmt.Errorf("expected type %T, received %T", *new(ExpectedType), r.Value()),
-				Matcher: t.name,
-				Path:    path,
-			})
+		if err := typeCheck[ExpectedType](r.Value()); err != nil {
+			errs = append(errs, t.matcherError(err, path))
 
 			continue
 		}
@@ -70,18 +121,11 @@ func (t typeMatcher[ExpectedType]) JSON(s []byte) ([]byte, []MatcherError) {
 		j, err := sjson.SetBytesOptions(
 			json,
 			path,
-			fmt.Sprintf("<Type:%T>", r.Value()),
-			&sjson.Options{
-				Optimistic:     true,
-				ReplaceInPlace: true,
-			},
+			typePlaceholder(r.Value()),
+			setJSONOptions,
 		)
 		if err != nil {
-			errs = append(errs, MatcherError{
-				Reason:  err,
-				Matcher: t.name,
-				Path:    path,
-			})
+			errs = append(errs, t.matcherError(err, path))
 
 			continue
 		}
@@ -90,4 +134,16 @@ func (t typeMatcher[ExpectedType]) JSON(s []byte) ([]byte, []MatcherError) {
 	}
 
 	return json, errs
+}
+
+func typeCheck[ExpectedType any](value interface{}) error {
+	if _, ok := value.(ExpectedType); !ok {
+		return fmt.Errorf("expected type %T, received %T", *new(ExpectedType), value)
+	}
+
+	return nil
+}
+
+func typePlaceholder(value interface{}) string {
+	return fmt.Sprintf("<Type:%T>", value)
 }

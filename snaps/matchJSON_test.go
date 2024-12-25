@@ -31,7 +31,7 @@ func TestMatchJSON(t *testing.T) {
 				input: `{"user":"mock-name","items":[5,1,3,4]}`,
 			},
 			{
-				name:  "string",
+				name:  "byte",
 				input: []byte(`{"user":"mock-name","items":[5,1,3,4]}`),
 			},
 			{
