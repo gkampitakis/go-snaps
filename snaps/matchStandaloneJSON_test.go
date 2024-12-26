@@ -8,9 +8,9 @@ import (
 	"github.com/gkampitakis/go-snaps/match"
 )
 
-const jsonFilename = "matchJSON_test.snap"
+const jsonStandaloneFilename = "mock-name_1.snap.json"
 
-func TestMatchJSON(t *testing.T) {
+func TestMatchStandaloneJSON(t *testing.T) {
 	t.Run("should create json snapshot", func(t *testing.T) {
 		expected := `{
  "items": [
@@ -46,22 +46,24 @@ func TestMatchJSON(t *testing.T) {
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				snapPath := setupSnapshot(t, jsonFilename, false)
+				snapPath := setupSnapshot(t, jsonStandaloneFilename, false)
 
 				mockT := test.NewMockTestingT(t)
 				mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
 
-				MatchJSON(mockT, tc.input)
+				MatchStandaloneJSON(mockT, tc.input)
 
-				snap, line, err := getPrevSnapshot("[mock-name - 1]", snapPath)
+				snap := test.GetFileContent(t, snapPath)
 
-				test.NoError(t, err)
-				test.Equal(t, 2, line)
 				test.Equal(t, expected, snap)
 				test.Equal(t, 1, testEvents.items[added])
 				// clean up function called
-				test.Equal(t, 0, testsRegistry.running[snapPath]["mock-name"])
-				test.Equal(t, 1, testsRegistry.cleanup[snapPath]["mock-name"])
+				for _, v := range standaloneTestsRegistry.running {
+					test.Equal(t, 0, v)
+				}
+				for _, v := range standaloneTestsRegistry.cleanup {
+					test.Equal(t, 1, v)
+				}
 			})
 		}
 	})
@@ -89,21 +91,21 @@ func TestMatchJSON(t *testing.T) {
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				setupSnapshot(t, jsonFilename, false)
+				setupSnapshot(t, jsonStandaloneFilename, false)
 
 				mockT := test.NewMockTestingT(t)
 				mockT.MockError = func(args ...any) {
 					test.Equal(t, tc.err, (args[0].(error)).Error())
 				}
 
-				MatchJSON(mockT, tc.input)
+				MatchStandaloneJSON(mockT, tc.input)
 			})
 		}
 	})
 
 	t.Run("matchers", func(t *testing.T) {
 		t.Run("should apply matchers in order", func(t *testing.T) {
-			snapPath := setupSnapshot(t, jsonFilename, false)
+			snapPath := setupSnapshot(t, jsonStandaloneFilename, false)
 
 			mockT := test.NewMockTestingT(t)
 			mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
@@ -118,7 +120,7 @@ func TestMatchJSON(t *testing.T) {
 				return map[string]any{"key4": nil}, nil
 			}
 
-			MatchJSON(
+			MatchStandaloneJSON(
 				mockT,
 				`{"key1":""}`,
 				match.Custom("key1", c1),
@@ -128,13 +130,13 @@ func TestMatchJSON(t *testing.T) {
 
 			test.Equal(
 				t,
-				"\n[mock-name - 1]\n{\n \"key1\": {\n  \"key2\": {\n   \"key3\": {\n    \"key4\": null\n   }\n  }\n }\n}\n---\n",
+				"{\n \"key1\": {\n  \"key2\": {\n   \"key3\": {\n    \"key4\": null\n   }\n  }\n }\n}",
 				test.GetFileContent(t, snapPath),
 			)
 		})
 
 		t.Run("should aggregate errors from matchers", func(t *testing.T) {
-			setupSnapshot(t, jsonFilename, false)
+			setupSnapshot(t, jsonStandaloneFilename, false)
 
 			mockT := test.NewMockTestingT(t)
 			mockT.MockError = func(args ...any) {
@@ -149,7 +151,7 @@ func TestMatchJSON(t *testing.T) {
 			c := func(val any) (any, error) {
 				return nil, errors.New("mock error")
 			}
-			MatchJSON(
+			MatchStandaloneJSON(
 				mockT,
 				`{"age":10}`,
 				match.Custom("age", c),
@@ -159,20 +161,20 @@ func TestMatchJSON(t *testing.T) {
 	})
 
 	t.Run("if it's running on ci should skip creating snapshot", func(t *testing.T) {
-		setupSnapshot(t, jsonFilename, true)
+		setupSnapshot(t, jsonStandaloneFilename, true)
 
 		mockT := test.NewMockTestingT(t)
 		mockT.MockError = func(args ...any) {
 			test.Equal(t, errSnapNotFound, args[0].(error))
 		}
 
-		MatchJSON(mockT, "{}")
+		MatchStandaloneJSON(mockT, "{}")
 
 		test.Equal(t, 1, testEvents.items[erred])
 	})
 
 	t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
-		snapPath := setupSnapshot(t, jsonFilename, false, true)
+		snapPath := setupSnapshot(t, jsonStandaloneFilename, false, true)
 
 		printerExpectedCalls := []func(received any){
 			func(received any) { test.Equal(t, addedMsg, received.(string)) },
@@ -187,18 +189,18 @@ func TestMatchJSON(t *testing.T) {
 		}
 
 		// First call for creating the snapshot
-		MatchJSON(mockT, "{\"value\":\"hello world\"}")
+		MatchStandaloneJSON(mockT, "{\"value\":\"hello world\"}")
 		test.Equal(t, 1, testEvents.items[added])
 
 		// Resetting registry to emulate the same MatchSnapshot call
 		testsRegistry = newRegistry()
 
 		// Second call with different params
-		MatchJSON(mockT, "{\"value\":\"bye world\"}")
+		MatchStandaloneJSON(mockT, "{\"value\":\"bye world\"}")
 
 		test.Equal(
 			t,
-			"\n[mock-name - 1]\n{\n \"value\": \"bye world\"\n}\n---\n",
+			"{\n \"value\": \"bye world\"\n}",
 			test.GetFileContent(t, snapPath),
 		)
 		test.Equal(t, 1, testEvents.items[updated])

@@ -20,6 +20,7 @@
 - [MatchSnapshot](#matchsnapshot)
 - [MatchStandaloneSnapshot](#matchstandalonesnapshot) `New`
 - [MatchJSON](#matchjson)
+- [MatchStandaloneJSON](#matchstandalonejson) `New`
 - [MatchYAML](#matchyaml) `New`
 - [Matchers](#matchers)
   - [match.Any](#matchany)
@@ -104,10 +105,9 @@ func TestSimple(t *testing.T) {
 ```
 
 `go-snaps` saves the snapshots in `__snapshots__` directory and the file
-name is the test file name with extension `.snap`.
+name is the `t.Name()` plus a number plus the extension `.snap`.
 
-So for example if your test is called `test_simple.go` when you run your tests, a snapshot file
-will be created at `./__snapshots__/TestSimple_1.snaps`.
+So for the above example the snapshot file name will be `./__snapshots__/TestSimple_1.snap` and `./__snapshots__/TestSimple_1.snap.html`.
 
 ## MatchJSON
 
@@ -130,6 +130,22 @@ func TestJSON(t *testing.T) {
 ```
 
 JSON will be saved in snapshot in pretty format for more readability and deterministic diffs.
+
+## MatchStandaloneJSON
+
+`MatchStandaloneJSON` will create snapshots on separate files as opposed to `MatchJSON` which adds multiple snapshots inside the same file.
+
+```go
+func TestSimple(t *testing.T) {
+  snaps.MatchStandaloneJSON(t, `{"user":"mock-user","age":10,"email":"mock@email.com"}`)
+  snaps.MatchStandaloneJSON(t, User{10, "mock-email"})
+}
+```
+
+`go-snaps` saves the snapshots in `__snapshots__` directory and the file
+name is the `t.Name()` plus a number plus the extension `.snap.json`.
+
+So for the above example the snapshot file name will be `./__snapshots__/TestSimple_1.snap.json` and `./__snapshots__/TestSimple_2.snap.json`.
 
 ## MatchYAML
 

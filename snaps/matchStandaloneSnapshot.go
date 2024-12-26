@@ -7,7 +7,7 @@ import (
 )
 
 /*
-MatchStandaloneSnapshot verifies the value matches the most recent snap file
+MatchStandaloneSnapshot verifies the input matches the most recent snap file
 
 	MatchStandaloneSnapshot(t, "Hello World")
 
@@ -16,14 +16,14 @@ MatchStandaloneSnapshot creates one snapshot file per call.
 You can call MatchStandaloneSnapshot multiple times inside a test.
 It will create multiple snapshot files at `__snapshots__` folder by default.
 */
-func (c *Config) MatchStandaloneSnapshot(t testingT, value any) {
+func (c *Config) MatchStandaloneSnapshot(t testingT, input any) {
 	t.Helper()
 
-	matchStandaloneSnapshot(c, t, value)
+	matchStandaloneSnapshot(c, t, input)
 }
 
 /*
-MatchStandaloneSnapshot verifies the value matches the most recent snap file
+MatchStandaloneSnapshot verifies the input matches the most recent snap file
 
 	MatchStandaloneSnapshot(t, "Hello World")
 
@@ -32,13 +32,13 @@ MatchStandaloneSnapshot creates one snapshot file per call.
 You can call MatchStandaloneSnapshot multiple times inside a test.
 It will create multiple snapshot files at `__snapshots__` folder by default.
 */
-func MatchStandaloneSnapshot(t testingT, value any) {
+func MatchStandaloneSnapshot(t testingT, input any) {
 	t.Helper()
 
-	matchStandaloneSnapshot(&defaultConfig, t, value)
+	matchStandaloneSnapshot(&defaultConfig, t, input)
 }
 
-func matchStandaloneSnapshot(c *Config, t testingT, value any) {
+func matchStandaloneSnapshot(c *Config, t testingT, input any) {
 	t.Helper()
 
 	genericPathSnap, genericSnapPathRel := snapshotPath(c, t.Name(), true)
@@ -47,7 +47,7 @@ func matchStandaloneSnapshot(c *Config, t testingT, value any) {
 		standaloneTestsRegistry.reset(genericPathSnap)
 	})
 
-	snapshot := pretty.Sprint(value)
+	snapshot := pretty.Sprint(input)
 	prevSnapshot, err := getPrevStandaloneSnapshot(snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if isCI {

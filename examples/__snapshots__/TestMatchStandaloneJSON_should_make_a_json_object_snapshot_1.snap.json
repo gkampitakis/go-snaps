@@ -1,0 +1,8 @@
+{
+ "mock-0": "value",
+ "mock-1": 2,
+ "mock-2": {
+  "Msg": "Hello World"
+ },
+ "mock-3": 10.4
+}

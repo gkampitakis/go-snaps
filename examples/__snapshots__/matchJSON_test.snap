@@ -54,14 +54,6 @@
 }
 ---
 
-[TestMatchers/JSON_string_validation - 1]
-{
- "age": "<less than 5 age>",
- "email": "mock@email.com",
- "user": "mock-user"
-}
----
-
 [TestMatchers/Any_matcher/should_ignore_fields - 1]
 {
  "age": 10,
@@ -80,7 +72,15 @@
 }
 ---
 
-[TestMatchers/http_response - 1]
+[TestMatchers/Custom_matcher/JSON_string_validation - 1]
+{
+ "age": "<less than 5 age>",
+ "email": "mock@email.com",
+ "user": "mock-user"
+}
+---
+
+[TestMatchers/Any_matcher/http_response - 1]
 {
  "data": {
   "createdAt": "<Any value>",
@@ -89,13 +89,13 @@
 }
 ---
 
-[TestMatchers/type_matcher - 1]
+[TestMatchers/Type_matcher/should_create_snapshot_with_type_placeholder - 1]
 {
  "data": "<Type:float64>"
 }
 ---
 
-[TestMatchers/type_matcher - 2]
+[TestMatchers/Type_matcher/should_create_snapshot_with_type_placeholder - 2]
 {
  "metadata": "<Type:map[string]interface {}>"
 }
