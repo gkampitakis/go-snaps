@@ -125,3 +125,8 @@ func shouldUpdate(u *bool) bool {
 
 	return updateVAR == "true"
 }
+
+// SetCustomCI allows setting a custom CI environment
+func SetCustomCI(customCI bool) {
+	isCI = customCI
+}

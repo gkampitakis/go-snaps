@@ -44,3 +44,15 @@ func TestBaseCaller(t *testing.T) {
 		TestBaseCallerNested(t)
 	})
 }
+
+func TestSetCustomCI(t *testing.T) {
+	t.Run("should override isCI variable", func(t *testing.T) {
+		// Set custom CI to true
+		SetCustomCI(true)
+		test.True(t, isCI)
+
+		// Set custom CI to false
+		SetCustomCI(false)
+		test.False(t, isCI)
+	})
+}

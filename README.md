@@ -429,3 +429,17 @@ This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) an
 
 > [!NOTE]
 > go-snaps doesn't handle CRLF line endings. If you are using Windows, you may need to convert the line endings to LF.
+
+## SetCustomCI
+
+`SetCustomCI` allows setting a custom CI environment.
+
+```go
+// Set custom CI to true
+snaps.SetCustomCI(true)
+
+// Set custom CI to false
+snaps.SetCustomCI(false)
+```
+
+This can be useful if you have a custom CI environment that is not detected by the `ciinfo` package.
