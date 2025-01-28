@@ -95,7 +95,7 @@ func matchYAML(c *Config, t testingT, input any, matchers ...match.YAMLMatcher) 
 	snapshot := takeYAMLSnapshot(y)
 	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {
-		if isCI {
+		if !shouldCreate(c.update) {
 			handleError(t, err)
 			return
 		}

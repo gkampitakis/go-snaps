@@ -63,7 +63,7 @@ func matchSnapshot(c *Config, t testingT, values ...any) {
 	snapshot := takeSnapshot(values)
 	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {
-		if isCI {
+		if !shouldCreate(c.update) {
 			handleError(t, err)
 			return
 		}

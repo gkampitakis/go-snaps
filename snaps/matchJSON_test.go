@@ -171,6 +171,19 @@ func TestMatchJSON(t *testing.T) {
 		test.Equal(t, 1, testEvents.items[erred])
 	})
 
+	t.Run("if snaps.Update(false) should skip creating snapshot", func(t *testing.T) {
+		setupSnapshot(t, fileName, false)
+
+		mockT := test.NewMockTestingT(t)
+		mockT.MockError = func(args ...any) {
+			test.Equal(t, errSnapNotFound, args[0].(error))
+		}
+
+		WithConfig(Update(false)).MatchJSON(mockT, "{}")
+
+		test.Equal(t, 1, testEvents.items[erred])
+	})
+
 	t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
 		snapPath := setupSnapshot(t, jsonFilename, false, true)
 
