@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -316,14 +317,18 @@ func getPrevStandaloneSnapshot(snapPath string) (string, error) {
 func snapshotPath(c *Config, tName string, isStandalone bool) (string, string) {
 	//  skips current func, the wrapper match* and the exported Match* func
 	callerFilename := baseCaller(3)
+	isTrimBathBuild := trimPathBuild()
 
 	dir := c.snapsDir
-	if !filepath.IsAbs(dir) {
+	if !filepath.IsAbs(dir) && !isTrimBathBuild {
 		dir = filepath.Join(filepath.Dir(callerFilename), c.snapsDir)
 	}
 
 	snapPath := filepath.Join(dir, constructFilename(c, callerFilename, tName, isStandalone))
-	snapPathRel, _ := filepath.Rel(filepath.Dir(callerFilename), snapPath)
+	snapPathRel := snapPath
+	if !isTrimBathBuild {
+		snapPathRel, _ = filepath.Rel(filepath.Dir(callerFilename), snapPath)
+	}
 
 	return snapPath, snapPathRel
 }
@@ -345,6 +350,21 @@ func constructFilename(c *Config, callerFilename, tName string, isStandalone boo
 	filename += snapsExt + c.extension
 
 	return filename
+}
+
+func trimPathBuild() bool {
+	bInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		return false
+	}
+
+	for _, info := range bInfo.Settings {
+		if info.Key == "-trimpath" {
+			return info.Value == "true"
+		}
+	}
+
+	return false
 }
 
 func unescapeEndChars(s string) string {
