@@ -72,6 +72,19 @@ func TestMatchStandaloneSnapshot(t *testing.T) {
 		test.Equal(t, 1, testEvents.items[erred])
 	})
 
+	t.Run("if snaps.Update(false) should skip creating snapshot", func(t *testing.T) {
+		setupSnapshot(t, fileName, false)
+
+		mockT := test.NewMockTestingT(t)
+		mockT.MockError = func(args ...any) {
+			test.Equal(t, errSnapNotFound, args[0].(error))
+		}
+
+		WithConfig(Update(false)).MatchStandaloneSnapshot(mockT, "hello world")
+
+		test.Equal(t, 1, testEvents.items[erred])
+	})
+
 	t.Run("should return error when diff is found", func(t *testing.T) {
 		setupSnapshot(t, standaloneFilename, false)
 

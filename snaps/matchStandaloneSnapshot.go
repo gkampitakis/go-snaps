@@ -50,7 +50,7 @@ func matchStandaloneSnapshot(c *Config, t testingT, input any) {
 	snapshot := pretty.Sprint(input)
 	prevSnapshot, err := getPrevStandaloneSnapshot(snapPath)
 	if errors.Is(err, errSnapNotFound) {
-		if isCI {
+		if !shouldCreate(c.update) {
 			handleError(t, err)
 			return
 		}

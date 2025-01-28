@@ -100,7 +100,7 @@ func matchJSON(c *Config, t testingT, input any, matchers ...match.JSONMatcher) 
 	snapshot := takeJSONSnapshot(j)
 	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {
-		if isCI {
+		if !shouldCreate(c.update) {
 			handleError(t, err)
 			return
 		}

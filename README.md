@@ -282,7 +282,7 @@ t.Run("snapshot tests", func(t *testing.T) {
   s := snaps.WithConfig(
     snaps.Dir("my_dir"),
     snaps.Filename("json_file"),
-    snaps.Ext(".json")
+    snaps.Ext(".json"),
     snaps.Update(false)
   )
 

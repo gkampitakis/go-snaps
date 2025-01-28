@@ -125,3 +125,16 @@ func shouldUpdate(u *bool) bool {
 
 	return updateVAR == "true"
 }
+
+// shouldCreate determines whether snapshots should be created
+func shouldCreate(u *bool) bool {
+	if isCI {
+		return false
+	}
+
+	if u != nil {
+		return *u
+	}
+
+	return true
+}
