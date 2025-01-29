@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 
@@ -22,6 +23,7 @@ var (
 	defaultConfig   = Config{
 		snapsDir: "__snapshots__",
 	}
+	isTrimBathBuild = trimPathBuild()
 )
 
 const (
@@ -137,4 +139,11 @@ func shouldCreate(u *bool) bool {
 	}
 
 	return true
+}
+
+// trimPathBuild checks if the build has trimpath setting true
+func trimPathBuild() bool {
+	goFlags := strings.Split(os.Getenv("GOFLAGS"), " ")
+
+	return slices.Contains(goFlags, "-trimpath")
 }

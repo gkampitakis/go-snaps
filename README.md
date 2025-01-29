@@ -34,9 +34,9 @@
 - [Running tests on CI](#running-tests-on-ci)
 - [No Color](#no-color)
 - [Snapshots Structure](#snapshots-structure)
+- [Known Limitations](#known-limitations)
 - [Acknowledgments](#acknowledgments)
 - [Contributing](./contributing.md)
-- [Appendix](#appendix)
 
 ## Installation
 
@@ -411,6 +411,12 @@ map[string]interface{}{
 > [!NOTE]
 > If your snapshot data contain characters `---` at the start of a line followed by a new line, `go-snaps` will "escape" them and save them as `/-/-/-/` to differentiate them from termination characters.
 
+## Known Limitations
+
+- When running a specific test file by specifying a path `go test ./my_test.go`, `go-snaps` can't track the path so it will mistakenly mark snapshots as obsolete.
+- go-snaps doesn't handle CRLF line endings. If you are using Windows, you may need to convert the line endings to LF.
+- go-snaps doesn't work when running with `go test -trimpath ./...`. If you want to use `go-snaps` and `trimpath` try passing from env with `GOFLAGS=-trimpath`.
+
 ## Acknowledgments
 
 This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) and [Cupaloy](https://github.com/bradleyjkemp/cupaloy) as inspiration.
@@ -418,14 +424,3 @@ This library used [Jest Snapshoting](https://jestjs.io/docs/snapshot-testing) an
 - Jest is a full-fledged Javascript testing framework and has robust snapshoting features.
 - Cupaloy is a great and simple Golang snapshoting solution.
 - The [logo](https://github.com/MariaLetta/free-gophers-pack) was made by [MariaLetta](https://github.com/MariaLetta).
-
-## Appendix
-
-> [!WARNING]
-> When running a specific test file by specifying a path `go test ./my_test.go`, `go-snaps` can't track the path so it will mistakenly mark snapshots as obsolete.
-
-> [!IMPORTANT]
-> Snapshots should be treated as code. The snapshot artifact should be committed alongside code changes, and reviewed as part of your code review process
-
-> [!NOTE]
-> go-snaps doesn't handle CRLF line endings. If you are using Windows, you may need to convert the line endings to LF.

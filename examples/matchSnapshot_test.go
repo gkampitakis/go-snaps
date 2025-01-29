@@ -5,8 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps"
@@ -80,10 +78,9 @@ func TestMatchSnapshot(t *testing.T) {
 		})
 
 		t.Run("should allow absolute path", func(t *testing.T) {
-			_, b, _, _ := runtime.Caller(0)
-			basepath := filepath.Dir(b)
+			dir, _ := os.Getwd()
 
-			snaps.WithConfig(snaps.Dir(basepath+"/absolute_path")).
+			snaps.WithConfig(snaps.Dir(dir+"/absolute_path")).
 				MatchSnapshot(t, "supporting absolute path")
 		})
 
