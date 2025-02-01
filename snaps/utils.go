@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"slices"
 	"strings"
 	"sync"
@@ -143,7 +144,23 @@ func shouldCreate(u *bool) bool {
 
 // trimPathBuild checks if the build has trimpath setting true
 func trimPathBuild() bool {
+	keys := []string{"-trimpath", "--trimpath"}
 	goFlags := strings.Split(os.Getenv("GOFLAGS"), " ")
 
-	return slices.Contains(goFlags, "-trimpath")
+	for _, flag := range goFlags {
+		if slices.Contains(keys, flag) {
+			return true
+		}
+	}
+
+	bInfo, ok := debug.ReadBuildInfo()
+	if ok && len(bInfo.Settings) > 0 {
+		for _, info := range bInfo.Settings {
+			if slices.Contains(keys, info.Key) {
+				return info.Value == "true"
+			}
+		}
+	}
+
+	return runtime.GOROOT() == ""
 }
