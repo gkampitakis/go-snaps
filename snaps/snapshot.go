@@ -318,12 +318,15 @@ func snapshotPath(c *Config, tName string, isStandalone bool) (string, string) {
 	callerFilename := baseCaller(3)
 
 	dir := c.snapsDir
-	if !filepath.IsAbs(dir) {
+	if !filepath.IsAbs(dir) && !isTrimBathBuild {
 		dir = filepath.Join(filepath.Dir(callerFilename), c.snapsDir)
 	}
 
 	snapPath := filepath.Join(dir, constructFilename(c, callerFilename, tName, isStandalone))
-	snapPathRel, _ := filepath.Rel(filepath.Dir(callerFilename), snapPath)
+	snapPathRel := snapPath
+	if !isTrimBathBuild {
+		snapPathRel, _ = filepath.Rel(filepath.Dir(callerFilename), snapPath)
+	}
 
 	return snapPath, snapPathRel
 }

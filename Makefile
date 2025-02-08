@@ -20,3 +20,6 @@ test: ## Run tests
 
 test-verbose: ## Run tests with verbose output
 	go test -race -count=10 -shuffle on -v -cover ./...
+
+test-trimpath: ## Run tests with -trimpath
+	GOFLAGS=-trimpath go test -race -count=10 -shuffle on -v -cover ./examples

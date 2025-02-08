@@ -49,3 +49,5 @@ jobs:
           go-version: 1.21.x
       - name: Run Tests
         run: make test
+      - name: Run Tests
+        run: make test-trimpath
