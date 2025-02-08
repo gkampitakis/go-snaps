@@ -415,7 +415,7 @@ map[string]interface{}{
 
 - When running a specific test file by specifying a path `go test ./my_test.go`, `go-snaps` can't track the path so it will mistakenly mark snapshots as obsolete.
 - go-snaps doesn't handle CRLF line endings. If you are using Windows, you may need to convert the line endings to LF.
-- go-snaps doesn't work when running with `go test -trimpath ./...`. If you want to use `go-snaps` and `trimpath` try passing from env with `GOFLAGS=-trimpath`.
+- go-snaps cannot determine the snapshot path automatically when running with `go test -trimpath ./...`. It then instead relies on the current working directory to define the snapshot directory. If this is a problem in your use case you can set an absolute path with `snaps.WithConfig(snaps.Dir("/some/absolute/path"))`
 
 ## Acknowledgments
 
