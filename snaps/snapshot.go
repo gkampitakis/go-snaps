@@ -34,7 +34,6 @@ type Config struct {
 	json      *JSONConfig
 }
 
-// TODO: Revise this comments
 type JSONConfig struct {
 	// Width is a max column width for single line arrays
 	// Default: see defaultPrettyJSONOptions.Width for detail
@@ -101,7 +100,7 @@ func Ext(ext string) func(*Config) {
 	}
 }
 
-// Specify json configuration
+// Specify json format configuration
 //
 // default: see defaultPrettyJSONOptions for default json config
 func JSON(json JSONConfig) func(*Config) {
