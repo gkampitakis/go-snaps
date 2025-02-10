@@ -274,6 +274,10 @@ You can see more [examples](./examples/matchJSON_test.go#L96).
 - the filename where snapshots are stored
 - the snapshot file's extension (_regardless the extension the filename will include the `.snaps` inside the filename_)
 - programmatically control whether to update snapshots. _You can find an example usage at [examples](/examples/examples_test.go#13)_
+- json config's json format configuration:
+  - `Width`: The maximum width in characters before wrapping json output (default: 80)
+  - `Indent`: The indentation string to use for nested structures (default: 1 spaces)
+  - `SortKeys`: Whether to sort json object keys alphabetically (default: true)
 
 ```go
 t.Run("snapshot tests", func(t *testing.T) {
@@ -283,7 +287,12 @@ t.Run("snapshot tests", func(t *testing.T) {
     snaps.Dir("my_dir"),
     snaps.Filename("json_file"),
     snaps.Ext(".json"),
-    snaps.Update(false)
+    snaps.Update(false),
+    snaps.JSON(snaps.JSONConfig{
+      Width:    80,
+      Indent:   "    ",
+      SortKeys: false,
+    }),
   )
 
   s.MatchJSON(t, `{"hello":"world"}`)
