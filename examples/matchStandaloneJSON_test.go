@@ -45,12 +45,12 @@ func TestMatchStandaloneJSON(t *testing.T) {
 
 	t.Run("should create a prettyJSON snap following by config", func(t *testing.T) {
 		value := `{"user":"mock-user","age":10,"email":"mock@email.com"}`
-		config := snaps.WithConfig(snaps.JSON(snaps.JSONConfig{
+		s := snaps.WithConfig(snaps.JSON(snaps.JSONConfig{
 			Indent:   "    ",
 			SortKeys: false,
 		}))
-		config.MatchStandaloneJSON(t, value)
-		config.MatchStandaloneJSON(t, []byte(value))
+		s.MatchStandaloneJSON(t, value)
+		s.MatchStandaloneJSON(t, []byte(value))
 	})
 
 	t.Run("matchers", func(t *testing.T) {
