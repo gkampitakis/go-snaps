@@ -43,6 +43,16 @@ func TestMatchStandaloneJSON(t *testing.T) {
 		snaps.MatchStandaloneJSON(t, u)
 	})
 
+	t.Run("should create a prettyJSON snap following by config", func(t *testing.T) {
+		value := `{"user":"mock-user","age":10,"email":"mock@email.com"}`
+		config := snaps.WithConfig(snaps.JSON(snaps.JSONConfig{
+			Indent:   "    ",
+			SortKeys: false,
+		}))
+		config.MatchStandaloneJSON(t, value)
+		config.MatchStandaloneJSON(t, []byte(value))
+	})
+
 	t.Run("matchers", func(t *testing.T) {
 		t.Run("Custom matcher", func(t *testing.T) {
 			t.Run("struct marshalling", func(t *testing.T) {

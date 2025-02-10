@@ -91,6 +91,16 @@ func TestMatchJSON(t *testing.T) {
 
 		snaps.MatchJSON(t, u)
 	})
+
+	t.Run("should create a prettyJSON snap following by config", func(t *testing.T) {
+		value := `{"user":"mock-user","age":10,"email":"mock@email.com"}`
+		config := snaps.WithConfig(snaps.JSON(snaps.JSONConfig{
+			Indent:   "    ",
+			SortKeys: false,
+		}))
+		config.MatchJSON(t, value)
+		config.MatchJSON(t, []byte(value))
+	})
 }
 
 func TestMatchers(t *testing.T) {
