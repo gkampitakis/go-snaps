@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	jsonOptions = &pretty.Options{
+	defaultPrettyJSONOptions = &pretty.Options{
 		SortKeys: true,
 		Indent:   " ",
 	}
@@ -97,7 +97,7 @@ func matchJSON(c *Config, t testingT, input any, matchers ...match.JSONMatcher) 
 		return
 	}
 
-	snapshot := takeJSONSnapshot(j)
+	snapshot := takeJSONSnapshot(c, j)
 	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if !shouldCreate(c.update) {
@@ -159,8 +159,8 @@ func validateJSON(input any) ([]byte, error) {
 	}
 }
 
-func takeJSONSnapshot(b []byte) string {
-	return strings.TrimSuffix(string(pretty.PrettyOptions(b, jsonOptions)), "\n")
+func takeJSONSnapshot(c *Config, b []byte) string {
+	return strings.TrimSuffix(string(pretty.PrettyOptions(b, c.json.getPrettyJSONOptions())), "\n")
 }
 
 func applyJSONMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.MatcherError) {

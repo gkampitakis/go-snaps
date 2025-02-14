@@ -100,3 +100,19 @@
  "metadata": "<Type:map[string]interface {}>"
 }
 ---
+
+[TestMatchJSON/should_create_a_prettyJSON_snap_following_by_config - 1]
+{
+    "user": "mock-user",
+    "age": 10,
+    "email": "mock@email.com"
+}
+---
+
+[TestMatchJSON/should_create_a_prettyJSON_snap_following_by_config - 2]
+{
+    "user": "mock-user",
+    "age": 10,
+    "email": "mock@email.com"
+}
+---
