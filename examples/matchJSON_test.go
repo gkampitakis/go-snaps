@@ -71,7 +71,7 @@ func TestMatchJSON(t *testing.T) {
 	})
 
 	t.Run("should create a prettyJSON snap", func(t *testing.T) {
-		value := `{"user":"mock-user","age":10,"email":"mock@email.com"}`
+		value := `{"user":"mockuser","age":10,"email":"mock@email.com"}`
 		snaps.MatchJSON(t, value)
 		snaps.MatchJSON(t, []byte(value))
 	})
