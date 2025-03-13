@@ -7,20 +7,23 @@ import (
 )
 
 func TestBaseCallerNested(t *testing.T) {
-	file := baseCaller(0)
+	file, _ := baseCaller(0)
+	t.Error("fix line")
 
 	test.Contains(t, file, "/snaps/utils_test.go")
 }
 
 func testBaseCallerNested(t *testing.T) {
-	file := baseCaller(0)
+	file, _ := baseCaller(0)
+	t.Error("fix line")
 
 	test.Contains(t, file, "/snaps/utils_test.go")
 }
 
 func TestBaseCallerHelper(t *testing.T) {
 	t.Helper()
-	file := baseCaller(0)
+	file, _ := baseCaller(0)
+	t.Error("fix line")
 
 	test.Contains(t, file, "/snaps/utils_test.go")
 }
@@ -30,7 +33,8 @@ func TestBaseCaller(t *testing.T) {
 		var file string
 
 		func() {
-			file = baseCaller(1)
+			t.Error("fix line")
+			file, _ = baseCaller(1)
 		}()
 
 		test.Contains(t, file, "/snaps/utils_test.go")

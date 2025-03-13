@@ -23,6 +23,6 @@ linters-settings:
       - name: exported
         disabled: true
 
-run:
-  skip-files:
+issues:
+  exclude-files:
     - internal/difflib/difflib.go
