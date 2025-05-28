@@ -185,8 +185,44 @@ items:
 			test.Equal(t, 1, testEvents.items[erred])
 		})
 
+		t.Run(
+			"should create and update snapshot when UPDATE_SNAPS=always even on CI",
+			func(t *testing.T) {
+				snapPath := setupSnapshot(t, yamlFilename, true, "always")
+
+				printerExpectedCalls := []func(received any){
+					func(received any) { test.Equal(t, addedMsg, received.(string)) },
+					func(received any) { test.Equal(t, updatedMsg, received.(string)) },
+				}
+				mockT := test.NewMockTestingT(t)
+				mockT.MockLog = func(args ...any) {
+					printerExpectedCalls[0](args[0])
+
+					// shift
+					printerExpectedCalls = printerExpectedCalls[1:]
+				}
+
+				// First call for creating the snapshot
+				WithConfig(Update(false)).MatchYAML(mockT, "value: hello world")
+				test.Equal(t, 1, testEvents.items[added])
+
+				// Resetting registry to emulate the same MatchSnapshot call
+				testsRegistry = newRegistry()
+
+				// Second call with different params
+				WithConfig(Update(false)).MatchYAML(mockT, "value: bye world")
+
+				test.Equal(
+					t,
+					"\n[mock-name - 1]\nvalue: bye world\n---\n",
+					test.GetFileContent(t, snapPath),
+				)
+				test.Equal(t, 1, testEvents.items[updated])
+			},
+		)
+
 		t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
-			snapPath := setupSnapshot(t, yamlFilename, false, true)
+			snapPath := setupSnapshot(t, yamlFilename, false, "true")
 			printerExpectedCalls := []func(received any){
 				func(received any) { test.Equal(t, addedMsg, received.(string)) },
 				func(received any) { test.Equal(t, updatedMsg, received.(string)) },
