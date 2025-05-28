@@ -185,7 +185,7 @@ func TestMatchJSON(t *testing.T) {
 	})
 
 	t.Run("should update snapshot when 'shouldUpdate'", func(t *testing.T) {
-		snapPath := setupSnapshot(t, jsonFilename, false, true)
+		snapPath := setupSnapshot(t, jsonFilename, false, "true")
 
 		printerExpectedCalls := []func(received any){
 			func(received any) { test.Equal(t, addedMsg, received.(string)) },
@@ -216,4 +216,40 @@ func TestMatchJSON(t *testing.T) {
 		)
 		test.Equal(t, 1, testEvents.items[updated])
 	})
+
+	t.Run(
+		"should create and update snapshot when UPDATE_SNAPS=always even on CI",
+		func(t *testing.T) {
+			snapPath := setupSnapshot(t, jsonFilename, true, "always")
+
+			printerExpectedCalls := []func(received any){
+				func(received any) { test.Equal(t, addedMsg, received.(string)) },
+				func(received any) { test.Equal(t, updatedMsg, received.(string)) },
+			}
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) {
+				printerExpectedCalls[0](args[0])
+
+				// shift
+				printerExpectedCalls = printerExpectedCalls[1:]
+			}
+
+			// First call for creating the snapshot
+			WithConfig(Update(false)).MatchJSON(mockT, "{\"value\":\"hello world\"}")
+			test.Equal(t, 1, testEvents.items[added])
+
+			// Resetting registry to emulate the same MatchSnapshot call
+			testsRegistry = newRegistry()
+
+			// Second call with different params
+			WithConfig(Update(false)).MatchJSON(mockT, "{\"value\":\"bye world\"}")
+
+			test.Equal(
+				t,
+				"\n[mock-name - 1]\n{\n \"value\": \"bye world\"\n}\n---\n",
+				test.GetFileContent(t, snapPath),
+			)
+			test.Equal(t, 1, testEvents.items[updated])
+		},
+	)
 }

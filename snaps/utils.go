@@ -20,7 +20,7 @@ var (
 	errSnapNotFound = errors.New("snapshot not found")
 	isCI            = ciinfo.IsCI
 	updateVAR       = os.Getenv("UPDATE_SNAPS")
-	shouldClean     = updateVAR == "true" || updateVAR == "clean"
+	shouldClean     = updateVAR == "always" || updateVAR == "true" || updateVAR == "clean"
 	defaultConfig   = Config{
 		snapsDir: "__snapshots__",
 	}
@@ -118,6 +118,10 @@ func snapshotScanner(r io.Reader) *bufio.Scanner {
 
 // shouldUpdate determines whether snapshots should be updated
 func shouldUpdate(u *bool) bool {
+	if updateVAR == "always" {
+		return true
+	}
+
 	if isCI {
 		return false
 	}
@@ -131,6 +135,10 @@ func shouldUpdate(u *bool) bool {
 
 // shouldCreate determines whether snapshots should be created
 func shouldCreate(u *bool) bool {
+	if updateVAR == "always" {
+		return true
+	}
+
 	if isCI {
 		return false
 	}

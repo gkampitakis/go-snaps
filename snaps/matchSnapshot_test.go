@@ -33,15 +33,15 @@ string hello world 1 3 2
 `
 )
 
-func setupSnapshot(t *testing.T, file string, ci bool, update ...bool) string {
+func setupSnapshot(t *testing.T, file string, ci bool, update ...string) string {
 	t.Helper()
 	dir, _ := os.Getwd()
 	snapPath := filepath.Join(dir, "__snapshots__", file)
 	isCI = ci
 	updateVARPrev := updateVAR
 	updateVAR = ""
-	if len(update) > 0 && update[0] {
-		updateVAR = "true"
+	if len(update) > 0 {
+		updateVAR = update[0]
 	}
 
 	t.Cleanup(func() {
@@ -105,6 +105,43 @@ func TestMatchSnapshot(t *testing.T) {
 		test.Equal(t, 1, testEvents.items[erred])
 	})
 
+	t.Run(
+		"should create and update snapshot when UPDATE_SNAPS=always even on CI",
+		func(t *testing.T) {
+			snapPath := setupSnapshot(t, fileName, true, "always")
+
+			printerExpectedCalls := []func(received any){
+				func(received any) { test.Equal(t, addedMsg, received.(string)) },
+				func(received any) { test.Equal(t, updatedMsg, received.(string)) },
+				func(received any) { t.Error("should not be called 3rd time") },
+			}
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) {
+				printerExpectedCalls[0](args[0])
+
+				// shift
+				printerExpectedCalls = printerExpectedCalls[1:]
+			}
+
+			// First call for creating the snapshot
+			WithConfig(Update((false))).MatchSnapshot(mockT, 10, "hello world")
+			test.Equal(t, 1, testEvents.items[added])
+
+			// Resetting registry to emulate the same MatchSnapshot call
+			testsRegistry = newRegistry()
+
+			// Second call with different params
+			WithConfig(Update((false))).MatchSnapshot(mockT, 100, "bye world")
+
+			test.Equal(
+				t,
+				"\n[mock-name - 1]\nint(100)\nbye world\n---\n",
+				test.GetFileContent(t, snapPath),
+			)
+			test.Equal(t, 1, testEvents.items[updated])
+		},
+	)
+
 	t.Run("should return error when diff is found", func(t *testing.T) {
 		setupSnapshot(t, fileName, false)
 
@@ -145,7 +182,7 @@ func TestMatchSnapshot(t *testing.T) {
 
 	t.Run("should update snapshot", func(t *testing.T) {
 		t.Run("when 'updateVAR==true'", func(t *testing.T) {
-			snapPath := setupSnapshot(t, fileName, false, true)
+			snapPath := setupSnapshot(t, fileName, false, "true")
 
 			printerExpectedCalls := []func(received any){
 				func(received any) { test.Equal(t, addedMsg, received.(string)) },
@@ -179,7 +216,7 @@ func TestMatchSnapshot(t *testing.T) {
 		})
 
 		t.Run("when config update", func(t *testing.T) {
-			snapPath := setupSnapshot(t, fileName, false, false)
+			snapPath := setupSnapshot(t, fileName, false, "false")
 
 			printerExpectedCalls := []func(received any){
 				func(received any) { test.Equal(t, addedMsg, received.(string)) },

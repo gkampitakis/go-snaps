@@ -379,7 +379,9 @@ for obsolete snapshots.
 
 ## Running Tests on CI
 
-When `go-snaps` detects that it is running in CI it will automatically fail when snapshots are missing. This is done to ensure new snapshots are committed alongside the tests and assertions are successful.
+When `go-snaps` detects that it is running in CI it will automatically fail when snapshots are missing or there diffs. This is done to ensure new snapshots are committed alongside the tests and assertions are successful.
+
+You can override this behavior by setting `UPDATE_SNAPS` to `always` when running your tests that will create or update snapshots.
 
 > `go-snaps` uses [ciinfo](https://github.com/gkampitakis/ciinfo) for detecting if it runs on CI environment.
 
