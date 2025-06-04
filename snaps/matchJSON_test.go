@@ -172,7 +172,7 @@ func TestMatchJSON(t *testing.T) {
 	})
 
 	t.Run("if snaps.Update(false) should skip creating snapshot", func(t *testing.T) {
-		setupSnapshot(t, fileName, false)
+		setupSnapshot(t, jsonFilename, false)
 
 		mockT := test.NewMockTestingT(t)
 		mockT.MockError = func(args ...any) {

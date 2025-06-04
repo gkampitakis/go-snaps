@@ -17,7 +17,7 @@ var yamlEncodeOptions = []yaml.EncodeOption{
 
 /*
 MatchYAML verifies the input matches the most recent snap file.
-Input can be a valid json string or []byte or whatever value can be passed
+Input can be a valid yaml string or []byte or whatever value can be passed
 successfully on `yaml.Marshal`.
 
 	snaps.MatchYAML(t, "user: \"mock-user\"\nage: 10\nemail: mock@email.com")
@@ -37,7 +37,7 @@ func (c *Config) MatchYAML(t testingT, input any, matchers ...match.YAMLMatcher)
 
 /*
 MatchYAML verifies the input matches the most recent snap file.
-Input can be a valid json string or []byte or whatever value can be passed
+Input can be a valid yaml string or []byte or whatever value can be passed
 successfully on `yaml.Marshal`.
 
 	snaps.MatchYAML(t, "user: \"mock-user\"\nage: 10\nemail: mock@email.com")

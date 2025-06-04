@@ -1,0 +1,5 @@
+user: mock-user
+age: 10
+nested:
+ now:
+ - <Any value>
