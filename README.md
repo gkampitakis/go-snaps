@@ -22,6 +22,7 @@
 - [MatchJSON](#matchjson)
 - [MatchStandaloneJSON](#matchstandalonejson) `New`
 - [MatchYAML](#matchyaml) `New`
+- [MatchStandaloneYAML](#matchstandaloneyaml) `New`
 - [Matchers](#matchers)
   - [match.Any](#matchany)
   - [match.Custom](#matchcustom)
@@ -166,6 +167,22 @@ func TestYAML(t *testing.T) {
   snaps.MatchYAML(t, User{10, "mock-email"})
 }
 ```
+
+## MatchStandaloneYAML
+
+`MatchStandaloneYAML` will create snapshots on separate files as opposed to `MatchYAML` which adds multiple snapshots inside the same file.
+
+```go
+func TestSimple(t *testing.T) {
+  snaps.MatchStandaloneYAML(t, "user: \"mock-user\"\nage: 10\nemail: \"mock@email.com\"")
+  snaps.MatchStandaloneYAML(t, User{10, "mock-email"})
+}
+```
+
+`go-snaps` saves the snapshots in `__snapshots__` directory and the file
+name is the `t.Name()` plus a number plus the extension `.snap.yaml`.
+
+So for the above example the snapshot file name will be `./__snapshots__/TestSimple_1.snap.yaml` and `./__snapshots__/TestSimple_2.snap.yaml`.
 
 ### Matchers
 
