@@ -20,8 +20,9 @@ var (
 	errSnapNotFound = errors.New("snapshot not found")
 	isCI            = ciinfo.IsCI
 	updateVAR       = os.Getenv("UPDATE_SNAPS")
-	shouldClean     = updateVAR == "always" || updateVAR == "true" || updateVAR == "clean"
-	defaultConfig   = Config{
+	shouldClean     = updateVAR == "always" || (updateVAR == "true" && !isCI) ||
+		(updateVAR == "clean" && !isCI)
+	defaultConfig = Config{
 		snapsDir: "__snapshots__",
 	}
 	isTrimBathBuild = trimPathBuild()

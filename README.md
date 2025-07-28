@@ -362,6 +362,12 @@ func TestMain(m *testing.M) {
 
   // After all tests have run `go-snaps` can check for unused snapshots
   snaps.Clean(m)
+	// dirty, err := snaps.Clean(m)
+  // _ = err
+  // if dirty {
+  //   fmt.Println("Some snapshots were outdated.")
+  //   os.Exit(1)
+  // }
 
   os.Exit(v)
 }

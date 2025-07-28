@@ -57,7 +57,15 @@ type CleanOpts struct {
 //	 v := m.Run()
 //
 //	 // After all tests have run `go-snaps` can check for unused snapshots
-//	 snaps.Clean(m)
+//	 dirty, err := snaps.Clean(m)
+//	 if err != nil {
+//		 fmt.Println("Error cleaning snaps:", err)
+//		 os.Exit(1)
+//	 }
+//	 if dirty {
+//		 fmt.Println("Some snapshots were outdated.")
+//		 os.Exit(1)
+//	 }
 //
 //	 os.Exit(v)
 //	}
@@ -68,11 +76,19 @@ type CleanOpts struct {
 //	 v := m.Run()
 //
 //	 // After all tests have run `go-snaps` will sort snapshots
-//	 snaps.Clean(m, snaps.CleanOpts{Sort: true})
+//	 dirty, err := snaps.Clean(m, snaps.CleanOpts{Sort: true})
+//	 if err != nil {
+//		 fmt.Println("Error cleaning snaps:", err)
+//		 os.Exit(1)
+//	 }
+//	 if dirty {
+//		 fmt.Println("Some snapshots were outdated.")
+//		 os.Exit(1)
+//	 }
 //
 //	 os.Exit(v)
 //	}
-func Clean(m *testing.M, opts ...CleanOpts) {
+func Clean(m *testing.M, opts ...CleanOpts) (bool, error) {
 	var opt CleanOpts
 	if len(opts) != 0 {
 		opt = opts[0]
@@ -87,23 +103,22 @@ func Clean(m *testing.M, opts ...CleanOpts) {
 		standaloneOccurrenceFMT,
 	)
 
-	obsoleteFiles, usedFiles := examineFiles(
+	obsoleteFiles, usedFiles, filesDirty := examineFiles(
 		testsRegistry.cleanup,
 		registeredStandaloneTests,
 		runOnly,
-		shouldClean && !isCI,
+		shouldClean,
 	)
-	obsoleteTests, err := examineSnaps(
+	obsoleteTests, snapsDirty, err := examineSnaps(
 		testsRegistry.cleanup,
 		usedFiles,
 		runOnly,
 		count,
-		shouldClean && !isCI,
-		opt.Sort && !isCI,
+		shouldClean,
+		opt.Sort,
 	)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return snapsDirty || filesDirty, err
 	}
 
 	if s := summary(
@@ -111,10 +126,12 @@ func Clean(m *testing.M, opts ...CleanOpts) {
 		obsoleteTests,
 		len(skippedTests.values),
 		testEvents.items,
-		shouldClean && !isCI,
+		shouldClean,
 	); s != "" {
 		fmt.Println(s)
 	}
+
+	return filesDirty || snapsDirty, nil
 }
 
 // getTestID will return the testID if the line is in the form of [Test... - number]
@@ -161,7 +178,7 @@ func examineFiles(
 	registeredStandaloneTests set,
 	runOnly string,
 	shouldUpdate bool,
-) (obsolete, used []string) {
+) (obsolete, used []string, dirtyFiles bool) {
 	uniqueDirs := set{}
 
 	for snapPaths := range registry {
@@ -211,7 +228,7 @@ func examineFiles(
 		}
 	}
 
-	return obsolete, used
+	return obsolete, used, len(obsolete) > 0
 }
 
 func examineSnaps(
@@ -221,16 +238,17 @@ func examineSnaps(
 	count int,
 	update,
 	sort bool,
-) ([]string, error) {
+) ([]string, bool, error) {
 	obsoleteTests := []string{}
 	tests := map[string]string{}
 	data := bytes.Buffer{}
 	testIDs := []string{}
+	var isDirty bool
 
 	for _, snapPath := range used {
 		f, err := os.OpenFile(snapPath, os.O_RDWR, os.ModePerm)
 		if err != nil {
-			return nil, err
+			return nil, isDirty, err
 		}
 
 		var hasDiffs bool
@@ -271,14 +289,16 @@ func examineSnaps(
 		}
 
 		if err := s.Err(); err != nil {
-			return nil, err
+			return nil, isDirty, err
 		}
 
-		shouldSort := sort && !slices.IsSortedFunc(testIDs, naturalSort)
-		shouldUpdate := update && hasDiffs
+		shouldSort := sort && !slices.IsSortedFunc(testIDs, naturalSort) && update
+		shouldDelete := hasDiffs && update
+
+		isDirty = isDirty || (sort && !slices.IsSortedFunc(testIDs, naturalSort)) || hasDiffs
 
 		// if we don't have to "write" anything on the snap we skip
-		if !shouldUpdate && !shouldSort {
+		if !shouldDelete && !shouldSort {
 			f.Close()
 
 			clear(tests)
@@ -294,7 +314,7 @@ func examineSnaps(
 		}
 
 		if err := overwriteFile(f, nil); err != nil {
-			return nil, err
+			return nil, isDirty, err
 		}
 
 		for _, id := range testIDs {
@@ -312,7 +332,7 @@ func examineSnaps(
 		data.Reset()
 	}
 
-	return obsoleteTests, nil
+	return obsoleteTests, isDirty, nil
 }
 
 func summary(
