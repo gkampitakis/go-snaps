@@ -293,7 +293,7 @@ func examineSnaps(
 		}
 
 		shouldSort := sort && !slices.IsSortedFunc(testIDs, naturalSort)
-		isDirty = isDirty || hasDiffs || (shouldSort && isCI)
+		isDirty = isDirty || (hasDiffs && !update) || (shouldSort && isCI)
 
 		shouldDelete := update && hasDiffs
 
