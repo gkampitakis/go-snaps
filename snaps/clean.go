@@ -292,10 +292,10 @@ func examineSnaps(
 			return nil, isDirty, err
 		}
 
-		shouldSort := sort && !slices.IsSortedFunc(testIDs, naturalSort) && update
-		shouldDelete := hasDiffs && update
+		shouldSort := sort && !slices.IsSortedFunc(testIDs, naturalSort)
+		isDirty = isDirty || hasDiffs || (shouldSort && isCI)
 
-		isDirty = isDirty || (sort && !slices.IsSortedFunc(testIDs, naturalSort)) || hasDiffs
+		shouldDelete := update && hasDiffs
 
 		// if we don't have to "write" anything on the snap we skip
 		if !shouldDelete && !shouldSort {

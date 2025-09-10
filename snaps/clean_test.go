@@ -308,7 +308,7 @@ string hello world 2 2 1
 
 		test.Equal(t, string(expectedMockSnap1), content1)
 		test.Equal(t, string(expectedMockSnap2), content2)
-		test.True(t, isDirty)
+		test.False(t, isDirty)
 	})
 
 	t.Run(
