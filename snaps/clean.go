@@ -236,7 +236,7 @@ func examineSnaps(
 	used []string,
 	runOnly string,
 	count int,
-	update,
+	shouldUpdate,
 	sort bool,
 ) ([]string, bool, error) {
 	obsoleteTests := []string{}
@@ -251,7 +251,7 @@ func examineSnaps(
 			return nil, isDirty, err
 		}
 
-		var hasDiffs bool
+		var needsUpdating bool
 
 		registeredTests := occurrences(registry[snapPath], count, snapshotOccurrenceFMT)
 		s := snapshotScanner(f)
@@ -267,7 +267,7 @@ func examineSnaps(
 
 			if !registeredTests.Has(testID) && !testSkipped(testID, runOnly) {
 				obsoleteTests = append(obsoleteTests, testID)
-				hasDiffs = true
+				needsUpdating = true
 
 				removeSnapshot(s)
 				continue
@@ -292,12 +292,12 @@ func examineSnaps(
 			return nil, isDirty, err
 		}
 
-		shouldSort := sort && !slices.IsSortedFunc(testIDs, naturalSort)
+		needsSorting := sort && !slices.IsSortedFunc(testIDs, naturalSort)
 
 		// if we're not allowed to update anything, just capture if the snapshot
 		// needs cleaning, and then continue to the next snapshot
-		if !update {
-			if hasDiffs || shouldSort {
+		if !shouldUpdate {
+			if needsUpdating || needsSorting {
 				isDirty = true
 			}
 
@@ -310,7 +310,7 @@ func examineSnaps(
 			continue
 		}
 
-		if shouldSort {
+		if needsSorting {
 			// sort testIDs
 			slices.SortFunc(testIDs, naturalSort)
 		}
