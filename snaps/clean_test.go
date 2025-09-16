@@ -220,6 +220,8 @@ func TestExamineSnaps(t *testing.T) {
 		// Content of snaps is not changed
 		test.Equal(t, mockSnap1, []byte(content1))
 		test.Equal(t, mockSnap2, []byte(content2))
+
+		// And thus we are dirty since the contents do need changing
 		test.True(t, isDirty)
 	})
 
@@ -276,13 +278,15 @@ string hello world 2 2 1
 		)
 		test.NoError(t, err)
 
-		// Content of snaps is not changed
+		// Content of snaps have been updated
 		test.Equal(t, expected1, content1)
 		test.Equal(t, expected2, content2)
-		test.True(t, isDirty)
+
+		// And thus we are not dirty
+		test.False(t, isDirty)
 	})
 
-	t.Run("should sort all tests", func(t *testing.T) {
+	t.Run("should sort all tests when allowed to update", func(t *testing.T) {
 		shouldUpdate, sort := true, true
 		mockSnap1 := loadMockSnap(t, "mock-snap-sort-1")
 		mockSnap2 := loadMockSnap(t, "mock-snap-sort-2")
@@ -306,8 +310,11 @@ string hello world 2 2 1
 		content1 := test.GetFileContent(t, filepath.FromSlash(dir1+"/test1.snap"))
 		content2 := test.GetFileContent(t, filepath.FromSlash(dir2+"/test2.snap"))
 
+		// Content of snaps are now sorted
 		test.Equal(t, string(expectedMockSnap1), content1)
 		test.Equal(t, string(expectedMockSnap2), content2)
+
+		// And thus we are not dirty
 		test.False(t, isDirty)
 	})
 
@@ -347,8 +354,11 @@ string hello world 2 2 1
 			content1 := test.GetFileContent(t, filepath.FromSlash(dir1+"/test1.snap"))
 			content2 := test.GetFileContent(t, filepath.FromSlash(dir2+"/test2.snap"))
 
+			// Content of snaps is not changed
 			test.Equal(t, string(mockSnap1), content1)
 			test.Equal(t, string(mockSnap2), content2)
+
+			// And thus we are dirty, since there are obsolete snapshots that should be removed
 			test.True(t, isDirty)
 		},
 	)

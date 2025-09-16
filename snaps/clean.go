@@ -293,12 +293,14 @@ func examineSnaps(
 		}
 
 		shouldSort := sort && !slices.IsSortedFunc(testIDs, naturalSort)
-		isDirty = isDirty || (hasDiffs && !update) || (shouldSort && isCI)
 
-		shouldDelete := update && hasDiffs
+		// if we're not allowed to update anything, just capture if the snapshot
+		// needs cleaning, and then continue to the next snapshot
+		if !update {
+			if hasDiffs || shouldSort {
+				isDirty = true
+			}
 
-		// if we don't have to "write" anything on the snap we skip
-		if !shouldDelete && !shouldSort {
 			f.Close()
 
 			clear(tests)
