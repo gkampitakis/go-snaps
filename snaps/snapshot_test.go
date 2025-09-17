@@ -213,7 +213,7 @@ func TestSnapshotPath(t *testing.T) {
 			}()
 		}()
 
-		return
+		return snapPath, snapPathRel
 	}
 
 	t.Run("should return default path and file", func(t *testing.T) {

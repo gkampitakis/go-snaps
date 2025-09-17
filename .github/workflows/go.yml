@@ -30,7 +30,7 @@ jobs:
           args: -c ./golangci.yml
       - name: Format lint
         run: |
-          make install-tools && make format && git diff --quiet
+          make install-tools && make format && git diff && git diff --quiet
   test:
     name: Run tests
     runs-on: ${{ matrix.os }}
