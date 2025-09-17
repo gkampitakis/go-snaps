@@ -349,7 +349,7 @@ func getPrevStandaloneSnapshot(snapPath string) (string, error) {
 // Returns the relative path of the caller and the snapshot path.
 func snapshotPath(c *Config, tName string, isStandalone bool) (string, string) {
 	//  skips current func, the wrapper match* and the exported Match* func
-	callerFilename := baseCaller(3)
+	callerFilename, _ := baseCaller(3)
 
 	dir := c.snapsDir
 	if !filepath.IsAbs(dir) && !isTrimBathBuild {
