@@ -24,10 +24,9 @@ jobs:
         with:
           go-version-file: "go.mod"
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v8
         with:
           version: "latest"
-          args: -c ./golangci.yml
       - name: Format lint
         run: |
           make install-tools && make format && git diff && git diff --quiet

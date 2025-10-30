@@ -1,0 +1,31 @@
+version: "2"
+
+linters:
+  enable:
+    - lll
+    - revive
+    - staticcheck
+    - unconvert
+    - unparam
+
+  disable:
+    - errcheck
+
+  settings:
+    lll:
+      line-length: 130
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+  exclusions:
+    paths:
+      - internal/difflib/difflib.go
+
+formatters:
+  enable:
+    - goimports
+    - gofumpt
+  settings:
+    gofumpt:
+      extra-rules: true

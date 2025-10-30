@@ -9,7 +9,7 @@ install-tools: ## Install linting tools
 	go install github.com/segmentio/golines@latest
 
 lint: ## Run golangci linter
-	golangci-lint run -c ./golangci.yml ./...
+	golangci-lint run ./...
 
 format: ## Format code
 	gofumpt -l -w -extra .
