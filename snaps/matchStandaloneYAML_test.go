@@ -116,7 +116,7 @@ items:
 			mockT := test.NewMockTestingT(t)
 			mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
 			mockT.MockError = func(a ...any) {
-				fmt.Println(a)
+				fmt.Println(a...)
 			}
 
 			c1 := func(val any) (any, error) {
