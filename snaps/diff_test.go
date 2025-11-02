@@ -105,6 +105,8 @@ func TestDiff(t *testing.T) {
 	})
 
 	t.Run("with color", func(t *testing.T) {
+		colors.NOCOLOR = false
+
 		t.Run("should apply highlights on single line diff", func(t *testing.T) {
 			a := strings.Repeat("abcd", 20)
 			b := strings.Repeat("abcf", 20)

@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/gkampitakis/ciinfo"
 )
 
 const (
@@ -31,9 +33,9 @@ var NOCOLOR = isNoColor()
 func isNoColor() bool {
 	// https://no-color.org (with any value)
 	_, noColor := os.LookupEnv("NO_COLOR")
-	// hacky way but should be good enough to support diff on vscode output panel
-	term := strings.ToLower(os.Getenv("_"))
-	return noColor || strings.Contains(term, "visual") || strings.Contains(term, "code")
+	termenv, isTerm := os.LookupEnv("TERM")
+
+	return noColor || (!isTerm && !ciinfo.IsCI) || termenv == "dumb"
 }
 
 func Sprint(color, s string) string {
