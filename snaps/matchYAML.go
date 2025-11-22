@@ -141,7 +141,7 @@ func matchYAML(c *Config, t testingT, input any, matchers ...match.YAMLMatcher) 
 }
 
 func validateYAML(input any) ([]byte, error) {
-	var out interface{}
+	var out any
 
 	switch y := input.(type) {
 	case string:

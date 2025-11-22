@@ -10,13 +10,13 @@ import (
 )
 
 // GetValue returns the value of the node.
-func GetValue(node ast.Node) (interface{}, error) {
+func GetValue(node ast.Node) (any, error) {
 	data, err := node.MarshalYAML()
 	if err != nil {
 		return nil, err
 	}
 
-	var value interface{}
+	var value any
 	if err := yaml.Unmarshal(data, &value); err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func Get(f *ast.File, p string) (*yaml.Path, ast.Node, bool, error) {
 }
 
 // Update marshals the value and replaces the file at the path provided with the new value.
-func Update(f *ast.File, path *yaml.Path, value interface{}) error {
+func Update(f *ast.File, path *yaml.Path, value any) error {
 	b, err := yaml.Marshal(value)
 	if err != nil {
 		return err
