@@ -179,6 +179,43 @@ func TestMatchers(t *testing.T) {
 
 			snaps.MatchJSON(t, body, match.Any("data.createdAt"))
 		})
+
+		t.Run("should handle nested json arrays", func(t *testing.T) {
+			j := []byte(`{
+					"repositories": [
+						{
+							"name": "repo1",
+							"commits": [
+								{"sha": "abc123", "files": [{"path": "a.js", "checksum": "c1"}, {"path": "b.js", "checksum": "c2"}]},
+								{"sha": "def456", "files": [{"path": "c.js", "checksum": "c3"}]}
+							]
+						},
+						{
+							"name": "repo2",
+							"commits": [
+								{
+									"sha": "ghi789", 
+									"files": [
+										{"path": "d.js", "checksum": "c4"}, 
+										{"path": "e.js", "checksum": "c5"}, 
+										{"path": "f.js", "checksum": "c6"}
+									]
+								}
+							]
+						}
+					]
+				}`)
+
+			a := match.Any("repositories.#.commits.#.files.#.checksum").HandleNestedJSONArrays()
+
+			res, errs := a.JSON(j)
+			if len(errs) != 0 {
+				t.Errorf("unexpected errors %v", errs)
+				return
+			}
+
+			snaps.MatchJSON(t, res)
+		})
 	})
 
 	t.Run("my matcher", func(t *testing.T) {
