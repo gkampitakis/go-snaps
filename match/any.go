@@ -10,10 +10,11 @@ import (
 )
 
 type anyMatcher struct {
-	paths            []string
-	placeholder      any
-	errOnMissingPath bool
-	name             string
+	paths                  []string
+	placeholder            any
+	errOnMissingPath       bool
+	handleNestedJSONArrays bool
+	name                   string
 }
 
 func (a *anyMatcher) matcherError(err error, path string) MatcherError {
@@ -52,6 +53,16 @@ func (a *anyMatcher) Placeholder(p any) *anyMatcher {
 // that doesn't exist
 func (a *anyMatcher) ErrOnMissingPath(e bool) *anyMatcher {
 	a.errOnMissingPath = e
+	return a
+}
+
+// HandleNestedJSONArrays enables support for nested arrays when using Any matcher in JSON
+// E.g. results.#.packages.#.vulnerabilities
+//
+// see issue https://github.com/gkampitakis/go-snaps/issues/84 for details.
+// Disabled by default for backward compatibility and will be enabled by default if it doesn't introduce any issues in future.
+func (a *anyMatcher) HandleNestedJSONArrays() *anyMatcher {
+	a.handleNestedJSONArrays = true
 	return a
 }
 
@@ -95,23 +106,51 @@ func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 
 	json := b
 	for _, path := range a.paths {
-		r := gjson.GetBytes(json, path)
-		if !r.Exists() {
-			if a.errOnMissingPath {
-				errs = append(errs, a.matcherError(errPathNotFound, path))
+		if a.handleNestedJSONArrays {
+			expandedPath, err := gjsonExpandPath(json, path)
+			if err != nil {
+				errs = append(errs, a.matcherError(err, path))
+				continue
 			}
 
-			continue
+			for _, ep := range expandedPath {
+				r := gjson.GetBytes(json, ep)
+				if !r.Exists() {
+					if a.errOnMissingPath {
+						errs = append(errs, a.matcherError(errPathNotFound, path))
+					}
+
+					continue
+				}
+
+				j, err := sjson.SetBytesOptions(json, ep, a.placeholder, setJSONOptions)
+				if err != nil {
+					errs = append(errs, a.matcherError(err, path))
+
+					continue
+				}
+
+				json = j
+			}
+		} else {
+			r := gjson.GetBytes(json, path)
+			if !r.Exists() {
+				if a.errOnMissingPath {
+					errs = append(errs, a.matcherError(errPathNotFound, path))
+				}
+
+				continue
+			}
+
+			j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJSONOptions)
+			if err != nil {
+				errs = append(errs, a.matcherError(err, path))
+
+				continue
+			}
+
+			json = j
 		}
-
-		j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJSONOptions)
-		if err != nil {
-			errs = append(errs, a.matcherError(err, path))
-
-			continue
-		}
-
-		json = j
 	}
 
 	return json, errs

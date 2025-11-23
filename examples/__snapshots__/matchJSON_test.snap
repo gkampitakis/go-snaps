@@ -116,3 +116,59 @@
     "email": "mock@email.com"
 }
 ---
+
+[TestMatchers/Any_matcher/should_handle_nested_json_arrays - 1]
+{
+ "repositories": [
+  {
+   "commits": [
+    {
+     "files": [
+      {
+       "checksum": "<Any value>",
+       "path": "a.js"
+      },
+      {
+       "checksum": "<Any value>",
+       "path": "b.js"
+      }
+     ],
+     "sha": "abc123"
+    },
+    {
+     "files": [
+      {
+       "checksum": "<Any value>",
+       "path": "c.js"
+      }
+     ],
+     "sha": "def456"
+    }
+   ],
+   "name": "repo1"
+  },
+  {
+   "commits": [
+    {
+     "files": [
+      {
+       "checksum": "<Any value>",
+       "path": "d.js"
+      },
+      {
+       "checksum": "<Any value>",
+       "path": "e.js"
+      },
+      {
+       "checksum": "<Any value>",
+       "path": "f.js"
+      }
+     ],
+     "sha": "ghi789"
+    }
+   ],
+   "name": "repo2"
+  }
+ ]
+}
+---
