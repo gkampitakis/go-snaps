@@ -181,13 +181,6 @@ func TestGetPrevSnapshot(t *testing.T) {
 			snap:        "mysnapshot\n---moredata",
 			line:        2,
 		},
-		{
-			description: "should keep terminal \r character inside snapshot data",
-			testID:      "[my-test-crlf]",
-			fileData:    "\n[one-more-snap]\nmock-data\r\n---\n[my-test-crlf]\nline1\r\nline2\r\nline3\r\n---\n",
-			snap:        "line1\r\nline2\r\nline3\r",
-			line:        5,
-		},
 	} {
 		s := scenario
 		t.Run(s.description, func(t *testing.T) {
@@ -327,8 +320,7 @@ func TestSnapshotPath(t *testing.T) {
 }
 
 func TestUpdateSnapshot(t *testing.T) {
-	t.Run("should update snapshot", func(t *testing.T) {
-		const updatedSnap = `
+	const updatedSnap = `
 
 [Test_1/TestSimple - 1]
 int(1)
@@ -346,27 +338,11 @@ string hello world 1 3 2
 ---
 
 `
-		snapPath := test.CreateTempFile(t, mockSnap)
-		newSnapshot := "int(1250)\nstring new value"
+	snapPath := test.CreateTempFile(t, mockSnap)
+	newSnapshot := "int(1250)\nstring new value"
 
-		test.NoError(t, updateSnapshot("[Test_3/TestSimple - 1]", newSnapshot, snapPath))
-		test.Equal(t, updatedSnap, test.GetFileContent(t, snapPath))
-	})
-
-	t.Run("should not drop terminal \r from snapshot data", func(t *testing.T) {
-		snapPath := test.CreateTempFile(
-			t,
-			"\n[mock-id]\nline1\r\nline2\r\nline3\r\n---\n[another-id]\nmoredata\n---\n",
-		)
-		newSnapshot := "updated-line1\r\nupdated-line2\r\nupdated-line3\r"
-
-		test.NoError(t, updateSnapshot("[mock-id]", newSnapshot, snapPath))
-		test.Equal(
-			t,
-			"\n[mock-id]\nupdated-line1\r\nupdated-line2\r\nupdated-line3\r\n---\n[another-id]\nmoredata\n---\n",
-			test.GetFileContent(t, snapPath),
-		)
-	})
+	test.NoError(t, updateSnapshot("[Test_3/TestSimple - 1]", newSnapshot, snapPath))
+	test.Equal(t, updatedSnap, test.GetFileContent(t, snapPath))
 }
 
 func TestEscapeEndChars(t *testing.T) {

@@ -2,7 +2,6 @@ package snaps
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"io"
 	"math"
@@ -116,7 +115,6 @@ func baseCaller(skip int) (string, int) {
 // snapshotScanner returns a new *bufio.Scanner with a `MaxScanTokenSize == math.MaxInt` to read from r.
 func snapshotScanner(r io.Reader) *bufio.Scanner {
 	s := bufio.NewScanner(r)
-	s.Split(scanLines)
 	s.Buffer([]byte{}, math.MaxInt)
 	return s
 }
@@ -136,23 +134,6 @@ func shouldUpdate(u *bool) bool {
 	}
 
 	return updateVAR == "true"
-}
-
-// code taken from bufio/scan.go, modified to not terminal \r from the data.
-func scanLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
-	}
-	if i := bytes.IndexByte(data, '\n'); i >= 0 {
-		// We have a full newline-terminated line.
-		return i + 1, data[0:i], nil
-	}
-	// If we're at EOF, we have a final, non-terminated line. Return it.
-	if atEOF {
-		return len(data), data, nil
-	}
-	// Request more data.
-	return 0, nil, nil
 }
 
 // shouldCreate determines whether snapshots should be created
