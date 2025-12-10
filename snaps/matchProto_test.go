@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/test"
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 const protoFilename = "matchProto_test.snap"
@@ -139,4 +141,35 @@ func TestMatchProto(t *testing.T) {
 			test.Equal(t, 1, testEvents.items[updated])
 		},
 	)
+
+	t.Run("should accept protocmp options", func(t *testing.T) {
+		setupSnapshot(t, protoFilename, false)
+
+		mockT := test.NewMockTestingT(t)
+		mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
+
+		protoMsg := structpb.NewStringValue("test")
+
+		// Should work with protocmp options (even if they don't do anything useful here)
+		// The options are passed through to cmp.Diff
+		MatchProto(mockT, protoMsg, protocmp.Transform(), cmp.AllowUnexported())
+		test.Equal(t, 1, testEvents.items[added])
+	})
+
+	t.Run("should work with multiple protocmp options", func(t *testing.T) {
+		snapPath := setupSnapshot(t, protoFilename, false)
+
+		mockT := test.NewMockTestingT(t)
+		mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
+
+		protoMsg := structpb.NewStringValue("test")
+
+		// Should work with multiple options
+		MatchProto(mockT, protoMsg, protocmp.Transform(), cmp.AllowUnexported())
+		test.Equal(t, 1, testEvents.items[added])
+
+		snap, _, err := getPrevSnapshot("[mock-name - 1]", snapPath)
+		test.NoError(t, err)
+		test.Contains(t, snap, "test")
+	})
 }

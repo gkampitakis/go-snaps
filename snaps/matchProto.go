@@ -27,11 +27,19 @@ Input must be a proto.Message.
 The protobuf data is saved in the snapshot file using protojson. When comparing,
 the snapshot is unmarshaled back into the proto type and compared using
 cmp.Diff with protocmp.Transform().
+
+MatchProto also supports passing protocmp options as additional arguments. These options
+can be used to customize the comparison behavior, e.g., ignoring certain fields:
+
+	snaps.MatchProto(t, &pb.User{Name: "mock-user", Age: 10},
+		protocmp.IgnoreFields(&pb.User{}, "created_at"),
+		protocmp.IgnoreMessages(&pb.Timestamp{}),
+	)
 */
-func (c *Config) MatchProto(t testingT, input proto.Message) {
+func (c *Config) MatchProto(t testingT, input proto.Message, opts ...cmp.Option) {
 	t.Helper()
 
-	matchProto(c, t, input)
+	matchProto(c, t, input, opts...)
 }
 
 /*
@@ -43,14 +51,22 @@ Input must be a proto.Message.
 The protobuf data is saved in the snapshot file using protojson. When comparing,
 the snapshot is unmarshaled back into the proto type and compared using
 cmp.Diff with protocmp.Transform().
+
+MatchProto also supports passing protocmp options as additional arguments. These options
+can be used to customize the comparison behavior, e.g., ignoring certain fields:
+
+	snaps.MatchProto(t, &pb.User{Name: "mock-user", Age: 10},
+		protocmp.IgnoreFields(&pb.User{}, "created_at"),
+		protocmp.IgnoreMessages(&pb.Timestamp{}),
+	)
 */
-func MatchProto(t testingT, input proto.Message) {
+func MatchProto(t testingT, input proto.Message, opts ...cmp.Option) {
 	t.Helper()
 
-	matchProto(&defaultConfig, t, input)
+	matchProto(&defaultConfig, t, input, opts...)
 }
 
-func matchProto(c *Config, t testingT, input proto.Message) {
+func matchProto(c *Config, t testingT, input proto.Message, cmpOpts ...cmp.Option) {
 	t.Helper()
 
 	snapPath, snapPathRel := snapshotPath(c, t.Name(), false)
@@ -99,8 +115,8 @@ func matchProto(c *Config, t testingT, input proto.Message) {
 		return
 	}
 
-	// Compare protos using cmp.Diff with protocmp.Transform()
-	diff := compareProtos(c, t, input, prevSnapshot, snapPathRel, line)
+	// Compare protos using cmp.Diff with protocmp.Transform() and user-provided options
+	diff := compareProtos(c, t, input, prevSnapshot, snapPathRel, line, cmpOpts...)
 	if diff == "" {
 		testEvents.register(passed)
 		return
@@ -125,7 +141,7 @@ func takeProtoSnapshot(jsonData []byte) string {
 }
 
 
-func compareProtos(c *Config, t testingT, current proto.Message, prevSnapshotJSON string, snapPathRel string, line int) string {
+func compareProtos(c *Config, t testingT, current proto.Message, prevSnapshotJSON string, snapPathRel string, line int, cmpOpts ...cmp.Option) string {
 	t.Helper()
 
 	// Create a new instance of the same proto type
@@ -150,11 +166,16 @@ func compareProtos(c *Config, t testingT, current proto.Message, prevSnapshotJSO
 		return prettyDiff(prevSnapshotJSON, string(currentJSON), snapPathRel, line)
 	}
 
-	// Use cmp.Diff with protocmp.Transform() to compare
+	// Combine protocmp.Transform() with user-provided options
+	allOpts := make([]cmp.Option, 0, len(cmpOpts)+1)
+	allOpts = append(allOpts, protocmp.Transform())
+	allOpts = append(allOpts, cmpOpts...)
+
+	// Use cmp.Diff with protocmp.Transform() and user-provided options to compare
 	diff := cmp.Diff(
 		newProto,
 		current,
-		protocmp.Transform(),
+		allOpts...,
 	)
 
 	if diff == "" {
