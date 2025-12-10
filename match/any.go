@@ -107,42 +107,18 @@ func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 	json := b
 	for _, path := range a.paths {
 		if a.handleNestedJSONArrays {
-			expandedPath, err := gjsonExpandPath(json, path)
-			if err != nil {
-				errs = append(errs, a.matcherError(err, path))
-				continue
-			}
+			for _, ap := range expandArrayPaths(json, path) {
+				j, err := a.processPath(json, ap)
 
-			for _, ep := range expandedPath {
-				r := gjson.GetBytes(json, ep)
-				if !r.Exists() {
-					if a.errOnMissingPath {
-						errs = append(errs, a.matcherError(errPathNotFound, path))
-					}
-
-					continue
-				}
-
-				j, err := sjson.SetBytesOptions(json, ep, a.placeholder, setJSONOptions)
 				if err != nil {
 					errs = append(errs, a.matcherError(err, path))
-
 					continue
 				}
 
 				json = j
 			}
 		} else {
-			r := gjson.GetBytes(json, path)
-			if !r.Exists() {
-				if a.errOnMissingPath {
-					errs = append(errs, a.matcherError(errPathNotFound, path))
-				}
-
-				continue
-			}
-
-			j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJSONOptions)
+			j, err := a.processPath(json, path)
 			if err != nil {
 				errs = append(errs, a.matcherError(err, path))
 
@@ -154,4 +130,22 @@ func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 	}
 
 	return json, errs
+}
+
+func (a anyMatcher) processPath(json []byte, path string) ([]byte, error) {
+	r := gjson.GetBytes(json, path)
+	if !r.Exists() {
+		if a.errOnMissingPath {
+			return nil, errPathNotFound
+		}
+
+		return json, nil
+	}
+
+	j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJSONOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return j, nil
 }

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/test"
-	"github.com/tidwall/gjson"
 )
 
 func TestGjsonExpandPath(t *testing.T) {
@@ -71,12 +70,7 @@ func TestGjsonExpandPath(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := gjsonExpandPath(tt.data, tt.path)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("gjsonExpandPath() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				test.Equal(t, tt.expected, got)
+				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
 			})
 		}
 	})
@@ -171,12 +165,7 @@ func TestGjsonExpandPath(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := gjsonExpandPath(tt.data, tt.path)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("gjsonExpandPath() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				test.Equal(t, tt.expected, got)
+				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
 			})
 		}
 	})
@@ -351,18 +340,7 @@ func TestGjsonExpandPath(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				// Validate JSON is well-formed
-				var js interface{}
-				if err := json.Unmarshal(tt.data, &js); err != nil {
-					t.Fatalf("Invalid test JSON: %v", err)
-				}
-
-				got, err := gjsonExpandPath(tt.data, tt.path)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("gjsonExpandPath() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				test.Equal(t, tt.expected, got)
+				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
 			})
 		}
 	})
@@ -484,58 +462,8 @@ func TestGjsonExpandPath(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := gjsonExpandPath(tt.data, tt.path)
-				if tt.expectedError != nil {
-					if err == nil || err.Error() != tt.expectedError.Error() {
-						t.Errorf("expected error %v, got %v", tt.expectedError, err)
-					}
-					return
-				}
-
-				test.NoError(t, err)
-				test.Equal(t, tt.expected, got)
+				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
 			})
 		}
-	})
-}
-
-func TestConstructExpandedPaths(t *testing.T) {
-	t.Run("error cases", func(t *testing.T) {
-		t.Run("should error when multiple # remain with non-array structure", func(t *testing.T) {
-			// This simulates the programmer error case where the structure is a number
-			// but the path still has multiple # (which should never happen in practice)
-			// This tests the internal invariant check
-			data := []byte(`{"items": 5}`)
-			path := "items.#.nested.#.value"
-
-			// Get a gjson.Result that is a number
-			numOfEntries := gjson.GetBytes(data, "items")
-
-			// Try to expand a path with multiple # when structure is just a number
-			_, err := constructExpandedPaths(path, numOfEntries)
-
-			if err == nil {
-				t.Error("expected error but got nil")
-			}
-			test.Equal(t, "programmer error: there should only be 1 # left", err.Error())
-		})
-
-		t.Run("should propagate error from recursive call", func(t *testing.T) {
-			// This tests error propagation through the recursive structure
-			// We create a nested array where the inner structure will trigger an error
-			data := []byte(`{"outer": [[5]]}`)
-			path := "outer.#.#.nested.#.value"
-
-			// Get the nested array structure
-			numOfEntries := gjson.GetBytes(data, "outer.#.#")
-
-			// This should trigger the error in a nested recursive call
-			_, err := constructExpandedPaths(path, numOfEntries)
-
-			if err == nil {
-				t.Error("expected error but got nil")
-			}
-			test.Equal(t, "programmer error: there should only be 1 # left", err.Error())
-		})
 	})
 }
