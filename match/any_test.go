@@ -101,21 +101,6 @@ func TestAnyMatcher(t *testing.T) {
 		)
 
 		t.Run("HandleNestedJSONArrays", func(t *testing.T) {
-			t.Run("should return error in case of missing path", func(t *testing.T) {
-				a := Any("results.#.packages.#.vulnerabilities").HandleNestedJSONArrays()
-
-				res, errs := a.JSON(j)
-
-				test.Equal(t, j, res)
-				test.Equal(t, 1, len(errs))
-
-				err := errs[0]
-
-				test.Equal(t, "path does not exist", err.Reason.Error())
-				test.Equal(t, "Any", err.Matcher)
-				test.Equal(t, "results.#.packages.#.vulnerabilities", err.Path)
-			})
-
 			t.Run("should aggregate errors", func(t *testing.T) {
 				a := Any(
 					"results.#.packages.#.vulnerabilities",

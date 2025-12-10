@@ -32,53 +32,38 @@ type MatcherError struct {
 	Path    string
 }
 
-// gjsonExpandPath takes a gjson path, checks for nested access of arrays
-// and returns all possible paths to be used for setting values
-func gjsonExpandPath(data []byte, path string) ([]string, error) {
-	// if no array access, return the path as is
-	if !strings.Contains(path, "#") {
-		return []string{path}, nil
+func expandArrayPaths(jsonInput []byte, path string) []string {
+	// split on the first intermediate #, if present
+	pathToArray, restOfPath, hasArrayPlaceholder := strings.Cut(path, ".#.")
+
+	// if there is no intermediate placeholder, check for (and cut) a terminal one
+	if !hasArrayPlaceholder {
+		pathToArray, hasArrayPlaceholder = strings.CutSuffix(path, ".#")
 	}
 
-	// Get the path ending with #
-	// E.g. results.#.packages.#.vulnerabilities => results.#.packages.#
-	numOfEntriesPath := path[:strings.LastIndex(path, "#")+1]
-	// This returns a potentially nested array of array lengths
-	numOfEntries := gjson.GetBytes(data, numOfEntriesPath)
-	if !numOfEntries.Exists() {
-		return nil, errPathNotFound
+	// if there are no array placeholders in the path, just return it
+	if !hasArrayPlaceholder {
+		return []string{path}
 	}
 
-	return constructExpandedPaths(path, numOfEntries)
-}
-
-func constructExpandedPaths(path string, structure gjson.Result) ([]string, error) {
-	paths := []string{}
-
-	if structure.IsArray() {
-		// More nesting to go
-		for i, res := range structure.Array() {
-			p, err := constructExpandedPaths(
-				// Replace the first # with actual index
-				strings.Replace(path, "#", strconv.Itoa(i), 1),
-				res,
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			paths = append(paths, p...)
-		}
-	} else {
-		// Otherwise assume it is a number
-		if strings.Count(path, "#") != 1 {
-			return nil, errors.New("programmer error: there should only be 1 # left")
-		}
-		for i2 := range int(structure.Int()) {
-			newPath := strings.Replace(path, "#", strconv.Itoa(i2), 1)
-			paths = append(paths, newPath)
-		}
+	r := gjson.GetBytes(jsonInput, pathToArray)
+	// skip properties that are not arrays
+	if !r.IsArray() {
+		return []string{}
 	}
 
-	return paths, nil
+	// if property exists and is actually an array, build out the path to each item
+	// within that array
+	paths := make([]string, 0, len(r.Array()))
+
+	for i := range r.Array() {
+		static := pathToArray + "." + strconv.Itoa(i)
+
+		if restOfPath != "" {
+			static += "." + restOfPath
+		}
+		paths = append(paths, expandArrayPaths(jsonInput, static)...)
+	}
+
+	return paths
 }
