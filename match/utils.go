@@ -32,7 +32,20 @@ type MatcherError struct {
 	Path    string
 }
 
-func expandArrayPaths(jsonInput []byte, path string) []string {
+func expandArrayPaths(jsonInput []byte, path string) ([]string, error) {
+	if path == "#." {
+		r := gjson.ParseBytes(jsonInput)
+		if !r.IsArray() {
+			return []string{}, nil
+		}
+
+		paths := make([]string, 0, len(r.Array()))
+		for i := range r.Array() {
+			paths = append(paths, strconv.Itoa(i))
+		}
+		return paths, nil
+	}
+
 	// split on the first intermediate #, if present
 	pathToArray, restOfPath, hasArrayPlaceholder := strings.Cut(path, ".#.")
 
@@ -43,13 +56,16 @@ func expandArrayPaths(jsonInput []byte, path string) []string {
 
 	// if there are no array placeholders in the path, just return it
 	if !hasArrayPlaceholder {
-		return []string{path}
+		return []string{path}, nil
 	}
 
 	r := gjson.GetBytes(jsonInput, pathToArray)
+	if !r.Exists() {
+		return []string{}, errPathNotFound
+	}
 	// skip properties that are not arrays
 	if !r.IsArray() {
-		return []string{}
+		return []string{}, nil
 	}
 
 	// if property exists and is actually an array, build out the path to each item
@@ -62,8 +78,13 @@ func expandArrayPaths(jsonInput []byte, path string) []string {
 		if restOfPath != "" {
 			static += "." + restOfPath
 		}
-		paths = append(paths, expandArrayPaths(jsonInput, static)...)
+		nestedPaths, err := expandArrayPaths(jsonInput, static)
+		if err != nil {
+			return nil, err
+		}
+
+		paths = append(paths, nestedPaths...)
 	}
 
-	return paths
+	return paths, nil
 }

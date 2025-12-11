@@ -62,15 +62,30 @@ func TestGjsonExpandPath(t *testing.T) {
 			{
 				name:     "root level array",
 				data:     []byte(`[1, 2, 3]`),
-				path:     "#.value",
-				expected: []string{"0.value", "1.value", "2.value"},
+				path:     "#.",
+				expected: []string{"0", "1", "2"},
+				wantErr:  false,
+			},
+			{
+				name: "root level array with nested arrays",
+				data: []byte(`[
+					{"results": ["data1", "data2"]},
+					{"results": ["data3", "data4", "data5"]}
+				]`),
+				path:     "#.results.#",
+				expected: []string{"#.results.0", "#.results.1"},
 				wantErr:  false,
 			},
 		}
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
+				got, err := expandArrayPaths(tt.data, tt.path)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("gjsonExpandPath() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				test.Equal(t, tt.expected, got)
 			})
 		}
 	})
@@ -165,7 +180,12 @@ func TestGjsonExpandPath(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
+				got, err := expandArrayPaths(tt.data, tt.path)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("gjsonExpandPath() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				test.Equal(t, tt.expected, got)
 			})
 		}
 	})
@@ -340,7 +360,12 @@ func TestGjsonExpandPath(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
+				got, err := expandArrayPaths(tt.data, tt.path)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("gjsonExpandPath() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				test.Equal(t, tt.expected, got)
 			})
 		}
 	})
@@ -462,7 +487,16 @@ func TestGjsonExpandPath(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
+				got, err := expandArrayPaths(tt.data, tt.path)
+				if tt.expectedError != nil {
+					if err == nil || err.Error() != tt.expectedError.Error() {
+						t.Errorf("expected error %v, got %v", tt.expectedError, err)
+					}
+					return
+				}
+
+				test.NoError(t, err)
+				test.Equal(t, tt.expected, got)
 			})
 		}
 	})

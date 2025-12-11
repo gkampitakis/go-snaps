@@ -19,13 +19,12 @@ func TestAnyMatcher(t *testing.T) {
 
 	t.Run("should allow overriding config values", func(t *testing.T) {
 		p := []string{"test.1", "test.2"}
-		a := Any(p...).ErrOnMissingPath(false).Placeholder("hello").HandleNestedJSONArrays()
+		a := Any(p...).ErrOnMissingPath(false).Placeholder("hello")
 
 		test.False(t, a.errOnMissingPath)
 		test.Equal(t, "hello", a.placeholder)
 		test.Equal(t, p, a.paths)
 		test.Equal(t, "Any", a.name)
-		test.True(t, a.handleNestedJSONArrays)
 	})
 
 	t.Run("JSON", func(t *testing.T) {
@@ -52,11 +51,16 @@ func TestAnyMatcher(t *testing.T) {
 		})
 
 		t.Run("should aggregate errors", func(t *testing.T) {
-			a := Any("user.2", "user.3")
+			a := Any(
+				"user.2",
+				"user.3",
+				"results.#.packages.#.vulnerabilities",
+				"results.#.packages.#.name",
+			)
 			res, errs := a.JSON(j)
 
 			test.Equal(t, j, res)
-			test.Equal(t, 2, len(errs))
+			test.Equal(t, 4, len(errs))
 		})
 
 		t.Run("should replace value and return new json", func(t *testing.T) {
@@ -100,16 +104,51 @@ func TestAnyMatcher(t *testing.T) {
 			},
 		)
 
-		t.Run("HandleNestedJSONArrays", func(t *testing.T) {
-			t.Run("should aggregate errors", func(t *testing.T) {
-				a := Any(
-					"results.#.packages.#.vulnerabilities",
-					"results.#.packages.#.name",
-				).HandleNestedJSONArrays()
+		t.Run("nested json arrays", func(t *testing.T) {
+			t.Run("should replace values with root level nested arrays", func(t *testing.T) {
+				j := []byte(`[
+					{
+						"results": ["mock-data-1", "mock-data-2" ],
+					},
+					{
+						"results": ["mock-data-1", "mock-data-2" ],
+					},
+					{
+						"results": ["mock-data-1", "mock-data-2" ],
+					},
+				]`)
+
+				a := Any("#.results.#")
+
 				res, errs := a.JSON(j)
 
-				test.Equal(t, j, res)
-				test.Equal(t, 2, len(errs))
+				expected := `[
+					{
+						"results": ["<Any value>", "<Any value>" ],
+					},
+					{
+						"results": ["<Any value>", "<Any value>" ],
+					},
+					{
+						"results": ["<Any value>", "<Any value>" ],
+					},
+				]`
+
+				test.Equal(t, 0, len(errs))
+				test.Equal(t, expected, string(res))
+			})
+
+			t.Run("should replace values for single array", func(t *testing.T) {
+				j := []byte(`[1, 2, 3, 4]`)
+
+				a := Any("#.")
+
+				res, errs := a.JSON(j)
+
+				expected := `["<Any value>", "<Any value>", "<Any value>", "<Any value>"]`
+
+				test.Equal(t, 0, len(errs))
+				test.Equal(t, expected, string(res))
 			})
 
 			t.Run("should replace value and return new json", func(t *testing.T) {
@@ -142,7 +181,7 @@ func TestAnyMatcher(t *testing.T) {
 					"results.#.packages.#.vulnerabilities",
 					"results.#.packages.#.name",
 					"missing.key",
-				).ErrOnMissingPath(false).HandleNestedJSONArrays()
+				).ErrOnMissingPath(false)
 				res, errs := a.JSON(j)
 
 				expected := `{
