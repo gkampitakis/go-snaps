@@ -2,6 +2,7 @@ package match
 
 import (
 	"bytes"
+	"errors"
 
 	"github.com/gkampitakis/go-snaps/match/internal/yaml"
 	"github.com/goccy/go-yaml/parser"
@@ -10,11 +11,10 @@ import (
 )
 
 type anyMatcher struct {
-	paths                  []string
-	placeholder            any
-	errOnMissingPath       bool
-	handleNestedJSONArrays bool
-	name                   string
+	paths            []string
+	placeholder      any
+	errOnMissingPath bool
+	name             string
 }
 
 func (a *anyMatcher) matcherError(err error, path string) MatcherError {
@@ -53,16 +53,6 @@ func (a *anyMatcher) Placeholder(p any) *anyMatcher {
 // that doesn't exist
 func (a *anyMatcher) ErrOnMissingPath(e bool) *anyMatcher {
 	a.errOnMissingPath = e
-	return a
-}
-
-// HandleNestedJSONArrays enables support for nested arrays when using Any matcher in JSON
-// E.g. results.#.packages.#.vulnerabilities
-//
-// see issue https://github.com/gkampitakis/go-snaps/issues/84 for details.
-// Disabled by default for backward compatibility and will be enabled by default if it doesn't introduce any issues in future.
-func (a *anyMatcher) HandleNestedJSONArrays() *anyMatcher {
-	a.handleNestedJSONArrays = true
 	return a
 }
 
@@ -106,22 +96,20 @@ func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 
 	json := b
 	for _, path := range a.paths {
-		if a.handleNestedJSONArrays {
-			for _, ap := range expandArrayPaths(json, path) {
-				j, err := a.processPath(json, ap)
-
-				if err != nil {
-					errs = append(errs, a.matcherError(err, path))
-					continue
-				}
-
-				json = j
+		expandedPaths, err := expandArrayPaths(json, path)
+		if err != nil {
+			if errors.Is(err, errPathNotFound) && !a.errOnMissingPath {
+				continue
 			}
-		} else {
-			j, err := a.processPath(json, path)
+
+			errs = append(errs, a.matcherError(err, path))
+			continue
+		}
+
+		for _, ep := range expandedPaths {
+			j, err := a.processPath(json, ep)
 			if err != nil {
 				errs = append(errs, a.matcherError(err, path))
-
 				continue
 			}
 

@@ -206,7 +206,7 @@ func TestMatchers(t *testing.T) {
 					]
 				}`)
 
-			a := match.Any("repositories.#.commits.#.files.#.checksum").HandleNestedJSONArrays()
+			a := match.Any("repositories.#.commits.#.files.#.checksum")
 
 			res, errs := a.JSON(j)
 			if len(errs) != 0 {
