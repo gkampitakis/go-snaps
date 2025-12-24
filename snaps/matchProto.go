@@ -82,8 +82,8 @@ func matchProto(c *Config, t testingT, input proto.Message, cmpOpts ...cmp.Optio
 
 	// Marshal proto to JSON for storage with consistent formatting
 	opts := protojson.MarshalOptions{
-		Multiline: true,
-		Indent:    " ",
+		Multiline:       true,
+		Indent:          " ",
 		EmitUnpopulated: false,
 	}
 	protoJSON, err := opts.Marshal(input)
@@ -140,8 +140,7 @@ func takeProtoSnapshot(jsonData []byte) string {
 	return strings.TrimSuffix(string(jsonData), "\n")
 }
 
-
-func compareProtos(c *Config, t testingT, current proto.Message, prevSnapshotJSON string, snapPathRel string, line int, cmpOpts ...cmp.Option) string {
+func compareProtos(c *Config, t testingT, current proto.Message, prevSnapshotJSON, snapPathRel string, line int, cmpOpts ...cmp.Option) string {
 	t.Helper()
 
 	// Create a new instance of the same proto type

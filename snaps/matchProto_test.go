@@ -5,8 +5,8 @@ import (
 
 	"github.com/gkampitakis/go-snaps/internal/test"
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const protoFilename = "matchProto_test.snap"
