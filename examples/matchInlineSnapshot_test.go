@@ -19,7 +19,7 @@ func TestMatchInlineSnapshot(t *testing.T) {
 		snaps.MatchInlineSnapshot(
 			t,
 			u,
-			snaps.Inline("struct { User string; Age int }{User:\"mock-name\", Age:30}"),
+			snaps.Inline(`struct { User string; Age int }{User:"mock-name", Age:30}`),
 		)
 	})
 
@@ -41,7 +41,7 @@ line3`))
 		snaps.MatchInlineSnapshot(
 			t,
 			[]string{"a", "b", "c"},
-			snaps.Inline("[]string{\"a\", \"b\", \"c\"}"),
+			snaps.Inline(`[]string{"a", "b", "c"}`),
 		)
 	})
 
@@ -93,8 +93,8 @@ line3`))
 		snaps.MatchInlineSnapshot(t, "hello\tworld", snaps.Inline("hello world"))
 		snaps.MatchInlineSnapshot(t, "line1\nline2", snaps.Inline(`line1
 line2`))
-		snaps.MatchInlineSnapshot(t, "quotes: \"test\"", snaps.Inline("quotes: \"test\""))
-		snaps.MatchInlineSnapshot(t, `quotes: "test"`, snaps.Inline("quotes: \"test\""))
+		snaps.MatchInlineSnapshot(t, "quotes: \"test\"", snaps.Inline(`quotes: "test"`))
+		snaps.MatchInlineSnapshot(t, `quotes: "test"`, snaps.Inline(`quotes: "test"`))
 	})
 
 	t.Run("should handle multiple inline snapshots in sequence", func(t *testing.T) {
@@ -109,13 +109,11 @@ line2`))
 
 		snaps.MatchInlineSnapshot(
 			t,
-			p1,
-			snaps.Inline("examples.Product{ID:1, Name:\"Widget\", Price:9.99}"),
+			p1, snaps.Inline(`examples.Product{ID:1, Name:"Widget", Price:9.99}`),
 		)
 		snaps.MatchInlineSnapshot(
 			t,
-			p2,
-			snaps.Inline("examples.Product{ID:2, Name:\"Gadget\", Price:19.99}"),
+			p2, snaps.Inline(`examples.Product{ID:2, Name:"Gadget", Price:19.99}`),
 		)
 	})
 

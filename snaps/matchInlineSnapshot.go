@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -226,10 +227,7 @@ func registerInlineCallIdx(filename string) error {
 /* AST Code */
 
 func createInlineArgument(s string) ast.Expr {
-	v := fmt.Sprintf("`%s`", s)
-	if isSingleline(s) {
-		v = fmt.Sprintf("%q", s)
-	}
+	v := getInlineStringValue(s)
 
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
@@ -241,6 +239,14 @@ func createInlineArgument(s string) ast.Expr {
 			Value: v,
 		}},
 	}
+}
+
+func getInlineStringValue(s string) string {
+	if strconv.Quote(s) != `"`+s+`"` {
+		return fmt.Sprintf("`%s`", s)
+	}
+
+	return fmt.Sprintf("%q", s)
 }
 
 func traverseMatchInlineSnapshotAst(astFile *ast.File, fn func(*ast.CallExpr) bool) {
