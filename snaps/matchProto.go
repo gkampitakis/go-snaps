@@ -116,7 +116,7 @@ func matchProto(c *Config, t testingT, input proto.Message, cmpOpts ...cmp.Optio
 	}
 
 	// Compare protos using cmp.Diff with protocmp.Transform() and user-provided options
-	diff := compareProtos(c, t, input, prevSnapshot, snapPathRel, line, cmpOpts...)
+	diff := compareProtos(t, input, prevSnapshot, snapPathRel, line, cmpOpts...)
 	if diff == "" {
 		testEvents.register(passed)
 		return
@@ -140,7 +140,14 @@ func takeProtoSnapshot(jsonData []byte) string {
 	return strings.TrimSuffix(string(jsonData), "\n")
 }
 
-func compareProtos(c *Config, t testingT, current proto.Message, prevSnapshotJSON, snapPathRel string, line int, cmpOpts ...cmp.Option) string {
+func compareProtos(
+	t testingT,
+	current proto.Message,
+	prevSnapshotJSON,
+	snapPathRel string,
+	line int,
+	cmpOpts ...cmp.Option,
+) string {
 	t.Helper()
 
 	// Create a new instance of the same proto type
