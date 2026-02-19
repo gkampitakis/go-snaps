@@ -42,7 +42,7 @@ type syncRegistry struct {
 
 // Returns the id of the test in the snapshot
 // Form [<test-name> - <occurrence>]
-func (s *syncRegistry) getTestID(snapPath, testName string) string {
+func (s *syncRegistry) getTestID(snapPath, testName, label string) string {
 	s.Lock()
 
 	if _, exists := s.running[snapPath]; !exists {
@@ -55,7 +55,11 @@ func (s *syncRegistry) getTestID(snapPath, testName string) string {
 	c := s.running[snapPath][testName]
 	s.Unlock()
 
-	return fmt.Sprintf("[%s - %d]", testName, c)
+	if label != "" {
+		label = " - " + label
+	}
+
+	return fmt.Sprintf("[%s - %d%s]", testName, c, label)
 }
 
 // reset sets only the number of running registry for the given test to 0.
