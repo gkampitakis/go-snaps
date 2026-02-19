@@ -562,11 +562,15 @@ func TestNaturalSort(t *testing.T) {
 	t.Run("should sort in descending order", func(t *testing.T) {
 		items := []string{
 			"[TestExample/Test_Case_1#74 - 1]",
+			"[TestExample/Test_Case_2#01 - 1 - b]",
 			"[TestExample/Test_Case_1#05 - 1]",
 			"[TestExample/Test_Case_1#09 - 1]",
+			"[TestExample/Test_Case_2#01 - 2 - a]",
+			"[TestExample/Test_Case_1#74 - 1 - my label]",
 			"[TestExample - 1]",
 			"[TestExample/Test_Case_1#71 - 1]",
-			"[TestExample/Test_Case_1#100 - 1]",
+			"[TestExample/Test_Case_2#01 - 3 - c]",
+			"[TestExample/Test_Case_1#100 - 1 - another label]",
 			"[TestExample/Test_Case_1#7 - 1]",
 		}
 		expected := []string{
@@ -575,8 +579,12 @@ func TestNaturalSort(t *testing.T) {
 			"[TestExample/Test_Case_1#7 - 1]",
 			"[TestExample/Test_Case_1#09 - 1]",
 			"[TestExample/Test_Case_1#71 - 1]",
+			"[TestExample/Test_Case_1#74 - 1 - my label]",
 			"[TestExample/Test_Case_1#74 - 1]",
-			"[TestExample/Test_Case_1#100 - 1]",
+			"[TestExample/Test_Case_1#100 - 1 - another label]",
+			"[TestExample/Test_Case_2#01 - 1 - b]",
+			"[TestExample/Test_Case_2#01 - 2 - a]",
+			"[TestExample/Test_Case_2#01 - 3 - c]",
 		}
 
 		slices.SortFunc(items, naturalSort)
