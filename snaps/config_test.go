@@ -14,6 +14,7 @@ func TestWithConfig(t *testing.T) {
 		test.Equal(t, "__snapshots__", c.snapsDir)
 		test.Equal(t, "", c.filename)
 		test.Equal(t, "", c.extension)
+		test.Equal(t, "", c.label)
 		test.Nil(t, c.update)
 		test.Nil(t, c.json)
 		test.Nil(t, c.serializer)
@@ -32,6 +33,11 @@ func TestWithConfig(t *testing.T) {
 	t.Run("Ext", func(t *testing.T) {
 		c := WithConfig(Ext(".txt"))
 		test.Equal(t, ".txt", c.extension)
+	})
+
+	t.Run("Label", func(t *testing.T) {
+		c := WithConfig(Label("my_label"))
+		test.Equal(t, "my_label", c.label)
 	})
 
 	t.Run("Update", func(t *testing.T) {

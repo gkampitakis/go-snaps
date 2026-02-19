@@ -145,14 +145,21 @@ func getTestID(b []byte) (string, bool) {
 		return "", false
 	}
 
-	// needs to contain ' - '
-	separator := bytes.Index(b, []byte(" - "))
-	if separator == -1 {
+	// needs to contain at least one ' - ' seperator
+	firstSeparator := bytes.Index(b, []byte(" - "))
+	if firstSeparator == -1 {
 		return "", false
 	}
 
-	// needs to have a number after the separator
-	if !isNumber(b[separator+3 : len(b)-1]) {
+	// if there is a label, there will be a second seperator
+	secondSeparator := bytes.LastIndex(b, []byte(" - "))
+
+	if secondSeparator == -1 || secondSeparator == firstSeparator {
+		secondSeparator = len(b) - 1
+	}
+
+	// needs to have a number after the first separator
+	if !isNumber(b[firstSeparator+3 : secondSeparator]) {
 		return "", false
 	}
 
