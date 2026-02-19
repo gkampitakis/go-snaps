@@ -550,7 +550,7 @@ func TestGetTestID(t *testing.T) {
 			// indexing beyond the capacity will cause test to panic
 			b := make([]byte, 0, len(tc.input))
 			b = append(b, []byte(tc.input)...)
-			id, ok := getTestID(b)
+			id, _, ok := getTestID(b)
 
 			test.Equal(t, tc.valid, ok)
 			test.Equal(t, tc.expectedID, id)
