@@ -505,12 +505,27 @@ func TestGetTestID(t *testing.T) {
 		valid      bool
 	}{
 		{"[Test/something - 10]", "Test/something - 10", true},
+		{"[Test/something - 10 - my label]", "Test/something - 10 - my label", true},
 		{input: "[Test/something - 100231231dsada]", expectedID: "", valid: false},
 		{input: "[Test/something - 100231231 ]", expectedID: "", valid: false},
 		{input: "[Test/something -100231231 ]", expectedID: "", valid: false},
 		{input: "[Test/something- 100231231]", expectedID: "", valid: false},
 		{input: "[Test/something - a ]", expectedID: "", valid: false},
+		{input: "[Test/something - 100231231dsada - my label]", expectedID: "", valid: false},
+		// todo: decide if this should actually be considered valid
+		//  (if not, we should probably always string.Trim labels)
+		{input: "[Test/something - 100231231 - my label ]", expectedID: "Test/something - 100231231 - my label ", valid: true},
+		{input: "[Test/something -100231231 - my label ]", expectedID: "", valid: false},
+		{input: "[Test/something - 100231231 -my label]", expectedID: "", valid: false},
+		{input: "[Test/something - 100231231-my label]", expectedID: "", valid: false},
+		{input: "[Test/something - 100231231- my label]", expectedID: "", valid: false},
+		{input: "[Test/something- 100231231 - my label]", expectedID: "", valid: false},
+		{input: "[Test/something - a ]", expectedID: "", valid: false},
+		{input: "[Test/something - a]", expectedID: "", valid: false},
+		{input: "[Test/something - a - my label]", expectedID: "", valid: false},
+		{input: "[Test/something - a - my label ]", expectedID: "", valid: false},
 		{"[Test123 - Some Test]", "", false},
+		{"[Test123 - 1 - Some Test]", "Test123 - 1 - Some Test", true},
 		{"", "", false},
 		{"Invalid input", "", false},
 		{"[Test - Missing Closing Bracket", "", false},
