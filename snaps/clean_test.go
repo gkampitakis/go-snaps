@@ -176,8 +176,7 @@ func TestExamineFiles(t *testing.T) {
 }
 
 func TestExamineSnaps(t *testing.T) {
-	// something //
-	testIdsMapping := map[string]string{
+	testIdLabelMappings := map[string]string{
 		"TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
 		"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1",
 		"TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
@@ -204,7 +203,7 @@ func TestExamineSnaps(t *testing.T) {
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdsMapping)
+		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
 
 		test.Equal(t, []string{}, obsolete)
 		test.NoError(t, err)
@@ -226,7 +225,7 @@ func TestExamineSnaps(t *testing.T) {
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdsMapping)
+		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -257,7 +256,7 @@ func TestExamineSnaps(t *testing.T) {
 		delete(tests[used[0]], "TestDir1_3/TestSimple")
 		delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdsMapping)
+		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -318,7 +317,7 @@ string hello world 2 2 1
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdsMapping)
+		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
 
 		test.NoError(t, err)
 		test.Equal(t, 0, len(obsolete))
@@ -354,7 +353,7 @@ string hello world 2 2 1
 			delete(tests[used[0]], "TestDir1_3/TestSimple")
 			delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-			obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdsMapping)
+			obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
 
 			test.NoError(t, err)
 			test.Equal(t, []string{
@@ -381,12 +380,7 @@ string hello world 2 2 1
 }
 
 func TestExamineSnaps_WithLabels(t *testing.T) {
-	// label added
-	// label changed
-	// label removed
-
-	// something //
-	testIdsMapping := map[string]string{
+	testIdLabelMappings := map[string]string{
 		"TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
 		"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1 - my snapshot",
 		"TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
@@ -410,7 +404,7 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdsMapping)
+		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
 
 		test.Equal(t, []string{}, obsolete)
 		test.NoError(t, err)
@@ -432,7 +426,7 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdsMapping)
+		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -462,7 +456,7 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 		// removing tests from the map means those tests are no longer used
 		delete(tests[used[0]], "TestDir1_3/TestSimple")
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdsMapping)
+		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
