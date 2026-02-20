@@ -284,7 +284,8 @@ func examineSnaps(
 				continue
 			}
 
-			if !registeredTests.Has(testIDWithoutLabel) && !testSkipped(testIDWithoutLabel, runOnly) {
+			if !registeredTests.Has(testIDWithoutLabel) &&
+				!testSkipped(testIDWithoutLabel, runOnly) {
 				obsoleteTests = append(obsoleteTests, testIDWithoutLabel)
 				needsUpdating = true
 

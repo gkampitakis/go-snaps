@@ -203,7 +203,15 @@ func TestExamineSnaps(t *testing.T) {
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
+		obsolete, isDirty, err := examineSnaps(
+			tests,
+			used,
+			"",
+			1,
+			shouldUpdate,
+			sort,
+			testIdLabelMappings,
+		)
 
 		test.Equal(t, []string{}, obsolete)
 		test.NoError(t, err)
@@ -225,7 +233,15 @@ func TestExamineSnaps(t *testing.T) {
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
+		obsolete, isDirty, err := examineSnaps(
+			tests,
+			used,
+			"",
+			1,
+			shouldUpdate,
+			sort,
+			testIdLabelMappings,
+		)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -256,7 +272,15 @@ func TestExamineSnaps(t *testing.T) {
 		delete(tests[used[0]], "TestDir1_3/TestSimple")
 		delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
+		obsolete, isDirty, err := examineSnaps(
+			tests,
+			used,
+			"",
+			1,
+			shouldUpdate,
+			sort,
+			testIdLabelMappings,
+		)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -317,7 +341,15 @@ string hello world 2 2 1
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
+		obsolete, isDirty, err := examineSnaps(
+			tests,
+			used,
+			"",
+			1,
+			shouldUpdate,
+			sort,
+			testIdLabelMappings,
+		)
 
 		test.NoError(t, err)
 		test.Equal(t, 0, len(obsolete))
@@ -353,7 +385,15 @@ string hello world 2 2 1
 			delete(tests[used[0]], "TestDir1_3/TestSimple")
 			delete(tests[used[1]], "TestDir2_1/TestSimple")
 
-			obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
+			obsolete, isDirty, err := examineSnaps(
+				tests,
+				used,
+				"",
+				1,
+				shouldUpdate,
+				sort,
+				testIdLabelMappings,
+			)
 
 			test.NoError(t, err)
 			test.Equal(t, []string{
@@ -404,7 +444,15 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
+		obsolete, isDirty, err := examineSnaps(
+			tests,
+			used,
+			"",
+			1,
+			shouldUpdate,
+			sort,
+			testIdLabelMappings,
+		)
 
 		test.Equal(t, []string{}, obsolete)
 		test.NoError(t, err)
@@ -426,11 +474,27 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 		// Removing the test entirely
 		delete(tests[used[1]], "TestDir2_2/TestSimple")
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
+		obsolete, isDirty, err := examineSnaps(
+			tests,
+			used,
+			"",
+			1,
+			shouldUpdate,
+			sort,
+			testIdLabelMappings,
+		)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
-		test.Equal(t, []string{"TestDir1_2/TestSimple - 1", "TestDir1_3/TestSimple - 2", "TestDir2_2/TestSimple - 1"}, obsolete)
+		test.Equal(
+			t,
+			[]string{
+				"TestDir1_2/TestSimple - 1",
+				"TestDir1_3/TestSimple - 2",
+				"TestDir2_2/TestSimple - 1",
+			},
+			obsolete,
+		)
 		test.NoError(t, err)
 
 		// Content of snaps is not changed
@@ -456,7 +520,15 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 		// removing tests from the map means those tests are no longer used
 		delete(tests[used[0]], "TestDir1_3/TestSimple")
 
-		obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort, testIdLabelMappings)
+		obsolete, isDirty, err := examineSnaps(
+			tests,
+			used,
+			"",
+			1,
+			shouldUpdate,
+			sort,
+			testIdLabelMappings,
+		)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
 
@@ -665,7 +737,11 @@ func TestGetTestID(t *testing.T) {
 		{input: "[Test/something - 100231231dsada - my label]", expectedID: "", valid: false},
 		// todo: decide if this should actually be considered valid
 		//  (if not, we should probably always string.Trim labels)
-		{input: "[Test/something - 100231231 - my label ]", expectedID: "Test/something - 100231231 - my label ", valid: true},
+		{
+			input:      "[Test/something - 100231231 - my label ]",
+			expectedID: "Test/something - 100231231 - my label ",
+			valid:      true,
+		},
 		{input: "[Test/something -100231231 - my label ]", expectedID: "", valid: false},
 		{input: "[Test/something - 100231231 -my label]", expectedID: "", valid: false},
 		{input: "[Test/something - 100231231-my label]", expectedID: "", valid: false},
