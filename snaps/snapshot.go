@@ -38,7 +38,7 @@ type syncRegistry struct {
 	running map[string]map[string]int
 	cleanup map[string]map[string]int
 
-	testIds map[string]string
+	labeled map[string]string
 
 	sync.Mutex
 }
@@ -64,7 +64,7 @@ func (s *syncRegistry) getTestID(snapPath, testName, label string) string {
 	}
 
 	testIdWithLabel := testIdWithoutLabel + label
-	s.testIds[testIdWithoutLabel] = testIdWithLabel
+	s.labeled[testIdWithoutLabel] = testIdWithLabel
 
 	s.Unlock()
 
@@ -82,7 +82,7 @@ func newRegistry() *syncRegistry {
 	return &syncRegistry{
 		running: make(map[string]map[string]int),
 		cleanup: make(map[string]map[string]int),
-		testIds: make(map[string]string),
+		labeled: make(map[string]string),
 		Mutex:   sync.Mutex{},
 	}
 }
