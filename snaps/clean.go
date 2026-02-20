@@ -274,9 +274,9 @@ func examineSnaps(
 			}
 			testIDs = append(testIDs, testIDWithLabel)
 
-			currentTestIdWithLabel, _ := testIdLabelMappings[testIDWithoutLabel]
+			currentTestIdWithLabel, ok := testIdLabelMappings[testIDWithoutLabel]
 
-			if currentTestIdWithLabel != testIDWithLabel {
+			if ok && currentTestIdWithLabel != testIDWithLabel {
 				obsoleteTests = append(obsoleteTests, testIDWithLabel)
 				needsUpdating = true
 
