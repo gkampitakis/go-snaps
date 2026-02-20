@@ -116,7 +116,7 @@ func Clean(m *testing.M, opts ...CleanOpts) (bool, error) {
 		count,
 		shouldClean,
 		opt.Sort,
-		testsRegistry.testIds,
+		testsRegistry.labeled,
 	)
 	if err != nil {
 		return snapsDirty || filesDirty, err
@@ -246,7 +246,7 @@ func examineSnaps(
 	count int,
 	shouldUpdate,
 	sort bool,
-	testIdsMapping map[string]string,
+	testIdLabelMappings map[string]string,
 ) ([]string, bool, error) {
 	obsoleteTests := []string{}
 	tests := map[string]string{}
@@ -274,14 +274,9 @@ func examineSnaps(
 			}
 			testIDs = append(testIDs, testIDWithLabel)
 
-			currentTestIdWithLabel, ok := testIdsMapping[testIDWithoutLabel]
-
-			if !ok {
-				fmt.Printf("missing %s\n", testIDWithoutLabel)
-			}
+			currentTestIdWithLabel, _ := testIdLabelMappings[testIDWithoutLabel]
 
 			if currentTestIdWithLabel != testIDWithLabel {
-				fmt.Printf("%s != %s\n", currentTestIdWithLabel, testIDWithLabel)
 				obsoleteTests = append(obsoleteTests, testIDWithLabel)
 				needsUpdating = true
 
