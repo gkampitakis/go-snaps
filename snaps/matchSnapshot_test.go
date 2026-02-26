@@ -2,6 +2,7 @@ package snaps
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -262,6 +263,59 @@ func TestMatchSnapshot(t *testing.T) {
 		}
 
 		MatchSnapshot(mockT)
+	})
+
+	t.Run("printer", func(t *testing.T) {
+		t.Run("should create snapshot with custom printer output", func(t *testing.T) {
+			snapPath := setupSnapshot(t, fileName, false)
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
+
+			WithConfig(Serializer(func(v any) string {
+				return fmt.Sprintf("serialized:%v", v)
+			})).MatchSnapshot(mockT, "hello world")
+
+			test.Equal(t,
+				"\n[mock-name - 1]\nserialized:hello world\n---\n",
+				test.GetFileContent(t, snapPath),
+			)
+			test.Equal(t, 1, testEvents.items[added])
+		})
+
+		t.Run("should pass when printer output matches snapshot", func(t *testing.T) {
+			setupSnapshot(t, fileName, false)
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
+
+			s := WithConfig(Serializer(func(v any) string { return fmt.Sprint(v) }))
+
+			s.MatchSnapshot(mockT, "hello world")
+			test.Equal(t, 1, testEvents.items[added])
+
+			// Resetting registry to emulate the same MatchStandaloneSnapshot call
+			testsRegistry = newRegistry()
+
+			s.MatchSnapshot(mockT, "hello world")
+			test.Equal(t, 1, testEvents.items[passed])
+		})
+
+		t.Run("should fail when printer output does not match snapshot", func(t *testing.T) {
+			setupSnapshot(t, fileName, false)
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
+			mockT.MockError = func(args ...any) {}
+
+			s := WithConfig(Serializer(func(v any) string { return fmt.Sprint(v) }))
+
+			s.MatchSnapshot(mockT, "hello world")
+			test.Equal(t, 1, testEvents.items[added])
+
+			// Resetting registry to emulate the same MatchStandaloneSnapshot call
+			testsRegistry = newRegistry()
+
+			s.MatchSnapshot(mockT, "bye world")
+			test.Equal(t, 1, testEvents.items[erred])
+		})
 	})
 
 	t.Run("diff should not print the escaped characters", func(t *testing.T) {

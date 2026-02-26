@@ -1,6 +1,7 @@
 package snaps
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -10,6 +11,56 @@ import (
 const standaloneFilename = "mock-name_1.snap"
 
 func TestMatchStandaloneSnapshot(t *testing.T) {
+	t.Run("printer", func(t *testing.T) {
+		t.Run("should create snapshot with custom printer output", func(t *testing.T) {
+			snapPath := setupSnapshot(t, standaloneFilename, false)
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
+
+			WithConfig(Serializer(func(v any) string {
+				return fmt.Sprintf("serialized:%v", v)
+			})).MatchStandaloneSnapshot(mockT, "hello world")
+
+			test.Equal(t, "serialized:hello world", test.GetFileContent(t, snapPath))
+			test.Equal(t, 1, testEvents.items[added])
+		})
+
+		t.Run("should pass when printer output matches snapshot", func(t *testing.T) {
+			setupSnapshot(t, standaloneFilename, false)
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
+
+			s := WithConfig(Serializer(func(v any) string { return fmt.Sprint(v) }))
+
+			s.MatchStandaloneSnapshot(mockT, "hello world")
+			test.Equal(t, 1, testEvents.items[added])
+
+			// Resetting registry to emulate the same MatchStandaloneSnapshot call
+			standaloneTestsRegistry = newStandaloneRegistry()
+
+			s.MatchStandaloneSnapshot(mockT, "hello world")
+			test.Equal(t, 1, testEvents.items[passed])
+		})
+
+		t.Run("should fail when printer output does not match snapshot", func(t *testing.T) {
+			setupSnapshot(t, standaloneFilename, false)
+			mockT := test.NewMockTestingT(t)
+			mockT.MockLog = func(args ...any) { test.Equal(t, addedMsg, args[0].(string)) }
+			mockT.MockError = func(args ...any) {}
+
+			s := WithConfig(Serializer(func(v any) string { return fmt.Sprint(v) }))
+
+			s.MatchStandaloneSnapshot(mockT, "hello world")
+			test.Equal(t, 1, testEvents.items[added])
+
+			// Resetting registry to emulate the same MatchStandaloneSnapshot call
+			standaloneTestsRegistry = newStandaloneRegistry()
+
+			s.MatchStandaloneSnapshot(mockT, "bye world")
+			test.Equal(t, 1, testEvents.items[erred])
+		})
+	})
+
 	t.Run("should create snapshot", func(t *testing.T) {
 		snapPath := setupSnapshot(t, standaloneFilename, false)
 		mockT := test.NewMockTestingT(t)
