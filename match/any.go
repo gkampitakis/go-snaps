@@ -2,6 +2,7 @@ package match
 
 import (
 	"bytes"
+	"errors"
 
 	"github.com/gkampitakis/go-snaps/match/internal/yaml"
 	"github.com/goccy/go-yaml/parser"
@@ -95,24 +96,44 @@ func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 
 	json := b
 	for _, path := range a.paths {
-		r := gjson.GetBytes(json, path)
-		if !r.Exists() {
-			if a.errOnMissingPath {
-				errs = append(errs, a.matcherError(errPathNotFound, path))
+		expandedPaths, err := expandArrayPaths(json, path)
+		if err != nil {
+			if errors.Is(err, errPathNotFound) && !a.errOnMissingPath {
+				continue
 			}
 
-			continue
-		}
-
-		j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJSONOptions)
-		if err != nil {
 			errs = append(errs, a.matcherError(err, path))
-
 			continue
 		}
 
-		json = j
+		for _, ep := range expandedPaths {
+			j, err := a.processPath(json, ep)
+			if err != nil {
+				errs = append(errs, a.matcherError(err, path))
+				continue
+			}
+
+			json = j
+		}
 	}
 
 	return json, errs
+}
+
+func (a anyMatcher) processPath(json []byte, path string) ([]byte, error) {
+	r := gjson.GetBytes(json, path)
+	if !r.Exists() {
+		if a.errOnMissingPath {
+			return nil, errPathNotFound
+		}
+
+		return json, nil
+	}
+
+	j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJSONOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return j, nil
 }
