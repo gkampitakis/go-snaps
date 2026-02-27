@@ -1,6 +1,8 @@
 package snaps
 
 import (
+	"fmt"
+
 	"github.com/tidwall/pretty"
 )
 
@@ -55,6 +57,17 @@ func Update(u bool) func(*Config) {
 func Serializer(s func(any) string) func(*Config) {
 	return func(c *Config) {
 		c.serializer = s
+	}
+}
+
+// Raw is a utility function for setting serializer to fmt.Sprint
+//
+// For more complex custom serialization logic, use snaps.Serializer instead of snaps.Raw
+func Raw() func(*Config) {
+	return func(c *Config) {
+		c.serializer = func(v any) string {
+			return fmt.Sprint(v)
+		}
 	}
 }
 

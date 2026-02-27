@@ -102,6 +102,14 @@ func TestTakeSnapshot(t *testing.T) {
 		test.Equal(t, 3, calls)
 		test.Equal(t, "a\nb\nc", value)
 	})
+
+	t.Run("uses fmt.Sprint", func(t *testing.T) {
+		c := WithConfig(Raw())
+
+		result := c.takeSnapshot([]any{[]int{1, 2, 3}})
+
+		test.Equal(t, "[1 2 3]", result)
+	})
 }
 
 func TestTakeStandaloneSnapshot(t *testing.T) {
@@ -120,6 +128,14 @@ func TestTakeStandaloneSnapshot(t *testing.T) {
 
 		test.Equal(t, "custom:world", result)
 	})
+
+	t.Run("uses fmt.Sprint", func(t *testing.T) {
+		c := WithConfig(Raw())
+
+		result := c.takeStandaloneSnapshot([]int{1, 2, 3})
+
+		test.Equal(t, "[1 2 3]", result)
+	})
 }
 
 func TestTakeInlineSnapshot(t *testing.T) {
@@ -137,5 +153,13 @@ func TestTakeInlineSnapshot(t *testing.T) {
 		result := c.takeInlineSnapshot("world")
 
 		test.Equal(t, "custom:world", result)
+	})
+
+	t.Run("uses fmt.Sprint", func(t *testing.T) {
+		c := WithConfig(Raw())
+
+		result := c.takeInlineSnapshot([]int{1, 2, 3})
+
+		test.Equal(t, "[1 2 3]", result)
 	})
 }
