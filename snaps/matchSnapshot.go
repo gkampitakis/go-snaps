@@ -60,7 +60,7 @@ func matchSnapshot(c *Config, t testingT, values ...any) {
 		testsRegistry.reset(snapPath, t.Name())
 	})
 
-	snapshot := takeSnapshot(values)
+	snapshot := c.takeSnapshot(values)
 	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if !shouldCreate(c.update) {
@@ -108,11 +108,15 @@ func matchSnapshot(c *Config, t testingT, values ...any) {
 	testEvents.register(updated)
 }
 
-func takeSnapshot(objects []any) string {
+func (c *Config) takeSnapshot(objects []any) string {
 	snapshots := make([]string, len(objects))
 
 	for i, object := range objects {
-		snapshots[i] = pretty.Sprint(object)
+		if c.serializer != nil {
+			snapshots[i] = c.serializer(object)
+		} else {
+			snapshots[i] = pretty.Sprint(object)
+		}
 	}
 
 	return escapeEndChars(strings.Join(snapshots, "\n"))

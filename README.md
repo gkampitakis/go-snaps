@@ -317,14 +317,16 @@ Every subsequent test run will compare the actual value against the inline snaps
 
 `go-snaps` allows passing configuration for overriding
 
-- the directory where snapshots are stored, _relative or absolute path_
-- the filename where snapshots are stored
-- the snapshot file's extension (_regardless the extension the filename will include the `.snaps` inside the filename_)
-- programmatically control whether to update snapshots. _You can find an example usage at [examples](/examples/examples_test.go#13)_
-- json config's json format configuration:
+- the directory where snapshots are stored, _relative or absolute path_ `snaps.Dir("my_dir")`
+- the filename where snapshots are stored `snaps.Filename("my_file")`
+- the snapshot file's extension (_regardless the extension the filename will include the `.snaps` inside the filename_) `snaps.Ext(".json")`
+- programmatically control whether to update snapshots. _You can find an example usage at [examples](/examples/examples_test.go#13)_ `snaps.Update(true)`
+- json config's json format configuration: `snaps.JSON(snaps.JSONConfig{...})`
   - `Width`: The maximum width in characters before wrapping json output (default: 80)
   - `Indent`: The indentation string to use for nested structures (default: 1 spaces)
   - `SortKeys`: Whether to sort json object keys alphabetically (default: true)
+- a custom serializer function for non-structured snapshots `snaps.Serializer(func(any) string {...})`
+- a helper serializer function `snaps.Raw()` that uses `fmt.Sprint` to serialize the value as is without any formatting or indentation.
 
 ```go
 t.Run("snapshot tests", func(t *testing.T) {
@@ -335,6 +337,11 @@ t.Run("snapshot tests", func(t *testing.T) {
     snaps.Filename("json_file"),
     snaps.Ext(".json"),
     snaps.Update(false),
+    snaps.Serializer(func(v any) string {
+      // custom serializer logic
+      return fmt.Sprintf("custom: %v", v)
+    }),
+    // or snaps.Raw() for no formatting
     snaps.JSON(snaps.JSONConfig{
       Width:    80,
       Indent:   "    ",

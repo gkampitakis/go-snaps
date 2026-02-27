@@ -1,13 +1,49 @@
 package snaps
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/test"
 )
 
 func TestMatchInlineSnapshot(t *testing.T) {
+	t.Run("printer", func(t *testing.T) {
+		t.Run("should use default printer", func(t *testing.T) {
+			testEvents = newTestEvents()
+			mockT := test.NewMockTestingT(t)
+
+			MatchInlineSnapshot(mockT, []string{"1", "2", "3"}, Inline(`[]string{"1", "2", "3"}`))
+
+			test.Equal(t, 1, testEvents.items[passed])
+		})
+
+		t.Run("should pass when printer output matches inline snapshot", func(t *testing.T) {
+			testEvents = newTestEvents()
+			mockT := test.NewMockTestingT(t)
+
+			WithConfig(Serializer(func(v any) string {
+				return fmt.Sprintf("serialized:%v", v)
+			})).MatchInlineSnapshot(mockT, "hello world", Inline("serialized:hello world"))
+
+			test.Equal(t, 1, testEvents.items[passed])
+		})
+
+		t.Run("should fail when printer output does not match inline snapshot", func(t *testing.T) {
+			testEvents = newTestEvents()
+			mockT := test.NewMockTestingT(t)
+			mockT.MockError = func(args ...any) {}
+
+			WithConfig(Serializer(func(v any) string {
+				return fmt.Sprintf("serialized:%v", v)
+			})).MatchInlineSnapshot(mockT, "hello world", Inline("hello world"))
+
+			test.Equal(t, 1, testEvents.items[erred])
+		})
+	})
+
 	t.Run("should error in case of different input from inline snapshot", func(t *testing.T) {
+		testEvents = newTestEvents()
 		mockT := test.NewMockTestingT(t)
 
 		mockT.MockError = func(a ...any) {

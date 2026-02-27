@@ -105,7 +105,7 @@ func matchStandaloneJSON(c *Config, t testingT, input any, matchers ...match.JSO
 		return
 	}
 
-	snapshot := takeJSONSnapshot(c, j)
+	snapshot := c.takeJSONSnapshot(j)
 	prevSnapshot, err := getPrevStandaloneSnapshot(snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if !shouldCreate(c.update) {

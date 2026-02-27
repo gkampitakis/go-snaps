@@ -111,7 +111,7 @@ func MatchInlineSnapshot(t testingT, received any, inlineSnap inlineSnapshot) {
 
 func matchInlineSnapshot(c *Config, t testingT, received any, inlineSnap inlineSnapshot) {
 	t.Helper()
-	snapshot := pretty.Sprint(received)
+	snapshot := c.takeInlineSnapshot(received)
 	filename, line := baseCaller(1)
 
 	// we should only register call positions if we are modifying the file and the file hasn't been registered yet.
@@ -206,6 +206,14 @@ func upsertInlineSnapshot(filename string, callerLine int, snapshot string) erro
 	}
 
 	return nil
+}
+
+func (c *Config) takeInlineSnapshot(received any) string {
+	if c.serializer != nil {
+		return c.serializer(received)
+	}
+
+	return pretty.Sprint(received)
 }
 
 // registerInlineCallIdx is expected to be called once per file and before getting modified

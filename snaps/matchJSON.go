@@ -97,7 +97,7 @@ func matchJSON(c *Config, t testingT, input any, matchers ...match.JSONMatcher) 
 		return
 	}
 
-	snapshot := takeJSONSnapshot(c, j)
+	snapshot := c.takeJSONSnapshot(j)
 	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if !shouldCreate(c.update) {
@@ -159,7 +159,7 @@ func validateJSON(input any) ([]byte, error) {
 	}
 }
 
-func takeJSONSnapshot(c *Config, b []byte) string {
+func (c *Config) takeJSONSnapshot(b []byte) string {
 	return strings.TrimSuffix(string(pretty.PrettyOptions(b, c.json.getPrettyJSONOptions())), "\n")
 }
 

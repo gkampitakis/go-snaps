@@ -38,6 +38,14 @@ func MatchStandaloneSnapshot(t testingT, input any) {
 	matchStandaloneSnapshot(&defaultConfig, t, input)
 }
 
+func (c *Config) takeStandaloneSnapshot(input any) string {
+	if c.serializer != nil {
+		return c.serializer(input)
+	}
+
+	return pretty.Sprint(input)
+}
+
 func matchStandaloneSnapshot(c *Config, t testingT, input any) {
 	t.Helper()
 
@@ -47,7 +55,7 @@ func matchStandaloneSnapshot(c *Config, t testingT, input any) {
 		standaloneTestsRegistry.reset(genericPathSnap)
 	})
 
-	snapshot := pretty.Sprint(input)
+	snapshot := c.takeStandaloneSnapshot(input)
 	prevSnapshot, err := getPrevStandaloneSnapshot(snapPath)
 	if errors.Is(err, errSnapNotFound) {
 		if !shouldCreate(c.update) {

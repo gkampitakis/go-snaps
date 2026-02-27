@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/gkampitakis/go-snaps/internal/colors"
-	"github.com/tidwall/pretty"
 )
 
 var (
@@ -25,102 +24,6 @@ var (
 	addedMsg   = colors.Sprint(colors.Green, updateSymbol+"Snapshot added")
 	updatedMsg = colors.Sprint(colors.Green, updateSymbol+"Snapshot updated")
 )
-
-type Config struct {
-	filename  string
-	snapsDir  string
-	extension string
-	update    *bool
-	json      *JSONConfig
-}
-
-type JSONConfig struct {
-	// Width is a max column width for single line arrays
-	// Default: see defaultPrettyJSONOptions.Width for detail
-	Width int
-	// Indent is the nested indentation
-	// Default: see defaultPrettyJSONOptions.Indent for detail
-	Indent string
-	// SortKeys will sort the keys alphabetically
-	// Default: see defaultPrettyJSONOptions.SortKeys for detail
-	SortKeys bool
-}
-
-func (j *JSONConfig) getPrettyJSONOptions() *pretty.Options {
-	if j == nil {
-		return defaultPrettyJSONOptions
-	}
-	return &pretty.Options{
-		Width:    j.Width,
-		Indent:   j.Indent,
-		SortKeys: j.SortKeys,
-	}
-}
-
-// Update determines whether to update snapshots or not
-//
-// It respects if running on CI.
-func Update(u bool) func(*Config) {
-	return func(c *Config) {
-		c.update = &u
-	}
-}
-
-// Specify snapshot file name
-//
-//	default: test's filename
-//
-// this doesn't change the file extension see `snap.Ext`
-func Filename(name string) func(*Config) {
-	return func(c *Config) {
-		c.filename = name
-	}
-}
-
-// Specify folder name where snapshots are stored
-//
-//	default: __snapshots__
-//
-// Accepts absolute paths
-func Dir(dir string) func(*Config) {
-	return func(c *Config) {
-		c.snapsDir = dir
-	}
-}
-
-// Specify file name extension
-//
-// default: .snap
-//
-// Note: even if you specify a different extension the file still contain .snap
-// e.g. if you specify .txt the file will be .snap.txt
-func Ext(ext string) func(*Config) {
-	return func(c *Config) {
-		c.extension = ext
-	}
-}
-
-// Specify json format configuration
-//
-// default: see defaultPrettyJSONOptions for default json config
-func JSON(json JSONConfig) func(*Config) {
-	return func(c *Config) {
-		c.json = &json
-	}
-}
-
-// Create snaps with configuration
-//
-//	e.g snaps.WithConfig(snaps.Filename("my_test")).MatchSnapshot(t, "hello world")
-func WithConfig(args ...func(*Config)) *Config {
-	s := defaultConfig
-
-	for _, arg := range args {
-		arg(&s)
-	}
-
-	return &s
-}
 
 func handleError(t testingT, err any) {
 	t.Helper()
