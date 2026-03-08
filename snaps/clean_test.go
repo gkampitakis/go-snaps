@@ -176,24 +176,9 @@ func TestExamineFiles(t *testing.T) {
 }
 
 func TestExamineSnaps(t *testing.T) {
-	testIdLabelMappings := map[string]string{
-		"TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
-		"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1",
-		"TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
-		"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1",
-		"TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
-		"TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1",
-		"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
-		"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2",
-		"TestCat - 1":               "TestCat - 1",
-		"TestAlpha - 2":             "TestAlpha - 2",
-		"TestBeta - 1":              "TestBeta - 1",
-		"TestAlpha - 1":             "TestAlpha - 1",
-	}
-
 	t.Run("should report no obsolete snapshots", func(t *testing.T) {
 		shouldUpdate, sort := false, false
-		tests, dir1, dir2 := setupTempExamineFiles(
+		_, dir1, dir2 := setupTempExamineFiles(
 			t,
 			loadMockSnap(t, "mock-snap-1"),
 			loadMockSnap(t, "mock-snap-2"),
@@ -204,13 +189,24 @@ func TestExamineSnaps(t *testing.T) {
 		}
 
 		obsolete, isDirty, err := examineSnaps(
-			tests,
+			map[string]string{
+				"TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
+				"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1",
+				"TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
+				"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1",
+				"TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
+				"TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1",
+				"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
+				"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2",
+				"TestCat - 1":               "TestCat - 1",
+				"TestAlpha - 2":             "TestAlpha - 2",
+				"TestBeta - 1":              "TestBeta - 1",
+				"TestAlpha - 1":             "TestAlpha - 1",
+			},
 			used,
 			"",
-			1,
 			shouldUpdate,
 			sort,
-			testIdLabelMappings,
 		)
 
 		test.Equal(t, []string{}, obsolete)
@@ -222,25 +218,31 @@ func TestExamineSnaps(t *testing.T) {
 		shouldUpdate, sort := false, false
 		mockSnap1 := loadMockSnap(t, "mock-snap-1")
 		mockSnap2 := loadMockSnap(t, "mock-snap-2")
-		tests, dir1, dir2 := setupTempExamineFiles(t, mockSnap1, mockSnap2)
+		_, dir1, dir2 := setupTempExamineFiles(t, mockSnap1, mockSnap2)
 		used := []string{
 			filepath.FromSlash(dir1 + "/test1.snap"),
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		// Reducing test occurrence to 1 meaning the second test was removed ( testid - 2 )
-		tests[used[0]]["TestDir1_3/TestSimple"] = 1
-		// Removing the test entirely
-		delete(tests[used[1]], "TestDir2_2/TestSimple")
-
 		obsolete, isDirty, err := examineSnaps(
-			tests,
+			map[string]string{
+				"TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
+				"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1",
+				// "TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
+				"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1",
+				// "TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
+				"TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1",
+				"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
+				"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2",
+				"TestCat - 1":               "TestCat - 1",
+				"TestAlpha - 2":             "TestAlpha - 2",
+				"TestBeta - 1":              "TestBeta - 1",
+				"TestAlpha - 1":             "TestAlpha - 1",
+			},
 			used,
 			"",
-			1,
 			shouldUpdate,
 			sort,
-			testIdLabelMappings,
 		)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
@@ -258,7 +260,7 @@ func TestExamineSnaps(t *testing.T) {
 
 	t.Run("should update the obsolete snap files", func(t *testing.T) {
 		shouldUpdate, sort := true, false
-		tests, dir1, dir2 := setupTempExamineFiles(
+		_, dir1, dir2 := setupTempExamineFiles(
 			t,
 			loadMockSnap(t, "mock-snap-1"),
 			loadMockSnap(t, "mock-snap-2"),
@@ -268,18 +270,25 @@ func TestExamineSnaps(t *testing.T) {
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		// removing tests from the map means those tests are no longer used
-		delete(tests[used[0]], "TestDir1_3/TestSimple")
-		delete(tests[used[1]], "TestDir2_1/TestSimple")
-
 		obsolete, isDirty, err := examineSnaps(
-			tests,
+			map[string]string{
+				// "TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
+				"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1",
+				// "TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
+				"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1",
+				"TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
+				// "TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1",
+				// "TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
+				// "TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2",
+				"TestCat - 1":   "TestCat - 1",
+				"TestAlpha - 2": "TestAlpha - 2",
+				"TestBeta - 1":  "TestBeta - 1",
+				"TestAlpha - 1": "TestAlpha - 1",
+			},
 			used,
 			"",
-			1,
 			shouldUpdate,
 			sort,
-			testIdLabelMappings,
 		)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
@@ -331,7 +340,7 @@ string hello world 2 2 1
 		mockSnap2 := loadMockSnap(t, "mock-snap-sort-2")
 		expectedMockSnap1 := loadMockSnap(t, "mock-snap-sort-1-sorted")
 		expectedMockSnap2 := loadMockSnap(t, "mock-snap-sort-2-sorted")
-		tests, dir1, dir2 := setupTempExamineFiles(
+		_, dir1, dir2 := setupTempExamineFiles(
 			t,
 			mockSnap1,
 			mockSnap2,
@@ -342,13 +351,24 @@ string hello world 2 2 1
 		}
 
 		obsolete, isDirty, err := examineSnaps(
-			tests,
+			map[string]string{
+				"TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
+				"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1",
+				"TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
+				"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1",
+				"TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
+				"TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1",
+				"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
+				"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2",
+				"TestCat - 1":               "TestCat - 1",
+				"TestAlpha - 2":             "TestAlpha - 2",
+				"TestBeta - 1":              "TestBeta - 1",
+				"TestAlpha - 1":             "TestAlpha - 1",
+			},
 			used,
 			"",
-			1,
 			shouldUpdate,
 			sort,
-			testIdLabelMappings,
 		)
 
 		test.NoError(t, err)
@@ -371,7 +391,7 @@ string hello world 2 2 1
 			shouldUpdate, sort := false, true
 			mockSnap1 := loadMockSnap(t, "mock-snap-sort-1-sorted")
 			mockSnap2 := loadMockSnap(t, "mock-snap-sort-2-sorted")
-			tests, dir1, dir2 := setupTempExamineFiles(
+			_, dir1, dir2 := setupTempExamineFiles(
 				t,
 				mockSnap1,
 				mockSnap2,
@@ -381,18 +401,25 @@ string hello world 2 2 1
 				filepath.FromSlash(dir2 + "/test2.snap"),
 			}
 
-			// removing tests from the map means those tests are no longer used
-			delete(tests[used[0]], "TestDir1_3/TestSimple")
-			delete(tests[used[1]], "TestDir2_1/TestSimple")
-
 			obsolete, isDirty, err := examineSnaps(
-				tests,
+				map[string]string{
+					// "TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
+					"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1",
+					// "TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
+					"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1",
+					"TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
+					// "TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1",
+					// "TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
+					// "TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2",
+					"TestCat - 1":   "TestCat - 1",
+					"TestAlpha - 2": "TestAlpha - 2",
+					"TestBeta - 1":  "TestBeta - 1",
+					"TestAlpha - 1": "TestAlpha - 1",
+				},
 				used,
 				"",
-				1,
 				shouldUpdate,
 				sort,
-				testIdLabelMappings,
 			)
 
 			test.NoError(t, err)
@@ -420,21 +447,9 @@ string hello world 2 2 1
 }
 
 func TestExamineSnaps_WithLabels(t *testing.T) {
-	testIdLabelMappings := map[string]string{
-		"TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
-		"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1 - my snapshot",
-		"TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
-		"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1 - this is another snapshot",
-
-		"TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
-		"TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1 - stdout",
-		"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
-		"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2 - stderr",
-	}
-
 	t.Run("should report no obsolete snapshots", func(t *testing.T) {
 		shouldUpdate, sort := false, false
-		tests, dir1, dir2 := setupTempExamineFiles(
+		_, dir1, dir2 := setupTempExamineFiles(
 			t,
 			loadMockSnap(t, "mock-snap-1-labeled"),
 			loadMockSnap(t, "mock-snap-2-labeled"),
@@ -445,13 +460,21 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 		}
 
 		obsolete, isDirty, err := examineSnaps(
-			tests,
+			map[string]string{
+				"TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
+				"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1 - my snapshot",
+				"TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
+				"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1 - this is another snapshot",
+
+				"TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
+				"TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1 - stdout",
+				"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
+				"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2 - stderr",
+			},
 			used,
 			"",
-			1,
 			shouldUpdate,
 			sort,
-			testIdLabelMappings,
 		)
 
 		test.Equal(t, []string{}, obsolete)
@@ -463,25 +486,28 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 		shouldUpdate, sort := false, false
 		mockSnap1 := loadMockSnap(t, "mock-snap-1-labeled-renamed")
 		mockSnap2 := loadMockSnap(t, "mock-snap-2-labeled")
-		tests, dir1, dir2 := setupTempExamineFiles(t, mockSnap1, mockSnap2)
+		_, dir1, dir2 := setupTempExamineFiles(t, mockSnap1, mockSnap2)
 		used := []string{
 			filepath.FromSlash(dir1 + "/test1.snap"),
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		// Reducing test occurrence to 1 meaning the second test was removed ( testid - 2 )
-		tests[used[0]]["TestDir1_3/TestSimple"] = 1
-		// Removing the test entirely
-		delete(tests[used[1]], "TestDir2_2/TestSimple")
-
 		obsolete, isDirty, err := examineSnaps(
-			tests,
+			map[string]string{
+				"TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
+				"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1 - my snapshot",
+				// "TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
+				"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1 - this is another snapshot",
+
+				// "TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
+				"TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1 - stdout",
+				"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
+				"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2 - stderr",
+			},
 			used,
 			"",
-			1,
 			shouldUpdate,
 			sort,
-			testIdLabelMappings,
 		)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
@@ -507,7 +533,7 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 
 	t.Run("should update the obsolete snap files", func(t *testing.T) {
 		shouldUpdate, sort := true, false
-		tests, dir1, dir2 := setupTempExamineFiles(
+		_, dir1, dir2 := setupTempExamineFiles(
 			t,
 			loadMockSnap(t, "mock-snap-1-labeled-renamed"),
 			loadMockSnap(t, "mock-snap-2-labeled"),
@@ -517,17 +543,22 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 			filepath.FromSlash(dir2 + "/test2.snap"),
 		}
 
-		// removing tests from the map means those tests are no longer used
-		delete(tests[used[0]], "TestDir1_3/TestSimple")
-
 		obsolete, isDirty, err := examineSnaps(
-			tests,
+			map[string]string{
+				// "TestDir1_3/TestSimple - 1": "TestDir1_3/TestSimple - 1",
+				"TestDir1_2/TestSimple - 1": "TestDir1_2/TestSimple - 1 - my snapshot",
+				// "TestDir1_3/TestSimple - 2": "TestDir1_3/TestSimple - 2",
+				"TestDir1_1/TestSimple - 1": "TestDir1_1/TestSimple - 1 - this is another snapshot",
+
+				"TestDir2_2/TestSimple - 1": "TestDir2_2/TestSimple - 1",
+				"TestDir2_1/TestSimple - 1": "TestDir2_1/TestSimple - 1 - stdout",
+				"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
+				"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2 - stderr",
+			},
 			used,
 			"",
-			1,
 			shouldUpdate,
 			sort,
-			testIdLabelMappings,
 		)
 		content1 := test.GetFileContent(t, used[0])
 		content2 := test.GetFileContent(t, used[1])
