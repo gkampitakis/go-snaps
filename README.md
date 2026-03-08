@@ -325,6 +325,7 @@ Every subsequent test run will compare the actual value against the inline snaps
   - `Width`: The maximum width in characters before wrapping json output (default: 80)
   - `Indent`: The indentation string to use for nested structures (default: 1 spaces)
   - `SortKeys`: Whether to sort json object keys alphabetically (default: true)
+- a label to add to the end of snapshot ids, to help when reviewing `snaps.Label("stdout")`
 - a custom serializer function for non-structured snapshots `snaps.Serializer(func(any) string {...})`
 - a helper serializer function `snaps.Raw()` that uses `fmt.Sprint` to serialize the value as is without any formatting or indentation.
 
@@ -336,6 +337,7 @@ t.Run("snapshot tests", func(t *testing.T) {
     snaps.Dir("my_dir"),
     snaps.Filename("json_file"),
     snaps.Ext(".json"),
+    snaps.Label("JSON"),
     snaps.Update(false),
     snaps.Serializer(func(v any) string {
       // custom serializer logic
