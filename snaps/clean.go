@@ -110,13 +110,11 @@ func Clean(m *testing.M, opts ...CleanOpts) (bool, error) {
 		shouldClean,
 	)
 	obsoleteTests, snapsDirty, err := examineSnaps(
-		testsRegistry.cleanup,
+		testsRegistry.labeled,
 		usedFiles,
 		runOnly,
-		count,
 		shouldClean,
 		opt.Sort,
-		testsRegistry.labeled,
 	)
 	if err != nil {
 		return snapsDirty || filesDirty, err
@@ -240,13 +238,11 @@ func examineFiles(
 }
 
 func examineSnaps(
-	registry map[string]map[string]int,
+	testIdLabelMappings map[string]string,
 	used []string,
 	runOnly string,
-	count int,
 	shouldUpdate,
 	sort bool,
-	testIdLabelMappings map[string]string,
 ) ([]string, bool, error) {
 	obsoleteTests := []string{}
 	tests := map[string]string{}
@@ -262,7 +258,6 @@ func examineSnaps(
 
 		var needsUpdating bool
 
-		registeredTests := occurrences(registry[snapPath], count, snapshotOccurrenceFMT)
 		s := snapshotScanner(f)
 
 		for s.Scan() {
@@ -277,19 +272,18 @@ func examineSnaps(
 			// resolve the current full test snapshot id, based on the "old" one
 			currentTestIdWithLabel, ok := testIdLabelMappings[oldTestIDWithoutLabel]
 
-			// remove the old test snapshot if the label has been changed
-			if ok && currentTestIdWithLabel != oldTestIDWithLabel {
-				obsoleteTests = append(obsoleteTests, oldTestIDWithLabel)
+			// remove any test snapshots whose test no longer exists
+			if !ok && !testSkipped(oldTestIDWithoutLabel, runOnly) {
+				obsoleteTests = append(obsoleteTests, oldTestIDWithoutLabel)
 				needsUpdating = true
 
 				removeSnapshot(s)
 				continue
 			}
 
-			// remove any test snapshots whose test no longer exists
-			if !registeredTests.Has(oldTestIDWithoutLabel) &&
-				!testSkipped(oldTestIDWithoutLabel, runOnly) {
-				obsoleteTests = append(obsoleteTests, oldTestIDWithoutLabel)
+			// remove the old test snapshot if the label has been changed
+			if ok && currentTestIdWithLabel != oldTestIDWithLabel {
+				obsoleteTests = append(obsoleteTests, oldTestIDWithLabel)
 				needsUpdating = true
 
 				removeSnapshot(s)
