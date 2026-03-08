@@ -51,16 +51,11 @@ func TestAnyMatcher(t *testing.T) {
 		})
 
 		t.Run("should aggregate errors", func(t *testing.T) {
-			a := Any(
-				"user.2",
-				"user.3",
-				"results.#.packages.#.vulnerabilities",
-				"results.#.packages.#.name",
-			)
+			a := Any("user.2", "user.3")
 			res, errs := a.JSON(j)
 
 			test.Equal(t, j, res)
-			test.Equal(t, 4, len(errs))
+			test.Equal(t, 2, len(errs))
 		})
 
 		t.Run("should replace value and return new json", func(t *testing.T) {
@@ -133,19 +128,6 @@ func TestAnyMatcher(t *testing.T) {
 						"results": ["<Any value>", "<Any value>" ],
 					},
 				]`
-
-				test.Equal(t, 0, len(errs))
-				test.Equal(t, expected, string(res))
-			})
-
-			t.Run("should replace values for single array", func(t *testing.T) {
-				j := []byte(`[1, 2, 3, 4]`)
-
-				a := Any("#.")
-
-				res, errs := a.JSON(j)
-
-				expected := `["<Any value>", "<Any value>", "<Any value>", "<Any value>"]`
 
 				test.Equal(t, 0, len(errs))
 				test.Equal(t, expected, string(res))

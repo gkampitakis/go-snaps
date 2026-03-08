@@ -2,7 +2,6 @@ package match
 
 import (
 	"bytes"
-	"errors"
 
 	"github.com/gkampitakis/go-snaps/match/internal/yaml"
 	"github.com/goccy/go-yaml/parser"
@@ -96,18 +95,8 @@ func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 
 	json := b
 	for _, path := range a.paths {
-		expandedPaths, err := expandArrayPaths(json, path)
-		if err != nil {
-			if errors.Is(err, errPathNotFound) && !a.errOnMissingPath {
-				continue
-			}
-
-			errs = append(errs, a.matcherError(err, path))
-			continue
-		}
-
-		for _, ep := range expandedPaths {
-			j, err := a.processPath(json, ep)
+		for _, ep := range expandArrayPaths(json, path) {
+			j, err := a.processPathJSON(json, ep)
 			if err != nil {
 				errs = append(errs, a.matcherError(err, path))
 				continue
@@ -120,7 +109,7 @@ func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 	return json, errs
 }
 
-func (a anyMatcher) processPath(json []byte, path string) ([]byte, error) {
+func (a anyMatcher) processPathJSON(json []byte, path string) ([]byte, error) {
 	r := gjson.GetBytes(json, path)
 	if !r.Exists() {
 		if a.errOnMissingPath {

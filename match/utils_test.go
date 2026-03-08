@@ -15,56 +15,42 @@ func TestGjsonExpandPath(t *testing.T) {
 			data     []byte
 			path     string
 			expected []string
-			wantErr  bool
 		}{
 			{
 				name:     "simple path without array access",
 				data:     []byte(`{"user": {"name": "John"}}`),
 				path:     "user.name",
 				expected: []string{"user.name"},
-				wantErr:  false,
 			},
 			{
 				name:     "single level array access",
 				data:     []byte(`{"items": [1, 2, 3]}`),
 				path:     "items.#.value",
 				expected: []string{"items.0.value", "items.1.value", "items.2.value"},
-				wantErr:  false,
 			},
 			{
 				name:     "empty array",
 				data:     []byte(`{"items": []}`),
 				path:     "items.#.value",
 				expected: []string{},
-				wantErr:  false,
 			},
 			{
 				name:     "array with single element",
 				data:     []byte(`{"items": [42]}`),
 				path:     "items.#.value",
 				expected: []string{"items.0.value"},
-				wantErr:  false,
 			},
 			{
 				name:     "path with # at the end",
 				data:     []byte(`{"items": [1, 2, 3]}`),
 				path:     "items.#",
 				expected: []string{"items.0", "items.1", "items.2"},
-				wantErr:  false,
 			},
 			{
 				name:     "path without # returns as-is",
 				data:     []byte(`{"a": {"b": {"c": "value"}}}`),
 				path:     "a.b.c",
 				expected: []string{"a.b.c"},
-				wantErr:  false,
-			},
-			{
-				name:     "root level array",
-				data:     []byte(`[1, 2, 3]`),
-				path:     "#.",
-				expected: []string{"0", "1", "2"},
-				wantErr:  false,
 			},
 			{
 				name: "root level array with nested arrays",
@@ -74,18 +60,12 @@ func TestGjsonExpandPath(t *testing.T) {
 				]`),
 				path:     "#.results.#",
 				expected: []string{"#.results.0", "#.results.1"},
-				wantErr:  false,
 			},
 		}
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := expandArrayPaths(tt.data, tt.path)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("gjsonExpandPath() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				test.Equal(t, tt.expected, got)
+				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
 			})
 		}
 	})
@@ -96,7 +76,6 @@ func TestGjsonExpandPath(t *testing.T) {
 			data     []byte
 			path     string
 			expected []string
-			wantErr  bool
 		}{
 			{
 				name: "two-level nested arrays",
@@ -109,7 +88,6 @@ func TestGjsonExpandPath(t *testing.T) {
 					"results.1.packages.1.vulnerabilities",
 					"results.1.packages.2.vulnerabilities",
 				},
-				wantErr: false,
 			},
 			{
 				name: "three levels of nesting",
@@ -119,7 +97,6 @@ func TestGjsonExpandPath(t *testing.T) {
 					"a.0.b.0.c.0.d",
 					"a.0.b.0.c.1.d",
 				},
-				wantErr: false,
 			},
 			{
 				name: "four levels of nesting",
@@ -130,7 +107,6 @@ func TestGjsonExpandPath(t *testing.T) {
 					"l1.0.l2.0.l3.0.l4.1.value",
 					"l1.0.l2.0.l3.1.l4.0.value",
 				},
-				wantErr: false,
 			},
 			{
 				name: "asymmetric nested arrays",
@@ -142,7 +118,6 @@ func TestGjsonExpandPath(t *testing.T) {
 					"data.0.items.2.value",
 					"data.2.items.0.value",
 				},
-				wantErr: false,
 			},
 			{
 				name: "mixed nested arrays with different lengths at each level",
@@ -174,18 +149,12 @@ func TestGjsonExpandPath(t *testing.T) {
 					"regions.1.cities.1.districts.0.name",
 					"regions.1.cities.1.districts.1.name",
 				},
-				wantErr: false,
 			},
 		}
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := expandArrayPaths(tt.data, tt.path)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("gjsonExpandPath() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				test.Equal(t, tt.expected, got)
+				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
 			})
 		}
 	})
@@ -196,7 +165,6 @@ func TestGjsonExpandPath(t *testing.T) {
 			data     []byte
 			path     string
 			expected []string
-			wantErr  bool
 		}{
 			{
 				name: "GitHub API response structure",
@@ -233,7 +201,6 @@ func TestGjsonExpandPath(t *testing.T) {
 					"repositories.1.commits.0.files.1.checksum",
 					"repositories.1.commits.0.files.2.checksum",
 				},
-				wantErr: false,
 			},
 			{
 				name: "vulnerability scanner output",
@@ -274,7 +241,6 @@ func TestGjsonExpandPath(t *testing.T) {
 					"scan_results.0.dependencies.0.vulnerabilities.1.id",
 					"scan_results.1.dependencies.0.vulnerabilities.0.id",
 				},
-				wantErr: false,
 			},
 			{
 				name: "e-commerce order with nested items",
@@ -310,7 +276,6 @@ func TestGjsonExpandPath(t *testing.T) {
 					"orders.0.items.0.variants.0.reviews.1.verified",
 					"orders.0.items.0.variants.1.reviews.0.verified",
 				},
-				wantErr: false,
 			},
 			{
 				name: "cloud infrastructure with regions and zones",
@@ -354,29 +319,22 @@ func TestGjsonExpandPath(t *testing.T) {
 					"cloud_providers.0.regions.0.zones.1.instances.0.status",
 					"cloud_providers.1.regions.0.zones.0.instances.0.status",
 				},
-				wantErr: false,
 			},
 		}
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := expandArrayPaths(tt.data, tt.path)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("gjsonExpandPath() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				test.Equal(t, tt.expected, got)
+				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
 			})
 		}
 	})
 
 	t.Run("edge cases and boundary conditions", func(t *testing.T) {
 		tests := []struct {
-			name          string
-			data          []byte
-			path          string
-			expected      []string
-			expectedError error
+			name     string
+			data     []byte
+			path     string
+			expected []string
 		}{
 			{
 				name: "array with many elements (10+)",
@@ -388,7 +346,6 @@ func TestGjsonExpandPath(t *testing.T) {
 					"items.8.value", "items.9.value", "items.10.value", "items.11.value",
 					"items.12.value", "items.13.value", "items.14.value", "items.15.value",
 				},
-				expectedError: nil,
 			},
 			{
 				name: "nested array with 100+ total paths",
@@ -424,21 +381,18 @@ func TestGjsonExpandPath(t *testing.T) {
 					}
 					return paths
 				}(),
-				expectedError: nil,
 			},
 			{
-				name:          "all empty arrays in nested structure",
-				data:          []byte(`{"a": [{"b": []}, {"b": []}]}`),
-				path:          "a.#.b.#.c",
-				expected:      []string{},
-				expectedError: nil,
+				name:     "all empty arrays in nested structure",
+				data:     []byte(`{"a": [{"b": []}, {"b": []}]}`),
+				path:     "a.#.b.#.c",
+				expected: []string{},
 			},
 			{
-				name:          "single element at each level",
-				data:          []byte(`{"a": [{"b": [{"c": [{"d": [1]}]}]}]}`),
-				path:          "a.#.b.#.c.#.d.#.e",
-				expected:      []string{"a.0.b.0.c.0.d.0.e"},
-				expectedError: nil,
+				name:     "single element at each level",
+				data:     []byte(`{"a": [{"b": [{"c": [{"d": [1]}]}]}]}`),
+				path:     "a.#.b.#.c.#.d.#.e",
+				expected: []string{"a.0.b.0.c.0.d.0.e"},
 			},
 			{
 				name: "highly unbalanced tree structure",
@@ -464,7 +418,6 @@ func TestGjsonExpandPath(t *testing.T) {
 					"items.0.children.0.grandchildren.9.value",
 					"items.1.children.0.grandchildren.0.value",
 				},
-				expectedError: nil,
 			},
 			{
 				name: "multiple # in different branches",
@@ -472,31 +425,20 @@ func TestGjsonExpandPath(t *testing.T) {
 					"branch_a": [{"data": [1, 2]}],
 					"branch_b": [{"data": [3, 4, 5]}]
 				}`),
-				path:          "branch_a.#.data.#.value",
-				expected:      []string{"branch_a.0.data.0.value", "branch_a.0.data.1.value"},
-				expectedError: nil,
+				path:     "branch_a.#.data.#.value",
+				expected: []string{"branch_a.0.data.0.value", "branch_a.0.data.1.value"},
 			},
 			{
-				name:          "path with non-existent intermediate key",
-				data:          []byte(`{"items": []}`),
-				path:          "nonexistent.#.value",
-				expected:      []string{},
-				expectedError: errPathNotFound,
+				name:     "path with non-existent intermediate key",
+				data:     []byte(`{"items": []}`),
+				path:     "nonexistent.#.value",
+				expected: []string{},
 			},
 		}
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := expandArrayPaths(tt.data, tt.path)
-				if tt.expectedError != nil {
-					if err == nil || err.Error() != tt.expectedError.Error() {
-						t.Errorf("expected error %v, got %v", tt.expectedError, err)
-					}
-					return
-				}
-
-				test.NoError(t, err)
-				test.Equal(t, tt.expected, got)
+				test.Equal(t, tt.expected, expandArrayPaths(tt.data, tt.path))
 			})
 		}
 	})

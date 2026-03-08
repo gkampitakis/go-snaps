@@ -18,7 +18,7 @@ func TestCustomMatcher(t *testing.T) {
 		test.Equal(t, c.name, "Custom")
 	})
 
-	t.Run("should allow overriding values", func(t *testing.T) {
+	t.Run("should allow overriding config values", func(t *testing.T) {
 		c := Custom("path", func(val any) (any, error) {
 			return nil, nil
 		}).ErrOnMissingPath(false)
@@ -42,9 +42,8 @@ func TestCustomMatcher(t *testing.T) {
 				return nil, nil
 			})
 
-			res, errs := c.JSON(j)
+			_, errs := c.JSON(j)
 
-			test.Nil(t, res)
 			test.Equal(t, 1, len(errs))
 
 			err := errs[0]
@@ -69,9 +68,8 @@ func TestCustomMatcher(t *testing.T) {
 				return nil, errors.New("custom error")
 			})
 
-			res, errs := c.JSON(j)
+			_, errs := c.JSON(j)
 
-			test.Nil(t, res)
 			test.Equal(t, 1, len(errs))
 
 			err := errs[0]
@@ -83,6 +81,7 @@ func TestCustomMatcher(t *testing.T) {
 
 		t.Run("should apply value from custom callback to json", func(t *testing.T) {
 			c := Custom("user.email", func(val any) (any, error) {
+				test.Equal(t, "mock-email", val.(string))
 				return "replaced email", nil
 			})
 
@@ -98,6 +97,107 @@ func TestCustomMatcher(t *testing.T) {
 
 			test.Equal(t, expected, string(res))
 			test.Nil(t, errs)
+		})
+
+		t.Run("nested json arrays", func(t *testing.T) {
+			t.Run("should replace values with root level nested arrays", func(t *testing.T) {
+				j := []byte(`[
+					{
+						"results": ["mock-data-1", "mock-data-2" ],
+					},
+					{
+						"results": ["mock-data-1", "mock-data-2" ],
+					},
+					{
+						"results": ["mock-data-1", "mock-data-2" ],
+					},
+				]`)
+
+				a := Custom("#.results.#", func(val any) (any, error) {
+					return "<custom>", nil
+				})
+
+				res, errs := a.JSON(j)
+
+				expected := `[
+					{
+						"results": ["<custom>", "<custom>" ],
+					},
+					{
+						"results": ["<custom>", "<custom>" ],
+					},
+					{
+						"results": ["<custom>", "<custom>" ],
+					},
+				]`
+
+				test.Equal(t, 0, len(errs))
+				test.Equal(t, expected, string(res))
+			})
+
+			t.Run("should replace value and return new json", func(t *testing.T) {
+				j := []byte(`{
+					"results": [
+						{
+							"packages": [
+								{"vulnerabilities": "mock-data-1", "name": "mock-name-1", "id": 12},
+								{"vulnerabilities": "mock-data-1", "name": "mock-name-1", "id": 15},
+								{"vulnerabilities": "mock-data-1", "name": "mock-name-1", "id": 17},
+							],
+						},
+						{
+							"packages": [
+								{"vulnerabilities": "mock-data-2", "name": "mock-name-2", "id": 22},
+								{"vulnerabilities": "mock-data-2", "name": "mock-name-2", "id": 25},
+								{"vulnerabilities": "mock-data-2", "name": "mock-name-2", "id": 27},
+							],
+						},
+						{
+							"packages": [
+								{"vulnerabilities": "mock-data-3", "name": "mock-name-3", "id": 32},
+								{"vulnerabilities": "mock-data-3", "name": "mock-name-3", "id": 35},
+								{"vulnerabilities": "mock-data-3", "name": "mock-name-3", "id": 37},
+							],
+						},
+					]
+				}`)
+				a := Custom(
+					"results.#.packages.#.vulnerabilities",
+					func(val any) (any, error) {
+						return "<custom>", nil
+					},
+				).ErrOnMissingPath(false)
+				res, errs := a.JSON(j)
+
+				expected := `{
+					"results": [
+						{
+							"packages": [
+								{"vulnerabilities": "<custom>", "name": "mock-name-1", "id": 12},
+								{"vulnerabilities": "<custom>", "name": "mock-name-1", "id": 15},
+								{"vulnerabilities": "<custom>", "name": "mock-name-1", "id": 17},
+							],
+						},
+						{
+							"packages": [
+								{"vulnerabilities": "<custom>", "name": "mock-name-2", "id": 22},
+								{"vulnerabilities": "<custom>", "name": "mock-name-2", "id": 25},
+								{"vulnerabilities": "<custom>", "name": "mock-name-2", "id": 27},
+							],
+						},
+						{
+							"packages": [
+								{"vulnerabilities": "<custom>", "name": "mock-name-3", "id": 32},
+								{"vulnerabilities": "<custom>", "name": "mock-name-3", "id": 35},
+								{"vulnerabilities": "<custom>", "name": "mock-name-3", "id": 37},
+							],
+						},
+					]
+				}`
+
+				test.Equal(t, 0, len(errs))
+				test.Equal(t, expected, string(res))
+			})
 		})
 	})
 

@@ -206,15 +206,7 @@ func TestMatchers(t *testing.T) {
 					]
 				}`)
 
-			a := match.Any("repositories.#.commits.#.files.#.checksum")
-
-			res, errs := a.JSON(j)
-			if len(errs) != 0 {
-				t.Errorf("unexpected errors %v", errs)
-				return
-			}
-
-			snaps.MatchJSON(t, res)
+			snaps.MatchJSON(t, j, match.Any("repositories.#.commits.#.files.#.checksum"))
 		})
 	})
 
