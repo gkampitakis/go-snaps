@@ -268,25 +268,28 @@ func examineSnaps(
 		for s.Scan() {
 			b := s.Bytes()
 			// Check if line is a test id
-			testIDWithLabel, testIDWithoutLabel, match := getTestID(b)
+			oldTestIDWithLabel, oldTestIDWithoutLabel, match := getTestID(b)
 			if !match {
 				continue
 			}
-			testIDs = append(testIDs, testIDWithLabel)
+			testIDs = append(testIDs, oldTestIDWithLabel)
 
-			currentTestIdWithLabel, ok := testIdLabelMappings[testIDWithoutLabel]
+			// resolve the current full test snapshot id, based on the "old" one
+			currentTestIdWithLabel, ok := testIdLabelMappings[oldTestIDWithoutLabel]
 
-			if ok && currentTestIdWithLabel != testIDWithLabel {
-				obsoleteTests = append(obsoleteTests, testIDWithLabel)
+			// remove the old test snapshot if the label has been changed
+			if ok && currentTestIdWithLabel != oldTestIDWithLabel {
+				obsoleteTests = append(obsoleteTests, oldTestIDWithLabel)
 				needsUpdating = true
 
 				removeSnapshot(s)
 				continue
 			}
 
-			if !registeredTests.Has(testIDWithoutLabel) &&
-				!testSkipped(testIDWithoutLabel, runOnly) {
-				obsoleteTests = append(obsoleteTests, testIDWithoutLabel)
+			// remove any test snapshots whose test no longer exists
+			if !registeredTests.Has(oldTestIDWithoutLabel) &&
+				!testSkipped(oldTestIDWithoutLabel, runOnly) {
+				obsoleteTests = append(obsoleteTests, oldTestIDWithoutLabel)
 				needsUpdating = true
 
 				removeSnapshot(s)
@@ -297,7 +300,7 @@ func examineSnaps(
 				line := s.Bytes()
 
 				if bytes.Equal(line, endSequenceByteSlice) {
-					tests[testIDWithLabel] = data.String()
+					tests[oldTestIDWithLabel] = data.String()
 
 					data.Reset()
 					break
