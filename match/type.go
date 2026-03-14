@@ -3,6 +3,7 @@ package match
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/gkampitakis/go-snaps/match/internal/yaml"
 	"github.com/goccy/go-yaml/parser"
@@ -103,19 +104,57 @@ func (t typeMatcher[ExpectedType]) JSON(b []byte) ([]byte, []MatcherError) {
 	json := b
 
 	for _, path := range t.paths {
-		r := gjson.GetBytes(json, path)
-		if !r.Exists() {
-			if t.errOnMissingPath {
-				errs = append(errs, t.matcherError(errPathNotFound, path))
+		for _, ep := range expandArrayPaths(json, path) {
+			j, err := t.processPathJSON(json, ep)
+			if err != nil {
+				errs = append(errs, t.matcherError(err, path))
+				continue
 			}
 
-			continue
+			json = j
+		}
+	}
+
+	return json, errs
+}
+
+func (t typeMatcher[ExpectedType]) processPathJSON(json []byte, path string) ([]byte, error) {
+	r := gjson.GetBytes(json, path)
+	if !r.Exists() {
+		if t.errOnMissingPath {
+			return nil, errPathNotFound
 		}
 
-		if err := typeCheck[ExpectedType](r.Value()); err != nil {
-			errs = append(errs, t.matcherError(err, path))
+		return json, nil
+	}
 
-			continue
+	if r.IsArray() && strings.HasPrefix(path, "#.") {
+		arr := r.Array()
+		if len(arr) == 0 {
+			return json, nil
+		}
+
+		for _, item := range arr {
+			if err := typeCheck[ExpectedType](item.Value()); err != nil {
+				return nil, err
+			}
+		}
+
+		j, err := sjson.SetBytesOptions(
+			json,
+			path,
+			// we don't support array of different types.
+			typePlaceholder(arr[0].Value()),
+			setJSONOptions,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return j, nil
+	} else {
+		if err := typeCheck[ExpectedType](r.Value()); err != nil {
+			return nil, err
 		}
 
 		j, err := sjson.SetBytesOptions(
@@ -125,15 +164,11 @@ func (t typeMatcher[ExpectedType]) JSON(b []byte) ([]byte, []MatcherError) {
 			setJSONOptions,
 		)
 		if err != nil {
-			errs = append(errs, t.matcherError(err, path))
-
-			continue
+			return nil, err
 		}
 
-		json = j
+		return j, nil
 	}
-
-	return json, errs
 }
 
 func typeCheck[ExpectedType any](value any) error {

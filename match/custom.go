@@ -2,6 +2,7 @@ package match
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/gkampitakis/go-snaps/match/internal/yaml"
 	"github.com/goccy/go-yaml/parser"
@@ -109,24 +110,64 @@ func (c *customMatcher) YAML(b []byte) ([]byte, []MatcherError) {
 
 // JSON is intended to be called internally on snaps.MatchJSON for applying Custom matcher
 func (c *customMatcher) JSON(b []byte) ([]byte, []MatcherError) {
-	r := gjson.GetBytes(b, c.path)
-	if !r.Exists() {
-		if c.errOnMissingPath {
-			return nil, c.matcherError(errPathNotFound)
+	var errs []MatcherError
+	json := b
+
+	for _, ep := range expandArrayPaths(json, c.path) {
+		j, err := c.processPathJSON(json, ep)
+		if err != nil {
+			errs = append(errs, c.matcherError(err)...)
+			continue
 		}
 
-		return b, nil
+		json = j
 	}
 
-	value, err := c.callback(r.Value())
-	if err != nil {
-		return nil, c.matcherError(err)
+	return json, errs
+}
+
+func (c *customMatcher) processPathJSON(json []byte, path string) ([]byte, error) {
+	r := gjson.GetBytes(json, path)
+	if !r.Exists() {
+		if c.errOnMissingPath {
+			return nil, errPathNotFound
+		}
+
+		return json, nil
 	}
 
-	b, err = sjson.SetBytesOptions(b, c.path, value, setJSONOptions)
-	if err != nil {
-		return nil, c.matcherError(err)
-	}
+	if r.IsArray() && strings.HasPrefix(path, "#.") {
+		arr := r.Array()
+		if len(arr) == 0 {
+			return json, nil
+		}
 
-	return b, nil
+		for _, item := range arr {
+			value, err := c.callback(item.Value())
+			if err != nil {
+				return nil, err
+			}
+
+			j, err := sjson.SetBytesOptions(json, path, value, setJSONOptions)
+			if err != nil {
+				return nil, err
+			}
+
+			json = j
+		}
+
+		return json, nil
+	} else {
+		value, err := c.callback(r.Value())
+		if err != nil {
+			return nil, err
+		}
+
+		j, err := sjson.SetBytesOptions(json, path, value, setJSONOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		return j, nil
+	}
 }

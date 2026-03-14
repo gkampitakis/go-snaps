@@ -95,24 +95,34 @@ func (a anyMatcher) JSON(b []byte) ([]byte, []MatcherError) {
 
 	json := b
 	for _, path := range a.paths {
-		r := gjson.GetBytes(json, path)
-		if !r.Exists() {
-			if a.errOnMissingPath {
-				errs = append(errs, a.matcherError(errPathNotFound, path))
+		for _, ep := range expandArrayPaths(json, path) {
+			j, err := a.processPathJSON(json, ep)
+			if err != nil {
+				errs = append(errs, a.matcherError(err, path))
+				continue
 			}
 
-			continue
+			json = j
 		}
-
-		j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJSONOptions)
-		if err != nil {
-			errs = append(errs, a.matcherError(err, path))
-
-			continue
-		}
-
-		json = j
 	}
 
 	return json, errs
+}
+
+func (a anyMatcher) processPathJSON(json []byte, path string) ([]byte, error) {
+	r := gjson.GetBytes(json, path)
+	if !r.Exists() {
+		if a.errOnMissingPath {
+			return nil, errPathNotFound
+		}
+
+		return json, nil
+	}
+
+	j, err := sjson.SetBytesOptions(json, path, a.placeholder, setJSONOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return j, nil
 }
