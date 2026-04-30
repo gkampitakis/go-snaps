@@ -1,6 +1,6 @@
 module github.com/gkampitakis/go-snaps
 
-go 1.22
+go 1.23
 
 require (
 	github.com/gkampitakis/ciinfo v0.3.2
@@ -14,7 +14,9 @@ require (
 )
 
 require (
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 )
