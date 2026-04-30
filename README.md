@@ -219,6 +219,8 @@ placeholder string.
 Any("user.name")
 // or with multiple paths
 Any("user.name", "user.email")
+// or with a attribute of a object in array
+Any("#.name")
 ```
 
 Any matcher provides some methods for setting options
