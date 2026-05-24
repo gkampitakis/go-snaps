@@ -148,11 +148,11 @@ func getPrevSnapshot(testID, snapPath string) (string, int, error) {
 }
 
 func addNewSnapshot(testID, snapshot, snapPath string) error {
-	if err := os.MkdirAll(filepath.Dir(snapPath), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(snapPath), 0o755); err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(snapPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	f, err := os.OpenFile(snapPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func updateSnapshot(testID, snapshot, snapPath string) error {
 	// all snapshots
 	_m.Lock()
 	defer _m.Unlock()
-	f, err := os.OpenFile(snapPath, os.O_RDWR, os.ModePerm)
+	f, err := os.OpenFile(snapPath, os.O_RDWR, 0o644)
 	if err != nil {
 		return err
 	}
@@ -222,11 +222,11 @@ func removeSnapshot(s *bufio.Scanner) {
 }
 
 func upsertStandaloneSnapshot(snapshot, snapPath string) error {
-	if err := os.MkdirAll(filepath.Dir(snapPath), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(snapPath), 0o755); err != nil {
 		return err
 	}
 
-	return os.WriteFile(snapPath, []byte(snapshot), os.ModePerm)
+	return os.WriteFile(snapPath, []byte(snapshot), 0o644)
 }
 
 func getPrevStandaloneSnapshot(snapPath string) (string, error) {

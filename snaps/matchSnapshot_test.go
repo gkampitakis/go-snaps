@@ -125,14 +125,14 @@ func TestMatchSnapshot(t *testing.T) {
 			}
 
 			// First call for creating the snapshot
-			WithConfig(Update((false))).MatchSnapshot(mockT, 10, "hello world")
+			WithConfig(Update(false)).MatchSnapshot(mockT, 10, "hello world")
 			test.Equal(t, 1, testEvents.items[added])
 
 			// Resetting registry to emulate the same MatchSnapshot call
 			testsRegistry = newRegistry()
 
 			// Second call with different params
-			WithConfig(Update((false))).MatchSnapshot(mockT, 100, "bye world")
+			WithConfig(Update(false)).MatchSnapshot(mockT, 100, "bye world")
 
 			test.Equal(
 				t,
@@ -275,7 +275,8 @@ func TestMatchSnapshot(t *testing.T) {
 				return fmt.Sprintf("serialized:%v", v)
 			})).MatchSnapshot(mockT, "hello world")
 
-			test.Equal(t,
+			test.Equal(
+				t,
 				"\n[mock-name - 1]\nserialized:hello world\n---\n",
 				test.GetFileContent(t, snapPath),
 			)

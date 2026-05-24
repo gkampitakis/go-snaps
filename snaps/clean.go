@@ -246,7 +246,7 @@ func examineSnaps(
 	var isDirty bool
 
 	for _, snapPath := range used {
-		f, err := os.OpenFile(snapPath, os.O_RDWR, os.ModePerm)
+		f, err := os.OpenFile(snapPath, os.O_RDWR, 0o644)
 		if err != nil {
 			return nil, isDirty, err
 		}

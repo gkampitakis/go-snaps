@@ -195,7 +195,7 @@ func upsertInlineSnapshot(filename string, callerLine int, snapshot string) erro
 	}
 
 	// Write to file
-	file, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+	file, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}

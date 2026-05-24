@@ -99,7 +99,7 @@ items:
 
 					mockT := test.NewMockTestingT(t)
 					mockT.MockError = func(args ...any) {
-						test.Equal(t, tc.err, (args[0].(error)).Error())
+						test.Equal(t, tc.err, args[0].(error).Error())
 					}
 
 					MatchYAML(mockT, tc.input)
@@ -127,7 +127,8 @@ items:
 					return map[string]any{"key4": nil}, nil
 				}
 
-				MatchYAML(mockT, "key1: \"\"",
+				MatchYAML(
+					mockT, "key1: \"\"",
 					match.Custom("$.key1", c1),
 					match.Custom("$.key1.key2", c2),
 					match.Custom("$.key1.key2.key3", c3),
@@ -139,7 +140,8 @@ items:
 
 				mockT := test.NewMockTestingT(t)
 				mockT.MockError = func(args ...any) {
-					test.Equal(t,
+					test.Equal(
+						t,
 						"\x1b[31;1m\n✕ match.Custom(\"$.age\") - mock error"+
 							"\x1b[0m\x1b[31;1m\n✕ match.Any(\"$.missing.key.1\") - path does not exist"+
 							"\x1b[0m\x1b[31;1m\n✕ match.Any(\"$.missing.key.2\") - path does not exist\x1b[0m",
