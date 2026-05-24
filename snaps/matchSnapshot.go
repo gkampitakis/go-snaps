@@ -55,7 +55,7 @@ func matchSnapshot(c *Config, t testingT, values ...any) {
 	}
 
 	snapPath, snapPathRel := snapshotPath(c, t.Name(), false)
-	testID := testsRegistry.getTestID(snapPath, t.Name())
+	testID := testsRegistry.getTestID(snapPath, t.Name(), c.label)
 	t.Cleanup(func() {
 		testsRegistry.reset(snapPath, t.Name())
 	})
