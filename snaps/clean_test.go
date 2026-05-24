@@ -267,13 +267,14 @@ string hello world 2 2 1
 ---
 `
 
-		test.Equal(t, []string{
-			"TestDir1_3/TestSimple - 1",
-			"TestDir1_3/TestSimple - 2",
-			"TestDir2_1/TestSimple - 1",
-			"TestDir2_1/TestSimple - 3",
-			"TestDir2_1/TestSimple - 2",
-		},
+		test.Equal(
+			t, []string{
+				"TestDir1_3/TestSimple - 1",
+				"TestDir1_3/TestSimple - 2",
+				"TestDir2_1/TestSimple - 1",
+				"TestDir2_1/TestSimple - 3",
+				"TestDir2_1/TestSimple - 2",
+			},
 			obsolete,
 		)
 		test.NoError(t, err)
@@ -341,13 +342,14 @@ string hello world 2 2 1
 			obsolete, isDirty, err := examineSnaps(tests, used, "", 1, shouldUpdate, sort)
 
 			test.NoError(t, err)
-			test.Equal(t, []string{
-				"TestDir1_3/TestSimple - 1",
-				"TestDir1_3/TestSimple - 2",
-				"TestDir2_1/TestSimple - 1",
-				"TestDir2_1/TestSimple - 2",
-				"TestDir2_1/TestSimple - 3",
-			},
+			test.Equal(
+				t, []string{
+					"TestDir1_3/TestSimple - 1",
+					"TestDir1_3/TestSimple - 2",
+					"TestDir2_1/TestSimple - 1",
+					"TestDir2_1/TestSimple - 2",
+					"TestDir2_1/TestSimple - 3",
+				},
 				obsolete,
 			)
 

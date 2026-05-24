@@ -93,7 +93,7 @@ func TestMatchJSON(t *testing.T) {
 
 				mockT := test.NewMockTestingT(t)
 				mockT.MockError = func(args ...any) {
-					test.Equal(t, tc.err, (args[0].(error)).Error())
+					test.Equal(t, tc.err, args[0].(error).Error())
 				}
 
 				MatchJSON(mockT, tc.input)
@@ -138,7 +138,8 @@ func TestMatchJSON(t *testing.T) {
 
 			mockT := test.NewMockTestingT(t)
 			mockT.MockError = func(args ...any) {
-				test.Equal(t,
+				test.Equal(
+					t,
 					"\x1b[31;1m\n✕ match.Custom(\"age\") - mock error"+
 						"\x1b[0m\x1b[31;1m\n✕ match.Any(\"missing.key.1\") - path does not exist"+
 						"\x1b[0m\x1b[31;1m\n✕ match.Any(\"missing.key.2\") - path does not exist\x1b[0m",
