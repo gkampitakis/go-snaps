@@ -37,7 +37,7 @@ func TestSkip(t *testing.T) {
 
 		mockT := test.NewMockTestingT(t)
 		mockT.MockSkipf = func(format string, args ...any) {
-			test.Equal(t, "mock", format)
+			test.Equal(t, "mock %d %d %d %d %d", format)
 			test.Equal(t, []any{1, 2, 3, 4, 5}, args)
 		}
 		mockT.MockLog = func(args ...any) {
@@ -45,7 +45,7 @@ func TestSkip(t *testing.T) {
 		}
 		mockT.MockSkipf = func(string, ...any) {}
 
-		Skipf(mockT, "mock", 1, 2, 3, 4, 5)
+		Skipf(mockT, "mock %d %d %d %d %d", 1, 2, 3, 4, 5)
 
 		test.Equal(t, []string{"mock-name"}, skippedTests.values)
 	})
