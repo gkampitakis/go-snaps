@@ -251,8 +251,6 @@ func examineSnaps(
 			return nil, isDirty, err
 		}
 
-		var needsUpdating bool
-
 		registeredTests := occurrences(registry[snapPath], count, snapshotOccurrenceFMT)
 		s := snapshotScanner(f)
 
@@ -267,7 +265,6 @@ func examineSnaps(
 
 			if !registeredTests.Has(testID) && !testSkipped(testID, runOnly) {
 				obsoleteTests = append(obsoleteTests, testID)
-				needsUpdating = true
 
 				removeSnapshot(s)
 				continue
@@ -297,7 +294,7 @@ func examineSnaps(
 		// if we're not allowed to update anything, just capture if the snapshot
 		// needs cleaning, and then continue to the next snapshot
 		if !shouldUpdate {
-			if needsUpdating || needsSorting {
+			if len(obsoleteTests) > 0 || needsSorting {
 				isDirty = true
 			}
 
