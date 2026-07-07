@@ -110,10 +110,9 @@ func Clean(m *testing.M, opts ...CleanOpts) (bool, error) {
 		shouldClean,
 	)
 	obsoleteTests, snapsDirty, err := examineSnaps(
-		testsRegistry.cleanup,
+		testsRegistry.labeled,
 		usedFiles,
 		runOnly,
-		count,
 		shouldClean,
 		opt.Sort,
 	)
@@ -135,28 +134,35 @@ func Clean(m *testing.M, opts ...CleanOpts) (bool, error) {
 }
 
 // getTestID will return the testID if the line is in the form of [Test... - number]
-func getTestID(b []byte) (string, bool) {
+func getTestID(b []byte) (string, string, bool) {
 	if len(b) == 0 {
-		return "", false
+		return "", "", false
 	}
 
 	// needs to start with [Test and end with ]
 	if !bytes.HasPrefix(b, []byte("[Test")) || b[len(b)-1] != ']' {
-		return "", false
+		return "", "", false
 	}
 
-	// needs to contain ' - '
-	separator := bytes.Index(b, []byte(" - "))
-	if separator == -1 {
-		return "", false
+	// needs to contain at least one ' - ' seperator
+	firstSeparator := bytes.Index(b, []byte(" - "))
+	if firstSeparator == -1 {
+		return "", "", false
 	}
 
-	// needs to have a number after the separator
-	if !isNumber(b[separator+3 : len(b)-1]) {
-		return "", false
+	// if there is a label, there will be a second seperator
+	secondSeparator := bytes.LastIndex(b, []byte(" - "))
+
+	if secondSeparator == -1 || secondSeparator == firstSeparator {
+		secondSeparator = len(b) - 1
 	}
 
-	return string(b[1 : len(b)-1]), true
+	// needs to have a number after the first separator
+	if !isNumber(b[firstSeparator+3 : secondSeparator]) {
+		return "", "", false
+	}
+
+	return string(b[1 : len(b)-1]), string(b[1:secondSeparator]), true
 }
 
 func isNumber(b []byte) bool {
@@ -232,10 +238,9 @@ func examineFiles(
 }
 
 func examineSnaps(
-	registry map[string]map[string]int,
+	testIdLabelMappings map[string]string,
 	used []string,
 	runOnly string,
-	count int,
 	shouldUpdate,
 	sort bool,
 ) ([]string, bool, error) {
@@ -253,20 +258,32 @@ func examineSnaps(
 
 		var needsUpdating bool
 
-		registeredTests := occurrences(registry[snapPath], count, snapshotOccurrenceFMT)
 		s := snapshotScanner(f)
 
 		for s.Scan() {
 			b := s.Bytes()
 			// Check if line is a test id
-			testID, match := getTestID(b)
+			oldTestIDWithLabel, oldTestIDWithoutLabel, match := getTestID(b)
 			if !match {
 				continue
 			}
-			testIDs = append(testIDs, testID)
+			testIDs = append(testIDs, oldTestIDWithLabel)
 
-			if !registeredTests.Has(testID) && !testSkipped(testID, runOnly) {
-				obsoleteTests = append(obsoleteTests, testID)
+			// resolve the current full test snapshot id, based on the "old" one
+			currentTestIdWithLabel, ok := testIdLabelMappings[oldTestIDWithoutLabel]
+
+			// remove any test snapshots whose test no longer exists
+			if !ok && !testSkipped(oldTestIDWithoutLabel, runOnly) {
+				obsoleteTests = append(obsoleteTests, oldTestIDWithoutLabel)
+				needsUpdating = true
+
+				removeSnapshot(s)
+				continue
+			}
+
+			// remove the old test snapshot if the label has been changed
+			if ok && currentTestIdWithLabel != oldTestIDWithLabel {
+				obsoleteTests = append(obsoleteTests, oldTestIDWithLabel)
 				needsUpdating = true
 
 				removeSnapshot(s)
@@ -277,7 +294,7 @@ func examineSnaps(
 				line := s.Bytes()
 
 				if bytes.Equal(line, endSequenceByteSlice) {
-					tests[testID] = data.String()
+					tests[oldTestIDWithLabel] = data.String()
 
 					data.Reset()
 					break

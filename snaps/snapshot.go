@@ -37,12 +37,15 @@ func handleError(t testingT, err any) {
 type syncRegistry struct {
 	running map[string]map[string]int
 	cleanup map[string]map[string]int
+
+	labeled map[string]string
+
 	sync.Mutex
 }
 
 // Returns the id of the test in the snapshot
 // Form [<test-name> - <occurrence>]
-func (s *syncRegistry) getTestID(snapPath, testName string) string {
+func (s *syncRegistry) getTestID(snapPath, testName, label string) string {
 	s.Lock()
 
 	if _, exists := s.running[snapPath]; !exists {
@@ -53,9 +56,19 @@ func (s *syncRegistry) getTestID(snapPath, testName string) string {
 	s.running[snapPath][testName]++
 	s.cleanup[snapPath][testName]++
 	c := s.running[snapPath][testName]
+
+	testIdWithoutLabel := fmt.Sprintf("%s - %d", testName, c)
+
+	if label != "" {
+		label = " - " + label
+	}
+
+	testIdWithLabel := testIdWithoutLabel + label
+	s.labeled[testIdWithoutLabel] = testIdWithLabel
+
 	s.Unlock()
 
-	return fmt.Sprintf("[%s - %d]", testName, c)
+	return "[" + testIdWithLabel + "]"
 }
 
 // reset sets only the number of running registry for the given test to 0.
@@ -69,6 +82,7 @@ func newRegistry() *syncRegistry {
 	return &syncRegistry{
 		running: make(map[string]map[string]int),
 		cleanup: make(map[string]map[string]int),
+		labeled: make(map[string]string),
 		Mutex:   sync.Mutex{},
 	}
 }

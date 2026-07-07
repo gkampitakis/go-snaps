@@ -14,6 +14,7 @@ type Config struct {
 	filename   string
 	snapsDir   string
 	extension  string
+	label      string
 	update     *bool
 	json       *JSONConfig
 	serializer func(any) string
@@ -102,6 +103,15 @@ func Dir(dir string) func(*Config) {
 func Ext(ext string) func(*Config) {
 	return func(c *Config) {
 		c.extension = ext
+	}
+}
+
+// Specify snapshot label, to make it easier to find and review
+//
+// default: empty
+func Label(label string) func(*Config) {
+	return func(c *Config) {
+		c.label = label
 	}
 }
 
