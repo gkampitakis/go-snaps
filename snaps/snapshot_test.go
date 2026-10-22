@@ -303,6 +303,25 @@ func TestSnapshotPath(t *testing.T) {
 		)
 	})
 
+	t.Run("should return standalone snapPath with sanitized test name", func(t *testing.T) {
+		snapPath, snapPathRel := snapshotPathWrapper(
+			&defaultConfig,
+			`TestFunction/a:b<c>d"e\f|g?h*i%j`,
+			true,
+		)
+
+		test.HasSuffix(
+			t,
+			snapPath,
+			filepath.FromSlash("/snaps/__snapshots__/TestFunction_a_b_c_d_e_f_g_h_i_j_%d.snap"),
+		)
+		test.Equal(
+			t,
+			filepath.FromSlash("__snapshots__/TestFunction_a_b_c_d_e_f_g_h_i_j_%d.snap"),
+			snapPathRel,
+		)
+	})
+
 	t.Run("should return standalone snapPath with overridden filename", func(t *testing.T) {
 		snapPath, snapPathRel := snapshotPathWrapper(&Config{
 			filename: "my_file",

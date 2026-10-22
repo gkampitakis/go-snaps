@@ -262,6 +262,7 @@ func getPrevStandaloneSnapshot(snapPath string) (string, error) {
 //   - if filename provided we return the filename with `.snap` extension
 //   - if extension provided we return the filename with `.snap` and the provided extension
 //   - if it's standalone snapshot we also append an integer (_%d) in the filename (even before `.snap`)
+//   - if it's standalone snapshot and no filename provided, the test name is sanitized for use as a filename
 //
 // Returns the relative path of the caller and the snapshot path.
 func snapshotPath(c *Config, tName string, isStandalone bool) (string, string) {
@@ -289,7 +290,7 @@ func constructFilename(c *Config, callerFilename, tName string, isStandalone boo
 		filename = strings.TrimSuffix(base, filepath.Ext(base))
 
 		if isStandalone {
-			filename = strings.ReplaceAll(tName, "/", "_")
+			filename = sanitizeFilename(tName)
 		}
 	}
 
@@ -299,6 +300,24 @@ func constructFilename(c *Config, callerFilename, tName string, isStandalone boo
 	filename += snapsExt + c.extension
 
 	return filename
+}
+
+// sanitizeFilename replaces characters that are either path separators, invalid in file names
+// on some operating systems (e.g. Windows) or have special meaning for the `_%d` formatting
+// verb appended to standalone snapshot file names, with `_`.
+func sanitizeFilename(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f {
+			return '_'
+		}
+
+		switch r {
+		case '/', '\\', ':', '*', '?', '"', '<', '>', '|', '%':
+			return '_'
+		}
+
+		return r
+	}, s)
 }
 
 func unescapeEndChars(s string) string {
