@@ -622,6 +622,56 @@ string hello world 2 1 2
 	})
 }
 
+func TestExamineSnaps_WithLabelsContainingSeparator(t *testing.T) {
+	const mockSnap = `
+[TestA - 1 - GET /users - admin]
+int(1)
+---
+
+[TestB - 1]
+int(2)
+---
+`
+
+	t.Run("should keep the snapshot when updating", func(t *testing.T) {
+		snapPath := test.CreateTempFile(t, mockSnap)
+
+		obsolete, isDirty, err := examineSnaps(
+			map[string]string{
+				"TestA - 1": "TestA - 1 - GET /users - admin",
+				"TestB - 1": "TestB - 1",
+			},
+			[]string{snapPath},
+			"",
+			true,
+			false,
+		)
+
+		test.NoError(t, err)
+		test.Equal(t, []string{}, obsolete)
+		test.False(t, isDirty)
+		test.Equal(t, mockSnap, test.GetFileContent(t, snapPath))
+	})
+
+	t.Run("should report the snapshot as obsolete", func(t *testing.T) {
+		snapPath := test.CreateTempFile(t, mockSnap)
+
+		obsolete, isDirty, err := examineSnaps(
+			map[string]string{
+				"TestB - 1": "TestB - 1",
+			},
+			[]string{snapPath},
+			"",
+			false,
+			false,
+		)
+
+		test.NoError(t, err)
+		test.Equal(t, []string{"TestA - 1"}, obsolete)
+		test.True(t, isDirty)
+	})
+}
+
 func TestOccurrences(t *testing.T) {
 	t.Run("when count 1", func(t *testing.T) {
 		tests := map[string]int{
@@ -764,6 +814,8 @@ func TestGetTestID(t *testing.T) {
 	}{
 		{"[Test/something - 10]", "Test/something - 10", true},
 		{"[Test/something - 10 - my label]", "Test/something - 10 - my label", true},
+		{"[Test/something - 10 - my - label]", "Test/something - 10 - my - label", true},
+		{"[Test/something - 10 - retry - 2]", "Test/something - 10 - retry - 2", true},
 		{input: "[Test/something - 100231231dsada]", expectedID: "", valid: false},
 		{input: "[Test/something - 100231231 ]", expectedID: "", valid: false},
 		{input: "[Test/something -100231231 ]", expectedID: "", valid: false},
@@ -786,6 +838,7 @@ func TestGetTestID(t *testing.T) {
 		{input: "[Test/something - a]", expectedID: "", valid: false},
 		{input: "[Test/something - a - my label]", expectedID: "", valid: false},
 		{input: "[Test/something - a - my label ]", expectedID: "", valid: false},
+		{input: "[Test/something - - my label]", expectedID: "", valid: false},
 		{"[Test123 - Some Test]", "", false},
 		{"[Test123 - 1 - Some Test]", "Test123 - 1 - Some Test", true},
 		{"", "", false},
