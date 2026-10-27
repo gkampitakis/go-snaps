@@ -151,10 +151,13 @@ func getTestID(b []byte) (string, string, bool) {
 	}
 
 	// if there is a label, there will be a second seperator
-	secondSeparator := bytes.LastIndex(b, []byte(" - "))
+	// (labels can contain " - " themselves, so look for the next one after the number)
+	secondSeparator := bytes.Index(b[firstSeparator+3:], []byte(" - "))
 
-	if secondSeparator == -1 || secondSeparator == firstSeparator {
+	if secondSeparator == -1 {
 		secondSeparator = len(b) - 1
+	} else {
+		secondSeparator += firstSeparator + 3
 	}
 
 	// needs to have a number after the first separator
