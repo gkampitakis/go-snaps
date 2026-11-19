@@ -15,6 +15,7 @@ import (
 
 var (
 	testsRegistry           = newRegistry()
+	addedSnapsRegistry      = newAddedRegistry()
 	standaloneTestsRegistry = newStandaloneRegistry()
 	_m                      = sync.RWMutex{}
 	endSequenceByteSlice    = []byte(endSequence)
@@ -84,6 +85,32 @@ func newRegistry() *syncRegistry {
 		cleanup: make(map[string]map[string]int),
 		labeled: make(map[string]string),
 		Mutex:   sync.Mutex{},
+	}
+}
+
+// syncAddedRegistry tracks the ids of the snapshots that were added during this
+// run, so that Clean can sort them into place without reordering the existing ones
+// map[snap path]: set[test id]
+type syncAddedRegistry struct {
+	ids map[string]map[string]struct{}
+	sync.Mutex
+}
+
+func (s *syncAddedRegistry) register(snapPath, testID string) {
+	s.Lock()
+	defer s.Unlock()
+
+	if _, exists := s.ids[snapPath]; !exists {
+		s.ids[snapPath] = make(map[string]struct{})
+	}
+
+	// test ids are stored without the surrounding brackets, to match how Clean reads them
+	s.ids[snapPath][strings.TrimSuffix(strings.TrimPrefix(testID, "["), "]")] = struct{}{}
+}
+
+func newAddedRegistry() *syncAddedRegistry {
+	return &syncAddedRegistry{
+		ids: make(map[string]map[string]struct{}),
 	}
 }
 
@@ -172,8 +199,13 @@ func addNewSnapshot(testID, snapshot, snapPath string) error {
 	}
 	defer f.Close()
 
-	_, err = fmt.Fprintf(f, "\n%s\n%s\n---\n", testID, snapshot)
-	return err
+	if _, err = fmt.Fprintf(f, "\n%s\n%s\n---\n", testID, snapshot); err != nil {
+		return err
+	}
+
+	addedSnapsRegistry.register(snapPath, testID)
+
+	return nil
 }
 
 func updateSnapshot(testID, snapshot, snapPath string) error {
