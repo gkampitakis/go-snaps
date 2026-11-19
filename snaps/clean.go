@@ -111,6 +111,7 @@ func Clean(m *testing.M, opts ...CleanOpts) (bool, error) {
 	)
 	obsoleteTests, snapsDirty, err := examineSnaps(
 		testsRegistry.labeled,
+		addedSnapsRegistry.ids,
 		usedFiles,
 		runOnly,
 		shouldClean,
@@ -242,6 +243,7 @@ func examineFiles(
 
 func examineSnaps(
 	testIdLabelMappings map[string]string,
+	addedSnaps map[string]map[string]struct{},
 	used []string,
 	runOnly string,
 	shouldUpdate,
@@ -260,6 +262,7 @@ func examineSnaps(
 		}
 
 		var needsUpdating bool
+		obsolete := map[string]struct{}{}
 
 		s := snapshotScanner(f)
 
@@ -278,19 +281,15 @@ func examineSnaps(
 			// remove any test snapshots whose test no longer exists
 			if !ok && !testSkipped(oldTestIDWithoutLabel, runOnly) {
 				obsoleteTests = append(obsoleteTests, oldTestIDWithoutLabel)
+				obsolete[oldTestIDWithLabel] = struct{}{}
 				needsUpdating = true
-
-				removeSnapshot(s)
-				continue
 			}
 
 			// remove the old test snapshot if the label has been changed
 			if ok && currentTestIdWithLabel != oldTestIDWithLabel {
 				obsoleteTests = append(obsoleteTests, oldTestIDWithLabel)
+				obsolete[oldTestIDWithLabel] = struct{}{}
 				needsUpdating = true
-
-				removeSnapshot(s)
-				continue
 			}
 
 			for s.Scan() {
@@ -312,6 +311,14 @@ func examineSnaps(
 			return nil, isDirty, err
 		}
 
+		// even when we're not allowed to update existing snapshots, we can still
+		// sort any snapshots added during this run into place around them
+		hasAddedSnaps := sort && !shouldUpdate && hasAny(testIDs, addedSnaps[snapPath])
+
+		if hasAddedSnaps {
+			testIDs = mergeAddedSnaps(testIDs, addedSnaps[snapPath])
+		}
+
 		needsSorting := sort && !slices.IsSortedFunc(testIDs, naturalSort)
 
 		// if we're not allowed to update anything, just capture if the snapshot
@@ -320,7 +327,9 @@ func examineSnaps(
 			if needsUpdating || needsSorting {
 				isDirty = true
 			}
+		}
 
+		if !shouldUpdate && !hasAddedSnaps {
 			f.Close()
 
 			clear(tests)
@@ -330,7 +339,7 @@ func examineSnaps(
 			continue
 		}
 
-		if needsSorting {
+		if needsSorting && shouldUpdate {
 			// sort testIDs
 			slices.SortFunc(testIDs, naturalSort)
 		}
@@ -340,6 +349,11 @@ func examineSnaps(
 		}
 
 		for _, id := range testIDs {
+			// obsolete snapshots can only be removed when we're allowed to update
+			if _, isObsolete := obsolete[id]; isObsolete && shouldUpdate {
+				continue
+			}
+
 			test, ok := tests[id]
 			if !ok {
 				continue
@@ -481,4 +495,45 @@ func naturalSort(a, b string) int {
 		return -1
 	}
 	return 1
+}
+
+// hasAny reports if any of the given ids are in the set
+func hasAny(ids []string, set map[string]struct{}) bool {
+	return slices.ContainsFunc(ids, func(id string) bool {
+		_, ok := set[id]
+		return ok
+	})
+}
+
+// mergeAddedSnaps returns the given test ids with those that were added during
+// this run sorted into place, without changing the order of the existing ones
+func mergeAddedSnaps(testIDs []string, added map[string]struct{}) []string {
+	var existing, sortedAdded []string
+
+	for _, id := range testIDs {
+		if _, ok := added[id]; ok {
+			sortedAdded = append(sortedAdded, id)
+		} else {
+			existing = append(existing, id)
+		}
+	}
+
+	slices.SortFunc(sortedAdded, naturalSort)
+
+	merged := make([]string, 0, len(testIDs))
+	i, j := 0, 0
+
+	for i < len(existing) && j < len(sortedAdded) {
+		if naturalSort(sortedAdded[j], existing[i]) < 0 {
+			merged = append(merged, sortedAdded[j])
+			j++
+		} else {
+			merged = append(merged, existing[i])
+			i++
+		}
+	}
+
+	// at most one of these has anything left
+	merged = append(merged, existing[i:]...)
+	return append(merged, sortedAdded[j:]...)
 }
