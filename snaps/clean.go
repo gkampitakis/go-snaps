@@ -262,7 +262,6 @@ func examineSnaps(
 		}
 
 		var needsUpdating bool
-		obsolete := map[string]struct{}{}
 
 		s := snapshotScanner(f)
 
@@ -281,15 +280,24 @@ func examineSnaps(
 			// remove any test snapshots whose test no longer exists
 			if !ok && !testSkipped(oldTestIDWithoutLabel, runOnly) {
 				obsoleteTests = append(obsoleteTests, oldTestIDWithoutLabel)
-				obsolete[oldTestIDWithLabel] = struct{}{}
 				needsUpdating = true
+
+				// obsolete snapshots can only be removed when we're allowed to update
+				if shouldUpdate {
+					removeSnapshot(s)
+					continue
+				}
 			}
 
 			// remove the old test snapshot if the label has been changed
 			if ok && currentTestIdWithLabel != oldTestIDWithLabel {
 				obsoleteTests = append(obsoleteTests, oldTestIDWithLabel)
-				obsolete[oldTestIDWithLabel] = struct{}{}
 				needsUpdating = true
+
+				if shouldUpdate {
+					removeSnapshot(s)
+					continue
+				}
 			}
 
 			for s.Scan() {
@@ -349,11 +357,6 @@ func examineSnaps(
 		}
 
 		for _, id := range testIDs {
-			// obsolete snapshots can only be removed when we're allowed to update
-			if _, isObsolete := obsolete[id]; isObsolete && shouldUpdate {
-				continue
-			}
-
 			test, ok := tests[id]
 			if !ok {
 				continue
