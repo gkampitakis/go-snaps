@@ -3,10 +3,8 @@ package snaps
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
-	"github.com/gkampitakis/go-snaps/internal/colors"
 	"github.com/gkampitakis/go-snaps/match"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/pretty"
@@ -75,25 +73,9 @@ func matchJSON(c *Config, t testingT, input any, matchers ...match.JSONMatcher) 
 		return
 	}
 
-	j, matchersErrors := applyJSONMatchers(j, matchers...)
+	j, matchersErrors := applyMatchers(j, matchers, match.JSONMatcher.JSON)
 	if len(matchersErrors) > 0 {
-		s := strings.Builder{}
-
-		for _, err := range matchersErrors {
-			colors.Fprint(
-				&s,
-				colors.Red,
-				fmt.Sprintf(
-					"\n%smatch.%s(\"%s\") - %s",
-					errorSymbol,
-					err.Matcher,
-					err.Path,
-					err.Reason,
-				),
-			)
-		}
-
-		handleError(t, s.String())
+		handleError(t, formatMatcherErrors(matchersErrors))
 		return
 	}
 
@@ -161,19 +143,4 @@ func validateJSON(input any) ([]byte, error) {
 
 func (c *Config) takeJSONSnapshot(b []byte) string {
 	return strings.TrimSuffix(string(pretty.PrettyOptions(b, c.json.getPrettyJSONOptions())), "\n")
-}
-
-func applyJSONMatchers(b []byte, matchers ...match.JSONMatcher) ([]byte, []match.MatcherError) {
-	errors := []match.MatcherError{}
-
-	for _, m := range matchers {
-		json, errs := m.JSON(b)
-		if len(errs) > 0 {
-			errors = append(errors, errs...)
-			continue
-		}
-		b = json
-	}
-
-	return b, errors
 }
