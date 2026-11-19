@@ -310,7 +310,7 @@ func examineSnaps(
 
 		// even when we're not allowed to update existing snapshots, we can still
 		// sort any snapshots added during this run into place around them
-		hasAddedSnaps := sort && !shouldUpdate && hasAny(testIDs, addedSnaps[snapPath])
+		hasAddedSnaps := sort && !shouldUpdate && len(addedSnaps[snapPath]) > 0
 
 		if hasAddedSnaps {
 			testIDs = mergeAddedSnaps(testIDs, addedSnaps[snapPath])
@@ -492,14 +492,6 @@ func naturalSort(a, b string) int {
 		return -1
 	}
 	return 1
-}
-
-// hasAny reports if any of the given ids are in the set
-func hasAny(ids []string, set map[string]struct{}) bool {
-	return slices.ContainsFunc(ids, func(id string) bool {
-		_, ok := set[id]
-		return ok
-	})
 }
 
 // mergeAddedSnaps returns the given test ids with those that were added during

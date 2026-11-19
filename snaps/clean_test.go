@@ -841,6 +841,41 @@ int(6)
 		test.NoError(t, err)
 		test.Equal(t, mockSnap, test.GetFileContent(t, snapPath))
 	})
+
+	t.Run("should not change anything when no snapshots were added", func(t *testing.T) {
+		// the extra blank lines would be normalized away if the file was rewritten
+		const unsortedSnap = `
+
+[TestB - 1]
+int(2)
+---
+
+
+[TestA - 1]
+int(1)
+---
+
+`
+
+		snapPath := test.CreateTempFile(t, unsortedSnap)
+
+		_, isDirty, err := examineSnaps(
+			labels,
+			map[string]map[string]struct{}{
+				"some/other/file.snap": {"TestA - 1": {}},
+			},
+			[]string{snapPath},
+			"",
+			false,
+			true,
+		)
+
+		test.NoError(t, err)
+
+		// still dirty, since the existing snapshots are not sorted
+		test.True(t, isDirty)
+		test.Equal(t, unsortedSnap, test.GetFileContent(t, snapPath))
+	})
 }
 
 // largeSnapIDs returns 20 sorted "existing" snapshot ids, and 6 unsorted "added"
