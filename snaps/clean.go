@@ -259,8 +259,6 @@ func examineSnaps(
 			return nil, isDirty, err
 		}
 
-		var needsUpdating bool
-
 		s := snapshotScanner(f)
 
 		for s.Scan() {
@@ -278,7 +276,6 @@ func examineSnaps(
 			// remove any test snapshots whose test no longer exists
 			if !ok && !testSkipped(oldTestIDWithoutLabel, runOnly) {
 				obsoleteTests = append(obsoleteTests, oldTestIDWithoutLabel)
-				needsUpdating = true
 
 				removeSnapshot(s)
 				continue
@@ -287,7 +284,6 @@ func examineSnaps(
 			// remove the old test snapshot if the label has been changed
 			if ok && currentTestIdWithLabel != oldTestIDWithLabel {
 				obsoleteTests = append(obsoleteTests, oldTestIDWithLabel)
-				needsUpdating = true
 
 				removeSnapshot(s)
 				continue
@@ -317,7 +313,7 @@ func examineSnaps(
 		// if we're not allowed to update anything, just capture if the snapshot
 		// needs cleaning, and then continue to the next snapshot
 		if !shouldUpdate {
-			if needsUpdating || needsSorting {
+			if len(obsoleteTests) > 0 || needsSorting {
 				isDirty = true
 			}
 
