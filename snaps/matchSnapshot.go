@@ -1,7 +1,6 @@
 package snaps
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/gkampitakis/go-snaps/internal/colors"
@@ -61,51 +60,7 @@ func matchSnapshot(c *Config, t testingT, values ...any) {
 	})
 
 	snapshot := c.takeSnapshot(values)
-	prevSnapshot, line, err := getPrevSnapshot(testID, snapPath)
-	if errors.Is(err, errSnapNotFound) {
-		if !shouldCreate(c.update) {
-			handleError(t, err)
-			return
-		}
-
-		err := addNewSnapshot(testID, snapshot, snapPath)
-		if err != nil {
-			handleError(t, err)
-			return
-		}
-
-		t.Log(addedMsg)
-		testEvents.register(added)
-		return
-	}
-	if err != nil {
-		handleError(t, err)
-		return
-	}
-
-	diff := prettyDiff(
-		unescapeEndChars(prevSnapshot),
-		unescapeEndChars(snapshot),
-		snapPathRel,
-		line,
-	)
-	if diff == "" {
-		testEvents.register(passed)
-		return
-	}
-
-	if !shouldUpdate(c.update) {
-		handleError(t, diff)
-		return
-	}
-
-	if err = updateSnapshot(testID, snapshot, snapPath); err != nil {
-		handleError(t, err)
-		return
-	}
-
-	t.Log(updatedMsg)
-	testEvents.register(updated)
+	compareAndStore(c, t, snapshot, snapFileStore{testID, snapPath, snapPathRel}, true)
 }
 
 func (c *Config) takeSnapshot(objects []any) string {

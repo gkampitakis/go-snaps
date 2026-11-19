@@ -123,40 +123,7 @@ func matchInlineSnapshot(c *Config, t testingT, received any, inlineSnap inlineS
 		}
 	}
 
-	if inlineSnap == nil {
-		if !shouldCreate(c.update) {
-			handleError(t, errSnapNotFound)
-			return
-		}
-
-		if err := upsertInlineSnapshot(filename, line, snapshot); err != nil {
-			handleError(t, err)
-			return
-		}
-
-		t.Log(addedMsg)
-		testEvents.register(added)
-		return
-	}
-
-	diff := prettyDiff(*inlineSnap, snapshot, "", -1)
-	if diff == "" {
-		testEvents.register(passed)
-		return
-	}
-
-	if !shouldUpdate(c.update) {
-		handleError(t, diff)
-		return
-	}
-
-	if err := upsertInlineSnapshot(filename, line, snapshot); err != nil {
-		handleError(t, err)
-		return
-	}
-
-	t.Log(updatedMsg)
-	testEvents.register(updated)
+	compareAndStore(c, t, snapshot, inlineStore{filename, line, inlineSnap}, false)
 }
 
 func upsertInlineSnapshot(filename string, callerLine int, snapshot string) error {

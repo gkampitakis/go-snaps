@@ -1,7 +1,6 @@
 package snaps
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -106,49 +105,5 @@ func matchStandaloneYAML(c *Config, t testingT, input any, matchers ...match.YAM
 	}
 
 	snapshot := takeYAMLSnapshot(y)
-	prevSnapshot, err := getPrevStandaloneSnapshot(snapPath)
-	if errors.Is(err, errSnapNotFound) {
-		if !shouldCreate(c.update) {
-			handleError(t, err)
-			return
-		}
-
-		err := upsertStandaloneSnapshot(snapshot, snapPath)
-		if err != nil {
-			handleError(t, err)
-			return
-		}
-
-		t.Log(addedMsg)
-		testEvents.register(added)
-		return
-	}
-	if err != nil {
-		handleError(t, err)
-		return
-	}
-
-	diff := prettyDiff(
-		prevSnapshot,
-		snapshot,
-		snapPathRel,
-		1,
-	)
-	if diff == "" {
-		testEvents.register(passed)
-		return
-	}
-
-	if !shouldUpdate(c.update) {
-		handleError(t, diff)
-		return
-	}
-
-	if err = upsertStandaloneSnapshot(snapshot, snapPath); err != nil {
-		handleError(t, err)
-		return
-	}
-
-	t.Log(updatedMsg)
-	testEvents.register(updated)
+	compareAndStore(c, t, snapshot, standaloneStore{snapPath, snapPathRel}, false)
 }
