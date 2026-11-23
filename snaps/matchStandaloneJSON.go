@@ -1,10 +1,6 @@
 package snaps
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/gkampitakis/go-snaps/internal/colors"
 	"github.com/gkampitakis/go-snaps/match"
 )
 
@@ -82,25 +78,9 @@ func matchStandaloneJSON(c *Config, t testingT, input any, matchers ...match.JSO
 		return
 	}
 
-	j, matchersErrors := applyJSONMatchers(j, matchers...)
+	j, matchersErrors := applyMatchers(j, matchers, match.JSONMatcher.JSON)
 	if len(matchersErrors) > 0 {
-		s := strings.Builder{}
-
-		for _, err := range matchersErrors {
-			colors.Fprint(
-				&s,
-				colors.Red,
-				fmt.Sprintf(
-					"\n%smatch.%s(\"%s\") - %s",
-					errorSymbol,
-					err.Matcher,
-					err.Path,
-					err.Reason,
-				),
-			)
-		}
-
-		handleError(t, s.String())
+		handleError(t, formatMatcherErrors(matchersErrors))
 		return
 	}
 
