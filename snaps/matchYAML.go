@@ -2,9 +2,7 @@ package snaps
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/gkampitakis/go-snaps/internal/colors"
 	"github.com/gkampitakis/go-snaps/match"
 	"github.com/goccy/go-yaml"
 )
@@ -69,25 +67,9 @@ func matchYAML(c *Config, t testingT, input any, matchers ...match.YAMLMatcher) 
 		return
 	}
 
-	y, matchersErrors := applyYAMLMatchers(y, matchers...)
+	y, matchersErrors := applyMatchers(y, matchers, match.YAMLMatcher.YAML)
 	if len(matchersErrors) > 0 {
-		s := strings.Builder{}
-
-		for _, err := range matchersErrors {
-			colors.Fprint(
-				&s,
-				colors.Red,
-				fmt.Sprintf(
-					"\n%smatch.%s(\"%s\") - %s",
-					errorSymbol,
-					err.Matcher,
-					err.Path,
-					err.Reason,
-				),
-			)
-		}
-
-		handleError(t, s.String())
+		handleError(t, formatMatcherErrors(matchersErrors))
 		return
 	}
 
@@ -121,22 +103,6 @@ func validateYAML(input any) ([]byte, error) {
 
 		return data, nil
 	}
-}
-
-func applyYAMLMatchers(b []byte, matchers ...match.YAMLMatcher) ([]byte, []match.MatcherError) {
-	errors := []match.MatcherError{}
-
-	for _, m := range matchers {
-		y, errs := m.YAML(b)
-		if len(errs) > 0 {
-			errors = append(errors, errs...)
-			continue
-		}
-
-		b = y
-	}
-
-	return b, errors
 }
 
 func takeYAMLSnapshot(b []byte) string {
