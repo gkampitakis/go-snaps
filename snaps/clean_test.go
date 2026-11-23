@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/internal/test"
@@ -203,6 +204,7 @@ func TestExamineSnaps(t *testing.T) {
 				"TestBeta - 1":              "TestBeta - 1",
 				"TestAlpha - 1":             "TestAlpha - 1",
 			},
+			nil,
 			used,
 			"",
 			shouldUpdate,
@@ -239,6 +241,7 @@ func TestExamineSnaps(t *testing.T) {
 				"TestBeta - 1":              "TestBeta - 1",
 				"TestAlpha - 1":             "TestAlpha - 1",
 			},
+			nil,
 			used,
 			"",
 			shouldUpdate,
@@ -285,6 +288,7 @@ func TestExamineSnaps(t *testing.T) {
 				"TestBeta - 1":  "TestBeta - 1",
 				"TestAlpha - 1": "TestAlpha - 1",
 			},
+			nil,
 			used,
 			"",
 			shouldUpdate,
@@ -366,6 +370,7 @@ string hello world 2 2 1
 				"TestBeta - 1":              "TestBeta - 1",
 				"TestAlpha - 1":             "TestAlpha - 1",
 			},
+			nil,
 			used,
 			"",
 			shouldUpdate,
@@ -417,6 +422,7 @@ string hello world 2 2 1
 					"TestBeta - 1":  "TestBeta - 1",
 					"TestAlpha - 1": "TestAlpha - 1",
 				},
+				nil,
 				used,
 				"",
 				shouldUpdate,
@@ -473,6 +479,7 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 				"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
 				"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2 - stderr",
 			},
+			nil,
 			used,
 			"",
 			shouldUpdate,
@@ -506,6 +513,7 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 				"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
 				"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2 - stderr",
 			},
+			nil,
 			used,
 			"",
 			shouldUpdate,
@@ -557,6 +565,7 @@ func TestExamineSnaps_WithLabels(t *testing.T) {
 				"TestDir2_1/TestSimple - 3": "TestDir2_1/TestSimple - 3",
 				"TestDir2_1/TestSimple - 2": "TestDir2_1/TestSimple - 2 - stderr",
 			},
+			nil,
 			used,
 			"",
 			shouldUpdate,
@@ -641,6 +650,7 @@ int(2)
 				"TestA - 1": "TestA - 1 - GET /users - admin",
 				"TestB - 1": "TestB - 1",
 			},
+			nil,
 			[]string{snapPath},
 			"",
 			true,
@@ -660,6 +670,7 @@ int(2)
 			map[string]string{
 				"TestB - 1": "TestB - 1",
 			},
+			nil,
 			[]string{snapPath},
 			"",
 			false,
@@ -670,6 +681,267 @@ int(2)
 		test.Equal(t, []string{"TestA - 1"}, obsolete)
 		test.True(t, isDirty)
 	})
+}
+
+func TestExamineSnaps_SortsAddedSnaps(t *testing.T) {
+	// TestB, TestD, and TestF existed before this run (with TestF now being obsolete),
+	// while TestE, TestA, and TestC were appended during this run
+	const mockSnap = `
+[TestB - 1]
+int(2)
+---
+
+[TestD - 1]
+int(4)
+---
+
+[TestF - 1]
+int(6)
+---
+
+[TestE - 1]
+int(5)
+---
+
+[TestA - 1]
+int(1)
+---
+
+[TestC - 1]
+int(3)
+---
+`
+
+	labels := map[string]string{
+		"TestA - 1": "TestA - 1",
+		"TestB - 1": "TestB - 1",
+		"TestC - 1": "TestC - 1",
+		"TestD - 1": "TestD - 1",
+		"TestE - 1": "TestE - 1",
+	}
+
+	t.Run("should sort added snapshots into place when not updating", func(t *testing.T) {
+		snapPath := test.CreateTempFile(t, mockSnap)
+
+		obsolete, isDirty, err := examineSnaps(
+			labels,
+			map[string]map[string]struct{}{
+				snapPath: {"TestE - 1": {}, "TestA - 1": {}, "TestC - 1": {}},
+			},
+			[]string{snapPath},
+			"",
+			false,
+			true,
+		)
+
+		test.NoError(t, err)
+		test.Equal(t, []string{"TestF - 1"}, obsolete)
+
+		// still dirty since the obsolete snapshot has not been removed
+		test.True(t, isDirty)
+		test.Equal(t, `
+[TestA - 1]
+int(1)
+---
+
+[TestB - 1]
+int(2)
+---
+
+[TestC - 1]
+int(3)
+---
+
+[TestD - 1]
+int(4)
+---
+
+[TestE - 1]
+int(5)
+---
+
+[TestF - 1]
+int(6)
+---
+`, test.GetFileContent(t, snapPath))
+	})
+
+	// these use more than 12 snapshots because slices.SortFunc uses a different
+	// algorithm for small slices, which can hide comparator bugs
+	t.Run("should sort added snapshots into place in large files", func(t *testing.T) {
+		existing, added := largeSnapIDs()
+
+		snapPath := test.CreateTempFile(t, buildMockSnap(slices.Concat(existing, added)))
+
+		_, _, err := examineSnaps(
+			labelsFor(existing, added),
+			map[string]map[string]struct{}{snapPath: setOf(added)},
+			[]string{snapPath},
+			"",
+			false,
+			true,
+		)
+
+		test.NoError(t, err)
+
+		expected := slices.Concat(existing, added)
+		slices.SortFunc(expected, naturalSort)
+
+		test.Equal(t, expected, readSnapIDs(t, snapPath))
+	})
+
+	t.Run("should not reorder existing snapshots in large files", func(t *testing.T) {
+		existing, added := largeSnapIDs()
+
+		// existing snapshots are deliberately out of order
+		slices.Reverse(existing)
+
+		snapPath := test.CreateTempFile(t, buildMockSnap(slices.Concat(existing, added)))
+
+		_, _, err := examineSnaps(
+			labelsFor(existing, added),
+			map[string]map[string]struct{}{snapPath: setOf(added)},
+			[]string{snapPath},
+			"",
+			false,
+			true,
+		)
+
+		test.NoError(t, err)
+
+		got := readSnapIDs(t, snapPath)
+
+		// every snapshot is still present...
+		test.Equal(t, len(existing)+len(added), len(got))
+
+		// ...and the existing ones are still in their original relative order
+		addedSet := setOf(added)
+		gotExisting := slices.DeleteFunc(slices.Clone(got), func(id string) bool {
+			_, ok := addedSet[id]
+			return ok
+		})
+
+		test.Equal(t, existing, gotExisting)
+	})
+
+	t.Run("should not change anything when sorting is disabled", func(t *testing.T) {
+		snapPath := test.CreateTempFile(t, mockSnap)
+
+		_, _, err := examineSnaps(
+			labels,
+			map[string]map[string]struct{}{
+				snapPath: {"TestE - 1": {}, "TestA - 1": {}, "TestC - 1": {}},
+			},
+			[]string{snapPath},
+			"",
+			false,
+			false,
+		)
+
+		test.NoError(t, err)
+		test.Equal(t, mockSnap, test.GetFileContent(t, snapPath))
+	})
+
+	t.Run("should not change anything when no snapshots were added", func(t *testing.T) {
+		// the extra blank lines would be normalized away if the file was rewritten
+		const unsortedSnap = `
+
+[TestB - 1]
+int(2)
+---
+
+
+[TestA - 1]
+int(1)
+---
+
+`
+
+		snapPath := test.CreateTempFile(t, unsortedSnap)
+
+		_, isDirty, err := examineSnaps(
+			labels,
+			map[string]map[string]struct{}{
+				"some/other/file.snap": {"TestA - 1": {}},
+			},
+			[]string{snapPath},
+			"",
+			false,
+			true,
+		)
+
+		test.NoError(t, err)
+
+		// still dirty, since the existing snapshots are not sorted
+		test.True(t, isDirty)
+		test.Equal(t, unsortedSnap, test.GetFileContent(t, snapPath))
+	})
+}
+
+// largeSnapIDs returns 20 sorted "existing" snapshot ids, and 6 unsorted "added"
+// snapshot ids that belong in between them
+func largeSnapIDs() ([]string, []string) {
+	existing := make([]string, 0, 20)
+	for i := 2; i <= 40; i += 2 {
+		existing = append(existing, fmt.Sprintf("TestSnap%d - 1", i))
+	}
+
+	added := []string{
+		"TestSnap33 - 1",
+		"TestSnap1 - 1",
+		"TestSnap41 - 1",
+		"TestSnap17 - 1",
+		"TestSnap9 - 1",
+		"TestSnap25 - 1",
+	}
+
+	return existing, added
+}
+
+func buildMockSnap(ids []string) string {
+	var b strings.Builder
+
+	for i, id := range ids {
+		fmt.Fprintf(&b, "\n[%s]\nint(%d)\n---\n", id, i)
+	}
+
+	return b.String()
+}
+
+func readSnapIDs(t *testing.T, snapPath string) []string {
+	t.Helper()
+
+	var ids []string
+
+	for _, line := range strings.Split(test.GetFileContent(t, snapPath), "\n") {
+		if id, _, ok := getTestID([]byte(line)); ok {
+			ids = append(ids, id)
+		}
+	}
+
+	return ids
+}
+
+func labelsFor(idSets ...[]string) map[string]string {
+	labels := map[string]string{}
+
+	for _, ids := range idSets {
+		for _, id := range ids {
+			labels[id] = id
+		}
+	}
+
+	return labels
+}
+
+func setOf(ids []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(ids))
+
+	for _, id := range ids {
+		set[id] = struct{}{}
+	}
+
+	return set
 }
 
 func TestOccurrences(t *testing.T) {
